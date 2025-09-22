@@ -1,0 +1,13 @@
+#! /bin/sh -
+
+# See: https://www.antlr.org/download.html
+
+wget https://www.antlr.org/download/antlr-4.13.2-complete.jar \
+     https://www.antlr.org/download/antlr-runtime-4.13.2.jar
+
+# More info at: https://www.cs.upc.edu/~cl/practica/install.html
+
+# antlr X.g4 && javac *.java && java X < file.X
+# assuming something like code/starter/Test.java
+
+# Also, get one-jar: https://one-jar.sourceforge.net/

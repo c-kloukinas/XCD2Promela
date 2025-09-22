@@ -1,0 +1,117 @@
+component P1(){
+
+	required port incrementUR{
+		void incUR();			
+	}
+	required port incrementNA{  
+		void incNA();			 
+	}	
+} 
+ 
+component P2(){
+	required port doubleUR{
+		void doubleUR();			
+	}
+	required port doubleNA{
+		void doubleNA();			
+	}		 
+	  
+}
+
+component NA(){
+ 	provided port incrementNA{
+
+		void incNA();
+	}
+	
+	provided port doubleNA{
+
+		void doubleNA();		
+	} 
+}
+component UR(){
+		
+	provided port incrementUR{
+		void incUR();
+	}
+	
+	provided port doubleUR{
+
+		void doubleUR();
+	}	
+}  
+
+connector P1P2_to_NAUR(roleP1{incrementNA,incrementUR},
+                     roleP2{doubleNA,doubleUR},
+                      roleUR{incrementUR,doubleUR},roleNA{incrementNA,doubleNA} ){
+	
+	role roleP1{
+		bool urFirst:=false;
+		required port_variable incrementNA{
+			@interaction{ 
+				waits: urFirst;
+				ensures: urFirst := false; 
+			}
+			void incNA();
+		}		 
+		required port_variable incrementUR{ 
+			@interaction{
+				waits: !urFirst; 
+				ensures: urFirst := true;
+			}
+			void incUR();
+		}	 
+	}
+	role roleP2{
+		bool urFirst:=false;
+		required port_variable doubleNA{
+			@interaction{
+				waits: urFirst;
+				ensures: urFirst := false;
+			}
+			void doubleNA();
+		}
+		required port_variable doubleUR{
+			@interaction{
+				waits: !urFirst;
+				ensures: urFirst := true;
+		    }
+			void doubleUR();
+		}
+	}
+	role roleNA{
+		provided port_variable incrementNA{		
+			void incNA();
+		}		
+		provided port_variable doubleNA{	
+			void doubleNA(); 
+		}	
+	}
+	role roleUR{
+		provided port_variable incrementUR{	
+			void incUR();
+		}	
+		provided port_variable doubleUR{	
+			void doubleUR();
+		}		
+	}
+	connector async link1(roleNA{incrementNA},roleP1{incrementNA} );
+	connector async link2(roleP1{incrementUR}, roleUR{incrementUR});	
+	connector async link3(roleNA{doubleNA},roleP2{doubleNA} );
+	connector async link4(roleP2{doubleUR}, roleUR{doubleUR});	
+}
+  
+
+
+component AlurPlant(){
+	
+	component P1 p1inst();
+	component P2 p2inst();
+	component NA nainst();
+	component UR urinst();
+	
+	connector P1P2_to_NAUR  connIns(p1inst{incrementNA,incrementUR}, p2inst{doubleNA,doubleUR},
+                                      urinst{incrementUR,doubleUR}, nainst{incrementNA, doubleNA});
+}
+ 
+component AlurPlant config();

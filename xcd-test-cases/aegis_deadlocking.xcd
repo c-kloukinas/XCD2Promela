@@ -1,0 +1,242 @@
+component client(byte numOfPorts){ 
+	    
+	byte data := 0;     
+	byte numOfOpenedServers := 0;    
+	   
+     
+	required port service[numOfPorts]{   
+		@interaction{ 
+			waits: numOfOpenedServers < numOfPorts;   
+		} 
+		@functional{  
+		  promises: \nothing;
+		  requires:true;		 
+		  ensures: numOfOpenedServers:=pre(numOfOpenedServers) +1;
+		}
+		void open();   
+		 
+		@interaction{ 
+		  waits: numOfOpenedServers > 0; 
+		} 
+		@functional{     
+		  promises: \nothing;  
+		  requires:true;				  
+		  ensures: numOfOpenedServers:=pre(numOfOpenedServers) - 1;
+		}
+		void close();
+		
+		@interaction{  
+		  waits: numOfOpenedServers == numOfPorts;
+		}
+		@functional{
+		  promises:\nothing;
+		  requires:true;				
+		  ensures: data:= result;
+		} 
+		byte request();				
+	}
+	
+}
+
+component server(byte numOfPorts){
+
+	bool opened[numOfPorts] := false;
+	byte data := 1;
+	
+	provided port service[numOfPorts] {
+		void open();
+		void close();
+
+		@functional{
+		  requires:true;				
+		  ensures: \result := data  ; 
+		}  
+		byte request();			  	
+	}	  
+}                           
+  
+component mixedComponent(byte numOfClientPorts, byte numOfServerPorts){
+
+	byte numOfOpenedServers := 0;
+	byte data := 3;	    
+ 
+//	[blocking]
+	required port client[numOfClientPorts]{   
+		@interaction{ 
+			waits: numOfOpenedServers < numOfClientPorts;  
+		}
+		@functional{ 
+		  promises: \nothing;
+		  requires:true;				   
+		  ensures:  numOfOpenedServers:=numOfOpenedServers +1;
+		}
+		void open();   
+		   
+		@interaction{ 
+		  waits: numOfOpenedServers > 0;      
+		} 
+		@functional{   
+		  promises: \nothing;
+		  requires:true;			 
+		  ensures:  numOfOpenedServers:=numOfOpenedServers - 1;
+		}
+		void close();  
+		
+		@interaction{ 
+		  waits: numOfOpenedServers == numOfClientPorts;
+		} 
+		@functional{
+		  promises: \nothing;
+		  requires:true;				
+		  ensures: data := result;
+		}  
+		byte request();				
+	}
+
+	provided port server[numOfServerPorts]{ 
+		  
+		@interaction_req{
+		 waits: numOfOpenedServers == numOfClientPorts;
+		}	
+		void open(); 
+		 
+		@interaction_req{
+		  waits: numOfOpenedServers == numOfClientPorts;
+		}		
+		void close();   
+   
+		@interaction_req{
+		  waits: numOfOpenedServers == numOfClientPorts;   
+		}			  
+		@functional_res{   
+		  ensures: \result := data;
+		}
+		byte request();		
+	}                                        	                           
+}                                
+
+connector client2server(client{service}, server{service}){   
+	          
+	role client{
+		bool opened := false;     
+		required port_variable service{    
+			@interaction{
+				waits: !opened; 
+				ensures: opened := true; 
+			} 
+			void open(); 		 			     
+			@interaction{
+				waits: opened; 
+				ensures: opened := false;
+			}
+			void close(); 	
+			@interaction{
+				waits: opened  ;  
+				ensures: \nothing; 
+			}			 
+			byte request();   
+		}        
+	}              
+	  
+	role server{       
+		bool opened:=false;  
+		provided port_variable service{  
+  
+			@interaction_req{  
+				waits: !opened;
+				ensures: opened:=true;
+			}
+			@interaction_res{
+				waits: opened;
+				ensures:  \nothing;
+			}			
+			void open();
+			@interaction{
+				waits: opened;
+				ensures: opened:= false;
+			}						
+			void close();
+			@interaction{
+				waits: opened; 
+				ensures: \nothing;
+			}			 	  
+			byte request();			
+		}
+	}
+	 
+	connector proc link(client{service}, server{service});
+}
+
+connector client2server_deadlock(byte numOfClients, byte numOfServers, client{service}, server{service}){   
+	          
+	role client{
+		bool opened := false;   
+		byte clientIndex := 0; 
+		required port_variable service{    
+			@interaction{
+				waits: !opened ; 
+				ensures: opened := true; 
+			} 
+			void open(); 		 			     
+			@interaction{
+				waits: opened; 
+				ensures: opened := false;
+			}
+			void close(); 	
+			@interaction{
+				waits: opened && clientIndex == @;  
+				ensures: clientIndex \in [0, numOfClients-1];  
+			}			 
+			byte request();    
+		}        
+	}              
+	     
+	role server{        
+		bool opened:=false;   
+		byte serverIndex := 0; 
+		provided port_variable service{  
+  
+			@interaction{  
+				waits: !opened;
+				ensures: opened:=true;
+			}
+			void open();
+			@interaction{
+				waits: opened ;
+				ensures: opened:= false;
+			}						
+			void close();
+			@interaction{
+				waits: opened  && serverIndex == @; 
+				ensures: serverIndex \in [0, numOfServers-1];
+			}			 	  
+			byte request();			
+		} 
+	}
+	 
+	connector proc link(client{service}, server{service});
+}
+ 
+
+component aegis(){
+	
+	component server experimentControl(3);
+	component mixedComponent doctrineAuthoring(1,3);
+	component client doctrineValidation(3);
+	component mixedComponent trackServer(1,3);
+	component mixedComponent geoServer(2,1);
+	component client doctrineReasoning(3);
+	
+	connector client2server_deadlock cs_1(1, 3, doctrineAuthoring{client[0]}, experimentControl{service[0]});
+	connector client2server_deadlock cs_2(3, 3, doctrineValidation{service[0]},experimentControl{service[1]});
+    connector client2server_deadlock cs_3(1, 3, trackServer{client[0]},experimentControl{service[2]});
+	connector client2server_deadlock cs_4(3, 3, doctrineValidation{service[1]},doctrineAuthoring{server[0]});
+	connector client2server_deadlock cs_5(3, 3, doctrineValidation{service[2]},trackServer{server[0]});
+	connector client2server_deadlock cs_6(3, 3, doctrineReasoning{service[0]},doctrineAuthoring{server[1]});
+	connector client2server_deadlock cs_7(2, 3, geoServer{client[0]},doctrineAuthoring{server[2]});
+	connector client2server_deadlock cs_8(3, 3, doctrineReasoning{service[1]},trackServer{server[1]}); 
+	connector client2server_deadlock cs_9(2, 3, geoServer{client[1]},trackServer{server[2]});
+	connector client2server_deadlock cs_10(3, 1, doctrineReasoning{service[2]}, geoServer{server[0]});	
+}   
+ 
+ component aegis configAegis();

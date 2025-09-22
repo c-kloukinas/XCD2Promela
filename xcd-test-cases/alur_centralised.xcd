@@ -1,0 +1,201 @@
+enum order := { none, incFirst, dblFirst }; // order: a new type
+
+connector centralised(roleP1{toUR,   toNA},
+            roleP2{toUR, toNA},
+            roleUR{inc,  double},
+            roleNA{inc,  double},
+            roleController{P1toUR,   P1toNA,
+                           P2toUR,   P2toNA,
+                           CtoURinc, CtoURdouble,
+                           CtoNAinc, CtoNAdouble}){
+
+  role roleP1{
+    bool urFirst:=false;
+    required port_variable toUR{
+      @interaction{ waits: !urFirst;
+            ensures: urFirst := true; }
+      void incUR(); }
+    required port_variable toNA{
+      @interaction{ waits: urFirst;
+            ensures: urFirst := false; }
+      void incNA(); }
+  }
+  role roleUR{
+    provided port_variable inc{ void incUR(); }
+    provided port_variable double{ void doubleUR(); }
+  }
+  role roleNA{
+    provided port_variable inc{ void incNA(); }
+    provided port_variable double{ void doubleNA(); }
+  }
+  role roleP2{
+    bool urFirst:=false;
+    required port_variable toNA{
+      @interaction{ waits: urFirst;
+            ensures: urFirst := false; }
+      void doubleNA(); }
+    required port_variable toUR{
+      @interaction{ waits: !urFirst;
+            ensures: urFirst := true; }
+      void doubleUR(); }
+  }
+
+  role roleController{
+    order corder := none;
+    bool p1_incNARcvd :=false;
+    bool p1_incURRcvd :=false;
+    bool p2_dblNARcvd :=false;
+    bool p2_dblURRcvd :=false;
+
+    bool ur_incUREmtd := false;
+    bool na_incNAEmtd := false;
+    bool ur_dblUREmtd := false;
+    bool na_dblNAEmtd := false;
+
+  all_received() { return p1_incURRcvd && p1_incNARcvd
+                       && p2_dblURRcvd && p2_dblNARcvd; }
+  inc_emitted() { return ur_incUREmtd && na_incNAEmtd ; }
+  dbl_emitted() { return ur_dblUREmtd && na_dblNAEmtd ; }
+
+    provided port_variable P1toUR{
+      @interaction{
+      waits: !p1_incURRcvd;
+      ensures: p1_incURRcvd :=true;
+        corder := pre(corder) == none
+	  ? incFirst : pre(corder); }
+      void incUR(); }
+    provided port_variable P1toNA{
+      @interaction{
+      waits:  !p1_incNARcvd;
+      ensures: p1_incNARcvd :=true; }
+      void incNA(); }
+    provided port_variable P2toUR{
+      @interaction{
+      waits:   !p2_dblURRcvd;
+      ensures: p2_dblURRcvd :=true;
+        corder := pre(corder) == none
+	  ? dblFirst : pre(corder); }
+      void doubleUR(); }
+    provided port_variable P2toNA{
+      @interaction{
+      waits:   !p2_dblNARcvd;
+      ensures: p2_dblNARcvd :=true; }
+      void doubleNA(); }
+
+    required port_variable CtoURinc{
+      @interaction{
+      waits: all_received() && !ur_incUREmtd
+          && ( (corder==incFirst)
+            || (corder==dblFirst && dbl_emitted()) );
+      ensures: ur_incUREmtd := true; }
+      void incUR(); }
+    required port_variable CtoURdouble{
+      @interaction{
+      waits: all_received() && !ur_dblUREmtd
+          && ( (corder==dblFirst)
+            || (corder==incFirst && inc_emitted()) );
+      ensures: ur_dblUREmtd := true; }
+      void doubleUR(); }
+    required port_variable CtoNAinc{
+      @interaction{
+      waits: ur_incUREmtd && !na_incNAEmtd;
+      ensures: // clear flags if dblFirst
+        p1_incURRcvd := !(pre(corder) == dblFirst);
+        p1_incNARcvd := !(pre(corder) == dblFirst);
+        ur_incUREmtd := !(pre(corder) == dblFirst);
+        na_incNAEmtd := !(pre(corder) == dblFirst);
+        p2_dblURRcvd := !(pre(corder) == dblFirst);
+        p2_dblNARcvd := !(pre(corder) == dblFirst);
+        ur_dblUREmtd := pre(corder) == dblFirst
+          ? false : pre(ur_dblUREmtd);
+        na_dblNAEmtd := pre(corder) == dblFirst
+          ? false : pre(na_dblNAEmtd);
+        corder := pre(corder) == dblFirst
+	  ? none : pre(corder); }
+      void incNA(); }
+    required port_variable CtoNAdouble{
+      @interaction{
+      waits: ur_dblUREmtd && !na_dblNAEmtd;
+      ensures: // clear flags if incFirst
+        p2_dblURRcvd := !(pre(corder) == incFirst);
+        p2_dblNARcvd := !(pre(corder) == incFirst);
+        ur_dblUREmtd := !(pre(corder) == incFirst);
+        na_dblNAEmtd := !(pre(corder) == incFirst);
+        p1_incURRcvd := !(pre(corder) == incFirst);
+        p1_incNARcvd := !(pre(corder) == incFirst);
+        ur_incUREmtd := pre(corder) == incFirst
+          ? false : pre(ur_incUREmtd);
+        na_incNAEmtd := pre(corder) == incFirst
+          ? false : pre(na_incNAEmtd);
+        corder := pre(corder) == incFirst
+	  ? none : pre(corder); }
+      void doubleNA(); }
+  }
+  // Controller appears to P1 & P2 as UR & NA
+  connector async link1(roleP1{toUR},
+                        roleController{P1toUR});
+  connector async link2(roleP1{toNA},
+                        roleController{P1toNA});
+  connector async link3(roleP2{toUR},
+                        roleController{P2toUR});
+  connector async link4(roleP2{toNA},
+                        roleController{P2toNA});
+  // Controller appears to UR & NA as P1 & P2
+  connector async link5(roleUR{inc},
+                        roleController{CtoURinc});
+  connector async link6(roleUR{double},
+                        roleController{CtoURdouble});
+  connector async link7(roleNA{inc},
+                        roleController{CtoNAinc});
+  connector async link8(roleNA{double},
+                        roleController{CtoNAdouble});
+}
+
+component P1(){
+  required port incUR{ void incUR(); }
+  required port incNA{ void incNA(); }
+}
+component P2(){
+  required port doubleUR{ void doubleUR(); }
+  required port doubleNA{ void doubleNA(); }
+}
+component NA(){
+  provided port incNA{ void incNA(); }
+  provided port doubleNA{ void doubleNA(); }
+}
+component UR(){
+  provided port incUR{ void incUR(); }
+  provided port doubleUR{ void doubleUR(); }
+}
+component controller{
+  provided port P1_incUR{ void incUR(); }
+  provided port P1_incNA{ void incNA(); }
+  provided port P2_doubleUR{ void doubleUR(); }
+  provided port P2_doubleNA{ void doubleNA(); }
+  required port NA_incNA{ void incNA(); }
+  required port NA_doubleNA{ void doubleNA(); }
+  required port UR_incUR{ void incUR(); }
+  required port UR_doubleUR{ void doubleUR(); }
+}
+
+
+component AlurPlant(){
+  component P1 p1inst();
+  component P2 p2inst();
+  component NA nainst();
+  component UR urinst();
+  component controller controllerinst();
+
+  connector centralised  centrins(
+         p1inst{incUR,incNA},
+         p2inst{doubleUR, doubleNA},
+         urinst{incUR,   doubleUR},
+         nainst{incNA,   doubleNA},
+         controllerinst{P1_incUR, P1_incNA,
+                        P2_doubleUR,P2_doubleNA,
+                        UR_incUR,   UR_doubleUR,
+                        NA_incNA,   NA_doubleNA}
+         );
+}
+
+component AlurPlant config();

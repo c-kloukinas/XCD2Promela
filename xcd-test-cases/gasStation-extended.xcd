@@ -1,0 +1,237 @@
+                  
+enum Amount := {None, Little, Average, Much};         
+                            
+typedef byte ID;                               
+           
+component Customer(){                       
+	
+  bool dummyVar9 := true;                                  
+  bool requestMade := false;    
+  Amount chosenAmount :=  Little;         
+    
+  emitter port pay{      
+                 
+    @interaction{    
+    waits: !requestMade;       
+    }      
+    @functional{   
+    promises: dummyVar1 := 1;   
+    ensures:  requestMade := true;
+              chosenAmount := amount;   
+    }
+    pay(Amount amount, int dummyVar1);   
+  }      
+     
+  required port gas{                  
+     
+    @interaction{   
+    waits: requestMade==true;     
+    }      
+    @functional{            
+    promises: dummyVar2 := 2;       
+     requires: \result == chosenAmount  ;
+     ensures: requestMade:=false;       
+     otherwise: 
+     requires: !(\result == chosenAmount);      
+     ensures: dummyVar9 := dummyVar9;
+     otherwise: 
+     requires: !(\exception == MissingPaymentException);      
+     ensures: requestMade:=requestMade; 
+    }  
+    Amount pump(int dummyVar2) throws MissingPaymentException;
+  }    
+
+}
+ 
+component Cashier(ID N := 2){ 
+
+  bool dummyVar10 := true;
+  Amount payment_amount[N] := None;
+
+  hasPaid(ID i) {
+    return payment_amount[i] != None; 
+  }
+
+  consumer port customer[N]{ 
+
+    @interaction{    
+    accepts: payment_amount[@] == None;                             
+    }    
+    @functional{                                                             
+    requires: dummyVar10 == dummyVar10;    
+       
+    ensures: payment_amount[@] := amount_arg;      
+    }  
+    pay(Amount amount_arg);               
+  }    
+
+  emitter port toPump{ 
+
+    @interaction{
+    waits: payment_amount[pumpID] != None;
+    }  
+    @functional{   
+    promises: pumpID \in [0, N-1] ;
+              amount := payment_amount[pumpID];  
+    ensures: payment_amount[pumpID] := None;
+    }
+    releasePump(ID pumpID, Amount amount); 
+  }   
+
+}        
+ 
+component Pump(ID N:=2){  
+ 
+  bool dummyVar11 := true;
+  bool pumpReleased[N] := false;       
+  Amount payment_amount[N] := None;
+
+  provided port oil[N]{   
+   
+    // @interaction{           
+    // accepts: !false;     
+    // }  
+    @interaction{           
+    accepts: !false;     
+	also :
+    waits: pumpReleased[@]==true;   
+    }  
+    @functional{    
+    requires: payment_amount[@] != None;
+    ensures: pumpReleased[@]:=false; 
+  	     \result := payment_amount[@];  
+  	otherwise
+  	requires: payment_amount[@] == None;
+  	throws: MissingPaymentException;
+    }    
+         
+    Amount pump() throws MissingPaymentException;
+  }  
+
+  consumer port fromCashier {
+
+    @interaction{ 
+    waits: ! pumpReleased[pumpID]; 
+    }  
+    @functional{
+    requires: dummyVar11 == dummyVar11;
+    ensures: pumpReleased[pumpID] := true;
+             payment_amount[pumpID] := amount;
+    } 
+    releasePump(ID pumpID, Amount amount);
+  }   
+                  
+}    
+    
+connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
+
+  role Customer{ 
+
+    bool dummyVariable3 := true;
+
+    emitter port_variable pay{   
+
+      @interaction{
+      waits: dummyVariable3;
+      ensures: dummyVariable3 := true;
+      }	  
+      pay();    
+    }                                         
+  }                                      
+                                           
+  role Cashier{
+
+    bool dummyVariable4 := true;
+
+    consumer port_variable customer{     
+
+      @interaction{
+      waits: dummyVariable4;
+      ensures: dummyVariable4 := true;
+      }                 
+      pay();        
+    }                 
+  }             
+      
+ connector proc cust2cash_pay(Customer{pay}, Cashier{customer});       
+                      
+}                               
+          
+connector Customer_Pump(Customer{gas}, Pump{oil}){   
+    
+  role Customer{  
+
+    bool dummyVariable5 := true;
+
+    required port_variable gas{  
+
+      @interaction{
+      waits: dummyVariable5;
+      ensures: dummyVariable5 := true;
+      }     
+      void pump();      
+    }   
+  }
+
+  role Pump{ 
+
+    bool dummyVariable6 := true;
+ 
+    provided port_variable oil{
+
+      @interaction{
+      waits: dummyVariable6;
+      ensures: dummyVariable6 := true;
+      } 
+      void pump();
+    }   
+  }    
+    
+  connector proc cust2pump_pump(Customer{gas}, Pump{oil});
+} 
+
+connector Cashier_Pump(Cashier{toPump}, Pump{fromCashier}){
+
+  role Cashier{    
+    bool dummyVariable7 := true;
+
+    emitter port_variable toPump{
+
+      @interaction{
+      waits: dummyVariable7;
+      ensures: dummyVariable7 := true;
+      } 
+      releasePump(int pumpID); 
+    }   
+  }  
+
+  role Pump{
+
+    bool dummyVariable8 := true;
+
+    consumer port_variable fromCashier{
+
+      @interaction{
+      waits: dummyVariable8;
+      ensures: dummyVariable8 := true;
+      } 
+      releasePump(int pumpID);
+    }
+  } 
+
+  connector async cash2pump_pump(Cashier{toPump},Pump{fromCashier});
+}
+
+component GasStation(ID N := 1){ // Add default value - represents Customer_MAX when this is the whole architecture.
+
+  component Customer cust1[1]();
+  component Cashier cash1(1);
+  component Pump pump1(1); 
+   
+  connector Customer_Cashier conn1[1](cust1[@]{pay}, cash1{customer[@]});
+  connector Customer_Pump conn2[1](cust1[@]{gas}, pump1{oil[@]});
+  connector Cashier_Pump conn3(cash1{toPump}, pump1{fromCashier});
+
+ } 
+ 
+ component GasStation config();

@@ -1,0 +1,176 @@
+                  
+enum Amount := {None, Little, Average, Much};         
+                            
+typedef byte ID;                               
+           
+component Customer(){                       
+	                                  
+  bool requestMade := false;    
+  Amount chosenAmount :=  Little;         
+    
+  emitter port pay{      
+                 
+    @interaction{    
+    waits: !requestMade;       
+    }      
+    @functional{   
+    promises: \nothing;   
+    ensures:  requestMade := true;
+              chosenAmount := amount;   
+    }
+    pay(Amount amount);   
+  }      
+     
+  required port gas{                  
+     
+    @interaction{   
+    waits: requestMade==true;     
+    }      
+    @functional{            
+    promises: \nothing;       
+     requires: \result == chosenAmount  ;
+     ensures: requestMade:=false;       
+     otherwise: 
+     requires: !(\result == chosenAmount);      
+     ensures: \nothing;
+     otherwise: 
+     requires: !(\exception == MissingPaymentException);      
+     ensures: \nothing; 
+    }  
+    Amount pump() throws MissingPaymentException;
+  }    
+
+}
+ 
+component Cashier(ID N := 2){ 
+
+  Amount payment_amount[N] := None;
+
+  hasPaid(ID i) {
+    return payment_amount[i] != None; 
+  }
+
+  consumer port customer[N]{   
+    @interaction{    
+    accepts: payment_amount[@] == None;                             
+    }    
+    @functional{                                                             
+    requires: true;    
+       
+    ensures: payment_amount[@] := amount_arg;      
+    }  
+    pay(Amount amount_arg);               
+  }       
+  emitter port toPump{ 
+
+    @interaction{
+    waits: payment_amount[pumpID] != None;
+    }  
+    @functional{   
+    promises: pumpID \in [0, N-1] ;
+              amount := payment_amount[pumpID];  
+    ensures: payment_amount[pumpID] := None;
+    }
+    releasePump(ID pumpID, Amount amount); 
+  }    
+}        
+ 
+component Pump(ID N:=2){  
+ 
+  bool pumpReleased[N] := false;       
+  Amount payment_amount[N] := None;
+
+  provided port oil[N]{   
+   
+    @interaction{           
+    accepts: pumpReleased[@]==true;   
+    }  
+    @functional{    
+    requires: payment_amount[@] != None;
+    ensures: pumpReleased[@]:=false; 
+  	     \result := payment_amount[@];  
+  	otherwise
+  	requires: payment_amount[@] == None;
+  	throws: MissingPaymentException;
+    }    
+         
+    Amount pump() throws MissingPaymentException;
+  }  
+
+  consumer port fromCashier {
+    @interaction{ 
+    waits: ! pumpReleased[pumpID]; 
+    }  
+    @functional{
+    requires: true;
+    ensures: pumpReleased[pumpID] := true;
+             payment_amount[pumpID] := amount;
+    } 
+    releasePump(ID pumpID, Amount amount);
+  }   
+                  
+}    
+    
+connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
+
+  role Customer{ 
+    emitter port_variable pay{   	  
+      pay();    
+    }                                         
+  }                                      
+                                           
+  role Cashier{
+    consumer port_variable customer{                    
+      pay();        
+    }                 
+  }             
+      
+ connector proc cust2cash_pay(Customer{pay}, Cashier{customer});       
+                      
+}                               
+          
+connector Customer_Pump(Customer{gas}, Pump{oil}){   
+    
+  role Customer{     
+    required port_variable gas{      
+    
+     void pump();      
+    }   
+  }
+  role Pump{ 
+    provided port_variable oil{
+     void pump();
+    }   
+  }    
+    
+  connector proc cust2pump_pump(Customer{gas}, Pump{oil});
+} 
+
+connector Cashier_Pump(Cashier{toPump}, Pump{fromCashier}){
+  role Cashier{      
+    emitter port_variable toPump{
+      releasePump(int pumpID); 
+    }   
+  }                      
+  role Pump{
+    consumer port_variable fromCashier{
+      releasePump(int pumpID);
+    }
+  } 
+
+  connector async cash2pump_pump(Cashier{toPump},Pump{fromCashier});
+}
+
+component GasStation(ID N := 1){ // Add default value - represents Customer_MAX when this is the whole architecture.
+
+  component Customer cust1[1]();
+  component Cashier cash1(1);
+  component Pump pump1(1); 
+   
+  connector Customer_Cashier conn1[1](cust1[@]{pay}, cash1{customer[@]});
+  connector Customer_Pump conn2[1](cust1[@]{gas}, pump1{oil[@]});
+  connector Cashier_Pump conn3(cash1{toPump}, pump1{fromCashier});
+
+ } 
+ 
+ component GasStation config();
