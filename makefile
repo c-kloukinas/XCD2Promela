@@ -30,8 +30,9 @@ JAVA_SRC+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Parser.java,$(GRAMMAR))
 JAVA_CLASSES=$(patsubst $(BLDSRC)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(JAVA_SRC))
 
 # normal Java src files
-JAVA_SRC+=$(SRCDIR)/$(PKGDIR)/$(MAIN).java
-JAVA_CLASSES+=$(BLDCLS)/$(PKGDIR)/$(MAIN).class
+NJS=$(wildcard $(SRCDIR)/$(PKGDIR)/*.java)
+JAVA_SRC+=$(NJS)
+JAVA_CLASSES+=$(patsubst $(SRCDIR)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(NJS))
 
 .PRECIOUS: $(JAVA_SRC)
 
