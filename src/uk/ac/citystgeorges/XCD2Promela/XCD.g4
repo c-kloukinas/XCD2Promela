@@ -561,7 +561,7 @@ multiplicativeExpression
     :
         multexpr_pre=unaryExpression
         (op+=(TK_MULTIPLY|TK_DIVIDE|TK_MODULO) multexprs+=unaryExpression
-        )*
+	 )*
 
     ;
 unaryExpression
@@ -670,8 +670,9 @@ dataType
  ;
 
 integerLiteral:
-        (valueZero='0')
-  | (valueUnsigned=NATURAL)
+  //       (valueZero='0')
+  // |
+  (valueUnsigned=NATURAL)
   | TK_SUBTRACT (valueSigned=NATURAL)
   ;
 
@@ -765,7 +766,7 @@ TK_LPARANT: '(';
 TK_RPARANT: ')';
 TK_AT: '@';
 
-NATURAL:  [1-9] [0-9]*;
+NATURAL:  '0' | [1-9] [0-9]*;
 
 ID:   [a-zA-Z_] [a-zA-Z_0-9]* ;
 
