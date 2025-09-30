@@ -17,6 +17,7 @@ BLDCLS=$(BLDDIR)/classes
 CLLIST=$(BLDDIRFULL)/list$(TARGET).list
 SRCDIR=$(TOPDIR)/src
 TESTDIR=$(BLDDIR)/test
+TESTCASESDIR=$(TOPDIR)/xcd-test-cases
 
 EXTERNAL_LIBS=0-external-libs
 ANTLR_HOME=$(TOPDIR)
@@ -88,10 +89,10 @@ $(TESTDIR):
 	mkdir -p $(TESTDIR)
 
 test1:  jar $(TESTDIR)
-	(cd $(TESTDIR); java -jar $(TARGETJAR) < $(TOPDIR)/xcd-test-cases/aegis_deadlocking.xcd)
+	(cd $(TESTDIR); java -jar $(TARGETJAR) < $(TESTCASESDIR)/aegis_deadlocking.xcd)
 
 test:  jar $(TESTDIR)
-	(cd $(TESTDIR); for f in $(TOPDIR)/xcd-test-cases/*.xcd ; do echo $$f ; java -jar $(TARGETJAR) <$$f  >/dev/null; if [ $$? != 0 ]; then break; fi; done)
+	(cd $(TESTDIR); for f in $(TESTCASESDIR)/*.xcd ; do echo $$f ; java -jar $(TARGETJAR) <$$f  >/dev/null; if [ $$? != 0 ]; then break; fi; done)
 
 clean:
 	-rm -rf $(TARGETJAR) $(BLDDIR)/* $(CLLIST) $(THINJAR)
