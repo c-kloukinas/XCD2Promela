@@ -335,8 +335,7 @@ consumerProvided_InteractionConstraint:
   |        TK_WAITS TK_COLON wait_cl=conditionalStatement
   ;
 
-emitterPort_functionalContract
-    :
+emitterPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=emitterPort_functionalConstraint
@@ -345,8 +344,7 @@ emitterPort_functionalContract
         )*
         TK_RBRACE
             ;
-requiredPort_functionalContract
-    :
+requiredPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=requiredPort_functionalConstraint
@@ -355,8 +353,7 @@ requiredPort_functionalContract
         )*
         TK_RBRACE
             ;
-consumerPort_functionalContract
-    :
+consumerPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=consumerPort_functionalConstraint
@@ -365,8 +362,7 @@ consumerPort_functionalContract
         )*
         TK_RBRACE
             ;
-providedPort_functionalContract
-    :
+providedPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=providedPort_functionalConstraint
@@ -406,16 +402,14 @@ providedPort_functionalConstraint:
 
 combinationKeyword: otherwise=TK_OTHERWISE | also=TK_ALSO;
 
-methodSignature
-    :
+methodSignature:
         rettype=dataType id=ID
         params=formalParameters
         (TK_THROWS (exceptions+=ID)+)?
         TK_SEMICOLON
     ;
 
-eventSignature
-    :
+eventSignature:
     id=ID
     params=formalParameters
     (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
@@ -454,8 +448,7 @@ variableDeclaration:
     elem=elementVariableDeclaration TK_SEMICOLON
     ;
 
-primitiveVariableDeclaration
-   :
+primitiveVariableDeclaration:
       type=dataType  id=ID (size=arraySize)?
       (op=TK_ASSIGN initval=variable_initialValue)?
      ;
@@ -489,8 +482,7 @@ inlineFunctionDeclaration:
 
     ;
 
-elementVariableDeclaration
-    :
+elementVariableDeclaration:
     (elType=TK_COMPONENT
     userdefined=ID
     id=ID (TK_LBRACKET size=NATURAL TK_RBRACKET)? (params=actualParameters)?)
@@ -516,23 +508,19 @@ postStatement:
         (postExprs+=setExpression        TK_SEMICOLON)*
         | nothing=TK_NOTHING TK_SEMICOLON
 ;
-conditionalExpression
-    :
+conditionalExpression:
      condexpr1=relationExpression
         (
         op+=(TK_OR|TK_AND | TK_SEMICOLON) condexprs+=relationExpression
         )*
     ;
 
-setExpression
-    :
+setExpression:
     setexpr_var=equalityExpression
         ;
 
-equalityExpression
-    :
+equalityExpression:
         eqexpr_pre=relationExpression
-
                 (op=TK_ASSIGN eqexpr=ternaryExpression
                 |op=TK_IN set=range
                 )
@@ -542,30 +530,25 @@ ternaryExpression:
         cond=relationExpression ( op=TK_QUESTIONMARK var2=relationExpression TK_COLON var3=ternaryExpression)?
 ;
 
-relationExpression
-    :
+relationExpression:
         relexpr_pre=additiveExpression
         (
          op+=(TK_LESS|TK_GREATER|TK_GREATEROREQUAL
                 |TK_LESSTHANOREQUAL|TK_EQUAL| TK_NOTEQUAL)
          relexprs+=additiveExpression )*
             ;
-additiveExpression
-    :
+additiveExpression:
         addexpr_pre=multiplicativeExpression
         (op+=(TK_SUM|TK_SUBTRACT)
         addexprs+=multiplicativeExpression
         )*
         ;
-multiplicativeExpression
-    :
+multiplicativeExpression:
         multexpr_pre=unaryExpression
         (op+=(TK_MULTIPLY|TK_DIVIDE|TK_MODULO) multexprs+=unaryExpression
 	 )*
-
     ;
-unaryExpression
-    :
+unaryExpression:
      nullexpr=nullaryExpression postop=(TK_INCREMENT | TK_DECREMENT)?
 //    |preop=TK_INCREMENT nullexpr=nullaryExpression
 //    |preop=TK_DECREMENT nullexpr=nullaryExpression
@@ -573,8 +556,7 @@ unaryExpression
 //    |preop=TK_WHEN TK_LPARANT condexpr=conditionalExpression TK_RPARANT
     ;
 
-nullaryExpression
-        :
+nullaryExpression:
     number=integerLiteral
   | trueToken=TK_TRUE
   | falseToken=TK_FALSE
@@ -588,15 +570,13 @@ nullaryExpression
 
 
 
-range
-    :
+range:
     TK_LBRACKET
     minvar=conditionalExpression TK_COMMA maxvar=conditionalExpression
     TK_RBRACKET
     ;
 
-actualParameters
-        :
+actualParameters:
      TK_LPARANT
      (arg_pre=actualParameter
       (TK_COMMA args+=actualParameter)*
@@ -644,8 +624,7 @@ connectorArgument_pv:
         pv=ID (index=connectorIndex)?
 ;
 
-formalParameters
-        :
+formalParameters:
         TK_LPARANT
         (
         par_pre=formalParameter(TK_COMMA pars+=formalParameter)*
@@ -657,9 +636,9 @@ formalParameter:
           prim_param=primitiveVariableDeclaration
        ;
 
-dataType
-    :
+dataType:
      TK_INTEGER
+    |TK_BYTE
     |TK_BOOL
     |TK_VOID
     |ID
@@ -716,6 +695,7 @@ TK_PRE: 'pre';
 
 TK_BOOL: 'bool';
 TK_INTEGER: 'int';
+TK_BYTE: 'byte';
 TK_VOID: 'void';
 TK_ENUM: 'enum';
 
