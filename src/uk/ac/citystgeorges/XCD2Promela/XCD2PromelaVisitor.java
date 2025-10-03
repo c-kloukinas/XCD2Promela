@@ -20,6 +20,26 @@ import org.antlr.v4.runtime.*;
 */
 
 public class XCD2PromelaVisitor extends ConnectorVisitor {
+    XCD2PromelaVisitor() {
+	String compilationUnitID = ""; // root
+	// initialise env, so that "result", etc. are known IDs
+	env = new ArrayList<ContextInfo>();
+	env.add(new ContextInfo(compilationUnitID, XCD_type.unknownt, false));
+	String array_sz = "";
+	String initVal = "";
+	String var_prefix = "";
+	String kword = "result";
+	String bigname = kword;
+	addIdInfo(kword
+		  , XCD_type.resultt
+		  , kword
+		  , false
+		  , false, array_sz // array?
+		  , false, initVal  // initial value?
+		  , bigname, var_prefix
+		  , compilationUnitID);
+    }
+
     /*
       Provisionally empty methods.
     */
