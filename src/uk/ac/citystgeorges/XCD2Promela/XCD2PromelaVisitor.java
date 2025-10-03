@@ -20,5 +20,18 @@ import org.antlr.v4.runtime.*;
 */
 
 public class XCD2PromelaVisitor extends ConnectorVisitor {
+    /*
+      Provisionally empty methods.
+    */
+    @Override public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) { return visitChildren(ctx); }
+
+    /*
+      Always empty methods
+     */
+    @Override
+    public LstStr visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public LstStr visitCompilationUnit(XCDParser.CompilationUnitContext ctx) { return visitChildren(ctx); }
 
 }
