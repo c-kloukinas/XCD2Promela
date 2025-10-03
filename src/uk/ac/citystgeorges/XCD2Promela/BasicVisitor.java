@@ -12,8 +12,8 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 public abstract
     class BasicVisitor
-    extends AbstractParseTreeVisitor<LstStr> implements XCDVisitor<LstStr>
-//  extends XCDBaseVisitor< LstStr >
+//    extends AbstractParseTreeVisitor<LstStr> implements XCDVisitor<LstStr>
+    extends XCDBaseVisitor< LstStr >
 {
     // @Override abstract public LstStr visitConnectorDeclaration(XCDParser.ConnectorDeclarationContext ctx);
 
@@ -58,22 +58,25 @@ public abstract
 	    s = "false";
 	else if (ctx.at != null) {
 	    var framenow = env.get(env.size()-1);
-	    var compTypeid = framenow.compTypeID;
-	    var portid = framenow.portID;
-	    var var_prefix = framenow.varPrefix;
-	    // var idInfo = framenow.map.get(id);
-	    if (var_prefix.contains("COMPONENT"))
-		s += var_prefix
-		    + "PORT_"
-		    + portid
-		    + "_INDEX";
-	    else
-		s += "COMPONENT_"
-		    + "COMPONENTPREFIX_VAR_PORT_"
-		    + portid
-		    + "_INDEX";
+	    var compTypeid = framenow.compilationUnitID;
+	    // var idInfo = getIdInfo(id);
+	    // var var_prefix = idInfo.varPrefix;
+	    // // var portid = framenow.portID;
+	    // var portid = "UNKNOWN";
+	    // if (var_prefix.contains("COMPONENT"))
+	    // 	s += var_prefix
+	    // 	    + "PORT_"
+	    // 	    + portid
+	    // 	    + "_INDEX";
+	    // else
+	    // 	s += "COMPONENT_"
+	    // 	    + "COMPONENTPREFIX_VAR_PORT_"
+	    // 	    + portid
+	    // 	    + "_INDEX";
+	    s += "UNKNOWNAT";
 	} else if (ctx.varid != null) {
-	    var varid = ctx.varid.getText();
+	    String varid = ctx.varid.getText();
+	    myassert(varid!=null && !varid.equals(""), "empty name for a variable");
 	    if (is_enumConstant(varid)) {
 		s = varid;
 	    } else {
@@ -87,7 +90,8 @@ public abstract
 		    s = varid;
 		} else {
 		    var framenow = env.get(env.size()-1);
-		    var var_prefix = framenow.varPrefix;
+		    // var var_prefix = framenow.varPrefix;
+		    var var_prefix = getIdInfo(varid).var_prefix;
 		    s = var_prefix + varid;
 		}
 		if (ctx.varindex != null) {
@@ -249,21 +253,21 @@ public abstract
 
     private String component_variable_result(String actionid){
 	var framenow = env.get(env.size()-1);
-	var compTypeid = framenow.compTypeID;
-	var portid = framenow.portID;
+	var compTypeid = framenow.compilationUnitID;
+	var portid = "UNKNOWN_PORTID"; // framenow.portID;
 	return "COMPONENT_" + compTypeid + "_VAR_PORT_" + portid + "_ACTION_" + actionid + "_RESULT";
     }
     private String component_variable_exception(String actionid) {
 	var framenow = env.get(env.size()-1);
-	var compTypeid = framenow.compTypeID;
-	var portid = framenow.portID;
+	var compTypeid = framenow.compilationUnitID;
+	var portid = "UNKNOWN_PORTID"; // framenow.portID;
 	return "COMPONENT_" + compTypeid + "_VAR_PORT_" + portid + "_ACTION_" + actionid + "_EXCEPTION" ;
     }
 
     private boolean isVarComponentParamOld(String variable) {
 	var framenow = env.get(env.size()-1);
-	var compTypeid = framenow.compTypeID;
-	var portid = framenow.portID;
+	var compTypeid = framenow.compilationUnitID;
+	var portid = "UNKNOWN_PORTID"; // framenow.portID;
 	var idInfo = framenow.map.get(variable);
 
 	// if(compType != null) {
@@ -282,15 +286,20 @@ public abstract
     }
     boolean isVarComponentParam(String id) {
 	var idInfo = getIdInfo(id);
-	return (idInfo.type == XCD_type.componentpart);
+	return (idInfo.type == XCD_type.paramt);
     }
     String nameOfVarComponentParam(String id) {
-	// var idInfo = getIdInfo(id);
 	var framenow = env.get(env.size()-1);
+	var compTypeid = framenow.compilationUnitID;
 	var idInfo = framenow.map.get(id);
-	var compTypeid = framenow.compTypeID;
-	var portid = framenow.portID;
-	var var_prefix = framenow.varPrefix;
+	// var portid = framenow.portID;
+	// var var_prefix = framenow.varPrefix;
+	String s = ("Component_i_Param_N(CompositeName,CompositeID,"
+		    + compTypeid	// compType.id
+		    + ",CompInstanceID,Instance,"
+		    + id		// varid
+		    + ")");
+	myassert(s.equals(idInfo.big_name), "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
 	return ("Component_i_Param_N(CompositeName,CompositeID,"
 		+ compTypeid	// compType.id
 		+ ",CompInstanceID,Instance,"
@@ -328,9 +337,9 @@ public abstract
     String nameOfVarConnectorParam(String id) { // supposedly also considers var_prefix
 	var framenow = env.get(env.size()-1);
 	var idInfo = framenow.map.get(id);
-	var compTypeid = framenow.compTypeID;
-	var portid = framenow.portID;
-	var var_prefix = framenow.varPrefix;
+	var compTypeid = framenow.compilationUnitID;
+	var portid = "UNKNOWN_PORTID"; // framenow.portID;
+	var var_prefix = getIdInfo(id).var_prefix;
 	String s = "UNKNOWN" + idInfo.big_name;
 
 	// var String output = "";
@@ -358,9 +367,11 @@ public abstract
 	return s;
     }
 
-    void myassert(boolean cond, String msg) {
+    static void myAssert(boolean cond, String msg) {
 	assert cond : msg ; if (!cond) throw new RuntimeException(msg);}
-    void mywarning(String msg) {System.err.println(msg);}
+    void myassert(boolean cond, String msg) {BasicVisitor.myAssert(cond,msg);}
+    static void myWarning(String msg) {System.err.println(msg);}
+    void mywarning(String msg) {BasicVisitor.myWarning(msg);}
 
     ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
     IdInfo addIdInfo(String symbol
