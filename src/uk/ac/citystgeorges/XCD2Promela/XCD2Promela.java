@@ -21,10 +21,11 @@ public class XCD2Promela {
         ParseTree tree = parser.compilationUnits(); // begin parsing at "compilationUnits" parse rule
 
 	ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
-	if (res != null)
-	    for (String s : res) {
-		System.err.println("RES: " + s);
-	    }
+	// if (res != null)
+	//     for (String s : res) {
+	// 	System.err.println("RES: " + s);
+	//     }
+
 	// XCD2PromelaListener translator = new XCD2PromelaListener();
 	// ParseTreeWalker.DEFAULT.walk(translator, tree); // initiate tree walk with listener translator
 
