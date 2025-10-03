@@ -54,11 +54,13 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	boolean is_arrayp = ctx.size!=null;
 	String array_sz = "";
 	if (is_arrayp) {
+	    mywarning("DANGER: \"" + varName + "\" is an array");
 	    array_sz = visit(ctx.size).get(0);
 	}
 	boolean has_initValp = ctx.op!=null;
 	String initVal = "";
 	if (has_initValp) {
+	    mywarning("DANGER: \"" + varName + "\" has an initial value");
 	    initVal = visit(ctx.initval).get(0);
 	}
 	var framenow = env.get(env.size()-1);
@@ -89,13 +91,14 @@ public abstract class ComponentVisitor extends BasicVisitor {
 		     + "\" type=\"" + framenow.type + "\"");
 
 	addIdInfo(varName
-		  , XCD_type.unknownt
+		  , XCD_type.vart
 		  , dtype
-		  , false /* not a param, right? */
+		  , false /* not a param, right? Let's assume so and correct it when we know more about it */
 		  , is_arrayp, array_sz
 		  , has_initValp, initVal
 		  , bigname, ""
 		  , compUnitId);
+	framenow.vars.add(varName);
 	res.add(s);
 	return res;
     }
@@ -133,16 +136,25 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	String header = "";
 	String instance = "";
 	LstStr argList = visit(ctx.param);
-
+	
 	String compName = ctx.id.getText();
 	instance += "proctype instance_name(CompositeName,CompositeID,"
 	    + compName + ",CompInstanceID,Instance)(";
 	int prmsz = argList.size();
-	if (prmsz>01)
+	if (prmsz>0) {
 	    instance += argList.get(0);
-	if (prmsz>1)
-	    for (int i=1; i<prmsz; ++i)
-		instance += ","+argList.get(i);
+	    if (prmsz>1)
+		for (int i=1; i<prmsz; ++i)
+		    instance += ","+argList.get(i);
+	}
+	for (String var : newctx.vars) {
+	    IdInfo info = getIdInfo(var);
+	    info.type = XCD_type.paramt;
+	    info.is_param = true;
+	}
+	newctx.params.addAll(newctx.vars);
+	newctx.vars = new LstStr();
+	
 	instance += ") {" + "\n" ;
 
 	instance += "Component_i_c_code(CompositeName,CompositeID,"
@@ -151,6 +163,28 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	    + "Component_i_roleData("
 	    + compName
 	    + ",CompInstanceID, Instance);\n\n";
+
+	for (String var : newctx.vars) {
+	    IdInfo info = getIdInfo(var);
+	    String big = info.big_name;
+	    header += "#define TYPEOF_COMPONENT_"
+		+ compName + "_VAR_" + var + " "
+		+ info.sType + "\n";
+	    instance += "TypeOf("
+		+ big
+		+ ") " + big
+		+ "["
+		+ ("Component_i_Param_N(CompositeName,CompositeID,"
+		   + compName
+		   + ",CompInstanceID,Instance,"
+		   + var + ")]")
+		+ ("=InitialValue(COMPONENT_"
+		   + compName
+		   + "_VAR_" + var +");\n");
+	}
+	
+	mywarning("TODO: complete the component code");
+	LstStr body_res = visit(ctx.body);
 
 	instance += "}\n";
 	// Create instance & header files
@@ -214,11 +248,13 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	// System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
 	// mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
 	String s = info.sType + " " + info.big_name;
-	if (info.is_array)
-	    s += info.arraySz;
+	if (info.is_array) {
+	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " is an array - good luck!");
+	    s += info.arraySz; }
 	// mywarning("MUSTFIX: Ignores initial value) - start from the bottom and move up...");
-	if (info.has_initVal)
-	    s += "=" + info.initVal;
+	if (info.has_initVal) {
+	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " has an initial value - good luck!");
+	    s += "=" + info.initVal; }
 
 	framenow.params.add(nm);
 
