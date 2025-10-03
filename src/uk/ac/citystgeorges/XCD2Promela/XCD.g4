@@ -637,10 +637,10 @@ formalParameter:
        ;
 
 dataType:
-     TK_INTEGER
-    |TK_BYTE
-    |TK_BOOL
-    |TK_VOID
+     basic=TK_INTEGER
+    |basic=TK_BYTE
+    |basic=TK_BOOL
+    |basic=TK_VOID
     |ID
     ;
 
