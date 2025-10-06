@@ -13,14 +13,16 @@ public class ContextInfo {
     String compilationUnitID; // enclosing context
     XCD_type type;		  // which is of type (comp,conn,conf,tdef,enum)
     Map<String,IdInfo> map;
-    ArrayList<String> params;
-    ArrayList<String> vars;
+    LstStr paramsORvars;
+    LstStr params;
+    LstStr vars;
     ContextInfo(String compUnitID, XCD_type tp, boolean is_paramp){
 	BasicVisitor.myAssert(compUnitID!=null, "compUnitID is null");
 	compilationUnitID = compUnitID;
 	type = tp;
-	params = new ArrayList<String>();
-	vars = new ArrayList<String>();
+	paramsORvars = new LstStr();
+	params = new LstStr();
+	vars = new LstStr();
 	map = new HashMap<String,IdInfo>();
 	map.put(compilationUnitID,
 		new IdInfo(tp
