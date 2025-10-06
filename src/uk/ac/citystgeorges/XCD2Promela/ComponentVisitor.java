@@ -11,6 +11,175 @@ import org.antlr.v4.runtime.*;
 
 public abstract class ComponentVisitor extends BasicVisitor {
 
+    @Override
+    public LstStr visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
+	String compId = ctx.id.getText();
+	ContextInfo newctx
+	    = new ContextInfo(compId, XCD_type.componentt, false);
+	env.add(newctx);
+	// For components we create two files - an instance and a header.
+	LstStr res = new LstStr(2);
+	String header = "";
+	String instance = "";
+	LstStr argList = visit(ctx.param); // Identify parameters
+	
+	String compName = ctx.id.getText();
+	instance += "proctype instance_name(CompositeName,CompositeID,"
+	    + compName + ",CompInstanceID,Instance)(";
+	// int prmsz = argList.size();
+	// if (prmsz>0) {
+	//     instance += argList.get(0);
+	//     if (prmsz>1)
+	// 	for (int i=1; i<prmsz; ++i)
+	// 	    instance += ","+argList.get(i);
+	// }
+	for (String var : newctx.paramsORvars) {
+	    IdInfo info = getIdInfo(var);
+	    info.type = XCD_type.paramt;
+	    info.is_param = true;
+	}
+	newctx.params.addAll(newctx.paramsORvars);
+	newctx.paramsORvars = new LstStr();
+	instance += ") {" + "\n" ;
+
+	visit(ctx.body);	// Visit the component body
+	for (String var : newctx.paramsORvars) { // Identify variables
+	    IdInfo info = getIdInfo(var);
+	    info.type = XCD_type.vart;
+	    info.is_param = false;
+	}
+	newctx.vars.addAll(newctx.paramsORvars);
+	newctx.paramsORvars = new LstStr();
+
+	
+	
+	instance += "Component_i_c_code(CompositeName,CompositeID,"
+	    + compName
+	    + ",CompInstanceID, Instance);\n\n"
+	    + "Component_i_roleData("
+	    + compName
+	    + ",CompInstanceID, Instance);\n\n";
+
+
+
+
+
+	for (String var : newctx.vars) {
+	    IdInfo info = getIdInfo(var);
+	    String big = info.big_name;
+	    header += "#define TYPEOF_COMPONENT_"
+		+ compName + "_VAR_" + var + " "
+		+ info.sType + "\n";
+	    String arrSz = "1";	// when there's no array, just a single instance
+	    if (info.is_array)
+		arrSz=("Component_i_Param_N(CompositeName,CompositeID,"
+		       + compName
+		       + ",CompInstanceID,Instance,"
+		       + var + ")");
+	    
+	    String type = "TypeOf("
+		+ big
+		+ ")";
+	    String nm = big
+		+ "["
+		+ arrSz
+		+ "]";
+	    String init = "=InitialValue(COMPONENT_"
+		+ compName
+		+ "_VAR_" + var +");";
+	    String pre_nm = "PRE(" + nm + ")";
+	    instance += type + " " + nm + init +"\n";
+	    instance += type + " " + pre_nm + init +"\n";
+	}
+	
+	mywarning("\tTODO: complete the component code");
+	LstStr body_res = visit(ctx.body);
+
+	instance += "}\n";
+	// Create instance & header files
+	try (FileWriter inst
+	     = new FileWriter("COMPONENT_TYPE_"+compId+"_INSTANCE.pml");
+	     FileWriter hdr
+	     = new FileWriter("COMPONENT_TYPE_"+compId+".h")) {
+	    hdr.write(header);
+	    inst.write(instance);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    System.exit(1);
+	}
+	int last = env.size()-1;
+	ContextInfo lastctx = env.get(last);
+	myassert(newctx == lastctx, "Context not the last element");
+	env.remove(env.size()-1); // should match what was added
+	res.add(instance);
+	res.add(header);
+	return res;
+    }
+
+    /*
+      Provisionally empty methods.
+    */
+    @Override public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public LstStr visitFormalParameters(XCDParser.FormalParametersContext ctx) {
+	var res = new LstStr();
+	String s = "";
+
+	if (ctx.par_pre!=null) {
+	    var resrec = visitChildren(ctx);
+	    int len1=(resrec!=null)?resrec.size():-1;
+	    int len2=ctx.pars.size()+1;
+	    myassert(len1 == len2 || len1==-1,
+		     "Number of parameters doesn't match ("+len1+") vs ("+len2+")");
+
+	    //     s += visit(ctx.par_pre).get(0);
+	    //     for (var p : ctx.pars)
+	    // 	s += ","+visit(p).get(0);
+	    s += resrec.get(0);
+	    resrec.remove(0);
+	    for (var p : resrec)
+		s += "," + p;
+	}
+	// System.err.println(" FormalParameters: "+s);
+	res.add(s);
+	return res;
+    }
+
+    @Override
+    public LstStr
+	visitFormalParameter(XCDParser.FormalParameterContext ctx) {
+	String nm = visit(ctx.prim_param).get(0);
+	var framenow = env.get(env.size()-1);
+	var compId = framenow.compilationUnitID;
+	var info = getIdInfo(nm);
+	// A parameter's big name is:
+	info.big_name = "Component_i_Param_N(CompositeName,CompositeID,"
+	    + compId
+	    + ",CompInstanceID,Instance,"
+	    + nm + ")";
+	var res = new LstStr();
+	// System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
+	// mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
+	String s = info.sType + " " + info.big_name;
+	if (info.is_array) {
+	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " is an array - good luck!");
+	    s += info.arraySz; }
+	// mywarning("MUSTFIX: Ignores initial value) - start from the bottom and move up...");
+	if (info.has_initVal) {
+	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " has an initial value - good luck!");
+	    s += "=" + info.initVal; }
+
+	framenow.params.add(nm);
+
+	// System.err.println("Formal param: " + s);
+	res.add(s);
+	return res;
+    }
+
+    @Override public LstStr visitActualParameters(XCDParser.ActualParametersContext ctx) { return visitChildren(ctx); }
+    @Override public LstStr visitActualParameter(XCDParser.ActualParameterContext ctx) { return visitChildren(ctx); }
+
     @Override public LstStr
 	visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) {
 	LstStr res = new LstStr();
@@ -31,7 +200,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override
     public LstStr visitArraySize(XCDParser.ArraySizeContext ctx) {
-	mywarning("TODO: Array size should be a general expr normally, now a number or an ID only");
+	mywarning("\t\tTODO: Array size should be a general expr normally, now a number or an ID only");
 	LstStr res = new LstStr();
 	String s = "";
 
@@ -98,7 +267,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 		  , has_initValp, initVal
 		  , bigname, ""
 		  , compUnitId);
-	framenow.vars.add(varName);
+	framenow.paramsORvars.add(varName);
 	res.add(s);
 	return res;
     }
@@ -124,146 +293,4 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	// System.err.println("TYPE READ: " + s);
 	return res;
     }
-
-    @Override
-    public LstStr visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
-	String compId = ctx.id.getText();
-	ContextInfo newctx
-	    = new ContextInfo(compId, XCD_type.componentt, false);
-	env.add(newctx);
-	// For components we create two files - an instance and a header.
-	LstStr res = new LstStr(2);
-	String header = "";
-	String instance = "";
-	LstStr argList = visit(ctx.param);
-	
-	String compName = ctx.id.getText();
-	instance += "proctype instance_name(CompositeName,CompositeID,"
-	    + compName + ",CompInstanceID,Instance)(";
-	int prmsz = argList.size();
-	if (prmsz>0) {
-	    instance += argList.get(0);
-	    if (prmsz>1)
-		for (int i=1; i<prmsz; ++i)
-		    instance += ","+argList.get(i);
-	}
-	for (String var : newctx.vars) {
-	    IdInfo info = getIdInfo(var);
-	    info.type = XCD_type.paramt;
-	    info.is_param = true;
-	}
-	newctx.params.addAll(newctx.vars);
-	newctx.vars = new LstStr();
-	
-	instance += ") {" + "\n" ;
-
-	instance += "Component_i_c_code(CompositeName,CompositeID,"
-	    + compName
-	    + ",CompInstanceID, Instance);\n\n"
-	    + "Component_i_roleData("
-	    + compName
-	    + ",CompInstanceID, Instance);\n\n";
-
-	for (String var : newctx.vars) {
-	    IdInfo info = getIdInfo(var);
-	    String big = info.big_name;
-	    header += "#define TYPEOF_COMPONENT_"
-		+ compName + "_VAR_" + var + " "
-		+ info.sType + "\n";
-	    instance += "TypeOf("
-		+ big
-		+ ") " + big
-		+ "["
-		+ ("Component_i_Param_N(CompositeName,CompositeID,"
-		   + compName
-		   + ",CompInstanceID,Instance,"
-		   + var + ")]")
-		+ ("=InitialValue(COMPONENT_"
-		   + compName
-		   + "_VAR_" + var +");\n");
-	}
-	
-	mywarning("TODO: complete the component code");
-	LstStr body_res = visit(ctx.body);
-
-	instance += "}\n";
-	// Create instance & header files
-	try (FileWriter inst
-	     = new FileWriter("COMPONENT_TYPE_"+compId+"_INSTANCE.pml");
-	     FileWriter hdr
-	     = new FileWriter("COMPONENT_TYPE_"+compId+".h")) {
-	    hdr.write(header);
-	    inst.write(instance);
-	} catch (IOException e) {
-	    e.printStackTrace();
-	    System.exit(1);
-	}
-	int last = env.size()-1;
-	ContextInfo lastctx = env.get(last);
-	myassert(newctx == lastctx, "Context not the last element");
-	env.remove(env.size()-1); // should match what was added
-	res.add(instance);
-	res.add(header);
-	return res;
-    }
-
-    @Override
-    public LstStr visitFormalParameters(XCDParser.FormalParametersContext ctx) {
-	var res = new LstStr();
-	String s = "";
-
-	if (ctx.par_pre!=null) {
-	    var resrec = visitChildren(ctx);
-	    int len1=(resrec!=null)?resrec.size():-1;
-	    int len2=ctx.pars.size()+1;
-	    myassert(len1 == len2 || len1==-1,
-		     "Number of parameters doesn't match ("+len1+") vs ("+len2+")");
-
-	    //     s += visit(ctx.par_pre).get(0);
-	    //     for (var p : ctx.pars)
-	    // 	s += ","+visit(p).get(0);
-	    s += resrec.get(0);
-	    resrec.remove(0);
-	    for (var p : resrec)
-		s += "," + p;
-	}
-	// System.err.println(" FormalParameters: "+s);
-	res.add(s);
-	return res;
-    }
-
-    @Override
-    public LstStr
-	visitFormalParameter(XCDParser.FormalParameterContext ctx) {
-	String nm = visit(ctx.prim_param).get(0);
-	var framenow = env.get(env.size()-1);
-	var compId = framenow.compilationUnitID;
-	var info = getIdInfo(nm);
-	// A parameter's big name is:
-	info.big_name = "Component_i_Param_N(CompositeName,CompositeID,"
-	    + compId
-	    + ",CompInstanceID,Instance,"
-	    + nm + ")";
-	var res = new LstStr();
-	// System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
-	// mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
-	String s = info.sType + " " + info.big_name;
-	if (info.is_array) {
-	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " is an array - good luck!");
-	    s += info.arraySz; }
-	// mywarning("MUSTFIX: Ignores initial value) - start from the bottom and move up...");
-	if (info.has_initVal) {
-	    mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " has an initial value - good luck!");
-	    s += "=" + info.initVal; }
-
-	framenow.params.add(nm);
-
-	// System.err.println("Formal param: " + s);
-	res.add(s);
-	return res;
-    }
-
-    @Override public LstStr visitActualParameters(XCDParser.ActualParametersContext ctx) { return visitChildren(ctx); }
-    @Override public LstStr visitActualParameter(XCDParser.ActualParameterContext ctx) { return visitChildren(ctx); }
-
 }
