@@ -32,6 +32,7 @@ public abstract
 	return aggregate;
     }
 
+    //// Visitor methods
     @Override
     public LstStr visitNullaryExpression(XCDParser.NullaryExpressionContext ctx) {
 	/*
@@ -119,7 +120,7 @@ public abstract
 	    myassert(false, "Unknown case of nullaryExpression");
 
 
-	System.out.println("Translation is: " + s);
+	// System.out.println("Translation is: " + s);
 	res.add(s);
 	return res;
     }
@@ -146,7 +147,7 @@ public abstract
 	    else
 		s += "--";
 	}
-	System.out.println("Translation is: " + s);
+	// System.out.println("Translation is: " + s);
 	res.add(s);
 	return res;
     }
@@ -251,6 +252,7 @@ public abstract
 	return res;
     }
 
+    //// Misc support methods
     private String component_variable_result(String actionid){
 	var framenow = env.get(env.size()-1);
 	var compTypeid = framenow.compilationUnitID;
@@ -380,15 +382,41 @@ public abstract
 		     , boolean has_initValp, String initVal
 		     , String big_name, String var_prefix
 		     , String parentId) {
-	var mapsTo = new IdInfo(tp, stype, is_paramp
+	var newInfo = new IdInfo(tp, stype, is_paramp
 				, is_arrayp, arraySize
 				, has_initValp, initVal
 				, big_name, var_prefix
 				, parentId);
 	var currentMap = env.get(env.size()-1).map;
-	myassert(!currentMap.containsKey(symbol), "Symbol \""+symbol+"\" already in the map");
-	currentMap.put(symbol, mapsTo);
-	return mapsTo;
+	if (currentMap.containsKey(symbol)) {
+	    IdInfo info = currentMap.get(symbol);
+	    boolean matches = (info.type == newInfo.type)
+		&& (info.sType.equals(newInfo.sType))
+		&& (info.is_param == newInfo.is_param)
+		&& (info.is_array == newInfo.is_array)
+		&& (info.arraySz.equals(newInfo.arraySz))
+		&& (info.has_initVal == newInfo.has_initVal)
+		&& (info.initVal.equals(newInfo.initVal))
+		&& (info.big_name.equals(newInfo.big_name))
+		&& (info.parent.equals(newInfo.parent));
+	    if (!matches) {
+		mywarning("Symbol \"" +symbol+"\" aldeary in the map"
+			  + "\n" + info.type + " vs " + newInfo.type
+			  + "\n" + info.sType + " vs " + newInfo.sType
+			  + "\n" + info.is_param + " vs " + newInfo.is_param
+			  + "\n" + info.is_array + " vs " + newInfo.is_array
+			  + "\n" + info.arraySz + " vs " + newInfo.arraySz
+			  + "\n" + info.has_initVal + " vs " + newInfo.has_initVal
+			  + "\n" + info.initVal + " vs " + newInfo.initVal
+			  + "\n" + info.big_name + " vs " + newInfo.big_name
+			  + "\n" + info.parent + " vs " + newInfo.parent);
+		myassert(false, "Symbol \""+symbol+"\" already in the map");
+	    } else
+		mywarning("Symbol \"" +symbol+"\" aldeary in the map - input visited twice!");
+
+	} else {
+	    currentMap.put(symbol, newInfo); }
+	return newInfo;
     }
     IdInfo getIdInfo(String id) {
 	int last = env.size()-1;
