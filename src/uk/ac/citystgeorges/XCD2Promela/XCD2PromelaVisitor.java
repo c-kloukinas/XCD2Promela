@@ -28,22 +28,23 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
 	String array_sz = "";
 	String initVal = "";
 	String var_prefix = "";
-	String kword = "result";
-	String bigname = kword;
-	addIdInfo(kword
-		  , XCD_type.resultt
-		  , kword
-		  , false
-		  , false, array_sz // array?
-		  , false, initVal  // initial value?
-		  , bigname, var_prefix
-		  , compilationUnitID);
+	// String kword = "\\result";
+	LstStr kwords = new LstStr();
+	kwords.add("\\result");
+	kwords.add("\\exception");
+	kwords.add("\\nothing");
+	kwords.add("\\in");
+	for (String kword : kwords )
+	    { String bigname = kword;
+		addIdInfo(kword
+			  , XCD_type.resultt
+			  , kword
+			  , false
+			  , false, array_sz // array?
+			  , false, initVal  // initial value?
+			  , bigname, var_prefix
+			  , compilationUnitID); }
     }
-
-    /*
-      Provisionally empty methods.
-    */
-    @Override public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) { return visitChildren(ctx); }
 
     /*
       Always empty methods
