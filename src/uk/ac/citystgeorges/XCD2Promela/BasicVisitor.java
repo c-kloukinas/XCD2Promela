@@ -380,6 +380,11 @@ public abstract
     int ln=-1;
     int atchar=-1;
     void resetln() {ln=-1; atchar=-1;}
+    /* Generic types used here (even though not needed - could have
+     * used proper types Token,RuleContext,Tree,Object instead)
+     * because they *look* like the type case I want to implement (and
+     * stand out more).
+     */
     <T extends Token> Token getAtoken(T tkn) { return (Token)tkn; }
     <T extends RuleContext> Token getAtoken(T rc) {
 	var chld = rc.getChild(0);
@@ -394,6 +399,7 @@ public abstract
 	return getAtoken(pld);
     }
     <T> Token getAtoken(T arg) {
+	if (null==arg) return null; // sanity check
 	if (arg instanceof Token) return getAtoken((Token)arg);
 	else if (arg instanceof RuleContext) return getAtoken((RuleContext)arg);
 	else if (arg instanceof Tree) return getAtoken((Tree)arg);
