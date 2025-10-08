@@ -13,6 +13,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override
     public LstStr visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
+	updateln(ctx);
 	String compId = ctx.id.getText();
 	ContextInfo newctx
 	    = new ContextInfo(compId, XCD_type.componentt, false);
@@ -123,6 +124,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override
     public LstStr visitFormalParameters(XCDParser.FormalParametersContext ctx) {
+	updateln(ctx);
 	var res = new LstStr();
 	String s = "";
 
@@ -149,6 +151,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
     @Override
     public LstStr
 	visitFormalParameter(XCDParser.FormalParameterContext ctx) {
+	updateln(ctx);
 	String nm = visit(ctx.prim_param).get(0);
 	var framenow = env.get(env.size()-1);
 	var compId = framenow.compilationUnitID;
@@ -182,6 +185,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override public LstStr
 	visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) {
+	updateln(ctx);
 	LstStr res = new LstStr();
 	String s = "";
 
@@ -200,6 +204,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override
     public LstStr visitArraySize(XCDParser.ArraySizeContext ctx) {
+	updateln(ctx);
 	mywarning("\t\tTODO: Array size should be a general expr normally, now a number or an ID only");
 	LstStr res = new LstStr();
 	String s = "";
@@ -215,6 +220,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override public LstStr
 	visitPrimitiveVariableDeclaration(XCDParser.PrimitiveVariableDeclarationContext ctx) {
+	updateln(ctx);
 	LstStr res = new LstStr();
 	String varName = ctx.id.getText();
 	String s = varName;
@@ -274,6 +280,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
     @Override
     public LstStr visitDataType(XCDParser.DataTypeContext ctx) {
+	updateln(ctx);
 	LstStr res = new LstStr();
 	String s = "";
 	if (ctx.basic!=null) {
