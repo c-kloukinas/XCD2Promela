@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.Tree;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 public abstract
@@ -35,6 +36,7 @@ public abstract
     //// Visitor methods
     @Override
     public LstStr visitNullaryExpression(XCDParser.NullaryExpressionContext ctx) {
+	updateln(ctx);
 	/*
 	  Relies on (passes these to nullaryExpression's visit):
 
@@ -77,7 +79,8 @@ public abstract
 	    s += "UNKNOWNAT";
 	} else if (ctx.varid != null) {
 	    String varid = ctx.varid.getText();
-	    myassert(varid!=null && !varid.equals(""), "empty name for a variable");
+	    myassert(varid!=null && !varid.equals("")
+		     , "empty name for a variable");
 	    if (is_enumConstant(varid)) {
 		s = varid;
 	    } else {
@@ -127,6 +130,7 @@ public abstract
 
     @Override
     public LstStr visitUnaryExpression(XCDParser.UnaryExpressionContext ctx) {
+	updateln(ctx);
 	/*
 	  Relies on (passes these to nullaryExpression's visit):
 
@@ -154,6 +158,7 @@ public abstract
 
     @Override
     public LstStr visitMultiplicativeExpression(XCDParser.MultiplicativeExpressionContext ctx) {
+	updateln(ctx);
 	/*
 	  Relies on (passes these to unaryExpression's visit):
 
@@ -181,6 +186,7 @@ public abstract
     }
 
     private LstStr visitNullaryExpression_index(XCDParser.NullaryExpressionContext ctx) {
+	updateln(ctx);
 	/* XXX: originally only number or expr with par was considered.
 
 	   Was it because the other cases depend on their context?
@@ -235,7 +241,7 @@ public abstract
 	else if (ctx.xcd_exception != null)
 	    s = "UNKNOWNexception";
 	else
-	    myassert(false, "Unknown case of nullaryExpression");
+	    myassert(false, "Unknown case of NullaryExpression_index");
 	res.add(s);
 
 	//	System.err.println("Translation is: " + s);
@@ -244,6 +250,7 @@ public abstract
 
     @Override
     public LstStr visitIntegerLiteral(XCDParser.IntegerLiteralContext ctx) {
+	updateln(ctx);
 	int chldNo = ctx.getChildCount();
 	String val = ((chldNo==2)? "-" : "")
 	    + ctx.getChild(chldNo-1).getText();
@@ -301,7 +308,8 @@ public abstract
 		    + ",CompInstanceID,Instance,"
 		    + id		// varid
 		    + ")");
-	myassert(s.equals(idInfo.big_name), "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
+	myassert(s.equals(idInfo.big_name)
+		 , "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
 	return ("Component_i_Param_N(CompositeName,CompositeID,"
 		+ compTypeid	// compType.id
 		+ ",CompInstanceID,Instance,"
@@ -369,11 +377,77 @@ public abstract
 	return s;
     }
 
+    int ln=-1;
+    int atchar=-1;
+    void resetln() {ln=-1; atchar=-1;}
+    <T extends Token> Token getAtoken(T tkn) { return (Token)tkn; }
+    <T extends RuleContext> Token getAtoken(T rc) {
+	var chld = rc.getChild(0);
+	if (chld == null) return null;
+	var pld = chld.getPayload();
+	return getAtoken(pld);
+    }
+    <T extends Tree> Token getAtoken(T ptree) {
+	var chld = ptree.getChild(0);
+	if (chld == null) return null;
+	var pld = chld.getPayload();
+	return getAtoken(pld);
+    }
+    <T> Token getAtoken(T arg) {
+	if (arg instanceof Token) return getAtoken((Token)arg);
+	else if (arg instanceof RuleContext) return getAtoken((RuleContext)arg);
+	else if (arg instanceof Tree) return getAtoken((Tree)arg);
+	var cl = arg.getClass();
+	// return getAtoken( cl.cast(arg) ); // Doesn't enable dynamic binding
+	myAssert(false
+		 , "ParseTree payload: more than a Token or a RuleContext!"
+		 + cl.toString());
+	return null;
+    }
+    void updateln(Tree ctx) {
+	Token tk = getAtoken(ctx);
+	if (tk==null)
+	    { resetln(); return; }
+	ln = tk.getLine(); atchar = tk.getStartIndex();
+    }
+    // void updateln1(Tree ctx) {
+    // 	Tree tree = ctx.getChild(0);
+    // 	if (tree == null) {
+    // 	    resetln(); return; }
+    // 	Object pld = tree.getPayload();
+    // 	Token tk = null;
+    // 	int depth = 3;
+    // 	while (!(pld instanceof Token) && depth>0) {
+    // 	    if (pld instanceof RuleContext) {
+    // 		var rc = (RuleContext) pld;
+    // 		if (rc == null) {
+    // 		    resetln(); return; // bailout, reset them
+    // 		} else {
+    // 		    Tree tree2 = rc.getChild(0);
+    // 		    if (tree2 == null) {
+    // 			resetln(); return; }
+    // 		    pld = tree2.getPayload();
+    // 		}
+    // 	    } // else: just decrement depth, eventually fall through
+    // 	    --depth;
+    // 	}
+    // 	if ((pld instanceof Token) && pld != null) {
+    // 	    tk = (Token) pld;	// non-null since pld non-null
+    // 	    ln = tk.getLine(); atchar = tk.getStartIndex();
+    // 	} else {
+    // 	    resetln();		// bailout, reset them
+    // 	}
+    // }
     static void myAssert(boolean cond, String msg) {
-	assert cond : msg ; if (!cond) throw new RuntimeException(msg);}
-    void myassert(boolean cond, String msg) {BasicVisitor.myAssert(cond,msg);}
-    static void myWarning(String msg) {System.err.println(msg);}
-    void mywarning(String msg) {BasicVisitor.myWarning(msg);}
+	assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
+    void myassert(boolean cond, String msg) {
+	msg = "Line: " +ln + " at char: " + atchar + "\n" + msg;
+	BasicVisitor.myAssert(cond,msg); }
+    static void myWarning(String msg) {
+	System.err.println(msg); }
+    void mywarning(String msg) {
+	msg = "Line: " +ln + " at char: " + atchar + "\n" + msg;
+	BasicVisitor.myWarning(msg); resetln(); }
 
     ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
     IdInfo addIdInfo(String symbol
