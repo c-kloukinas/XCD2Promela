@@ -23,7 +23,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	String header = "";
 	String instance = "";
 	LstStr argList = visit(ctx.param); // Identify parameters
-	
+
 	String compName = ctx.id.getText();
 	instance += "proctype instance_name(CompositeName,CompositeID,"
 	    + compName + ",CompInstanceID,Instance)(";
@@ -52,8 +52,8 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	newctx.vars.addAll(newctx.paramsORvars);
 	newctx.paramsORvars = new LstStr();
 
-	
-	
+
+
 	instance += "Component_i_c_code(CompositeName,CompositeID,"
 	    + compName
 	    + ",CompInstanceID, Instance);\n\n"
@@ -77,7 +77,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 		       + compName
 		       + ",CompInstanceID,Instance,"
 		       + var + ")");
-	    
+
 	    String type = "TypeOf("
 		+ big
 		+ ")";
@@ -92,7 +92,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	    instance += type + " " + nm + init +"\n";
 	    instance += type + " " + pre_nm + init +"\n";
 	}
-	
+
 	mywarning("\tTODO: complete the component code");
 	// LstStr body_res = visit(ctx.body);
 

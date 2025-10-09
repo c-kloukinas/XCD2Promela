@@ -13,7 +13,7 @@ compilationUnit:
 connectorDeclaration:
         TK_CONNECTOR id=ID params=connectorParameterList
         TK_LBRACE
-		body=connectorBody
+                body=connectorBody
         TK_RBRACE
     ;
 
@@ -546,7 +546,7 @@ additiveExpression:
 multiplicativeExpression:
         multexpr_pre=unaryExpression
         (op+=(TK_MULTIPLY|TK_DIVIDE|TK_MODULO) multexprs+=unaryExpression
-	 )*
+         )*
     ;
 unaryExpression:
      nullexpr=nullaryExpression postop=(TK_INCREMENT | TK_DECREMENT)?

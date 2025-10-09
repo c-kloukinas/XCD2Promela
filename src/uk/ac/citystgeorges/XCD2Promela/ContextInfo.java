@@ -11,29 +11,29 @@ public class ContextInfo {
     // String varPrefix;
     // Above are old, kept so old code compiles - remove them eventually XXX
     String compilationUnitID; // enclosing context
-    XCD_type type;		  // which is of type (comp,conn,conf,tdef,enum)
+    XCD_type type;                // which is of type (comp,conn,conf,tdef,enum)
     Map<String,IdInfo> map;
     LstStr paramsORvars;
     LstStr params;
     LstStr vars;
-    ContextInfo(String compUnitID, XCD_type tp, boolean is_paramp){
-	BasicVisitor.myAssert(compUnitID!=null, "compUnitID is null");
-	compilationUnitID = compUnitID;
-	type = tp;
-	paramsORvars = new LstStr();
-	params = new LstStr();
-	vars = new LstStr();
-	map = new HashMap<String,IdInfo>();
-	map.put(compilationUnitID,
-		new IdInfo(tp
-			   , "component"
-			   , is_paramp
-			   , false, null // not an array, no array size
-			   , false, null // no initial value
-			   , compilationUnitID // what's my big name?
-			   , ""	    // var_prefix
-			   , ""	    // parent (root)
-			   ));
+    ContextInfo(String compUnitID, XCD_type tp, boolean is_paramp) {
+        BasicVisitor.myAssert(compUnitID!=null, "compUnitID is null");
+        compilationUnitID = compUnitID;
+        type = tp;
+        paramsORvars = new LstStr();
+        params = new LstStr();
+        vars = new LstStr();
+        map = new HashMap<String,IdInfo>();
+        map.put(compilationUnitID,
+                new IdInfo(tp
+                           , "component"
+                           , is_paramp
+                           , false, null // not an array, no array size
+                           , false, null // no initial value
+                           , compilationUnitID // what's my big name?
+                           , ""     // var_prefix
+                           , ""     // parent (root)
+                           ));
     }
 
 }

@@ -9,14 +9,14 @@ import java.io.IOException;
 
 import org.antlr.v4.runtime.*;
 /*
-	ArrayList<String> res = new ArrayList<String>();
-	String s = "";
+        ArrayList<String> res = new ArrayList<String>();
+        String s = "";
 
-	res.add(s);
-	return res;
+        res.add(s);
+        return res;
 
-	var framenow = env.get(env.size()-1);
-	var symbolInfo = getIdInfo(symbol);
+        var framenow = env.get(env.size()-1);
+        var symbolInfo = getIdInfo(symbol);
 */
 public abstract class ConnectorVisitor extends ComponentVisitor {
     @Override

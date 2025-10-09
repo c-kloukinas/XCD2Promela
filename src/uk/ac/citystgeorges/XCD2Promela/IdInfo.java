@@ -12,19 +12,19 @@ public class IdInfo {
     String var_prefix;
     String parent;
     IdInfo(XCD_type tp, String stype, boolean is_paramp
-	   , boolean is_arrayp, String arraySize
-	   , boolean has_initValp, String theInitVal
-	   , String big, String prefix
-	   , String prnt){
-	type = tp;
-	sType = stype;
-	is_param = is_paramp;
-	is_array = is_arrayp;
-	arraySz = arraySize;
-	has_initVal = has_initValp;
-	initVal = theInitVal;
-	big_name = big;
-	var_prefix = prefix;
-	parent = prnt;
+           , boolean is_arrayp, String arraySize
+           , boolean has_initValp, String theInitVal
+           , String big, String prefix
+           , String prnt){
+        type = tp;
+        sType = stype;
+        is_param = is_paramp;
+        is_array = is_arrayp;
+        arraySz = arraySize;
+        has_initVal = has_initValp;
+        initVal = theInitVal;
+        big_name = big;
+        var_prefix = prefix;
+        parent = prnt;
     }
 }

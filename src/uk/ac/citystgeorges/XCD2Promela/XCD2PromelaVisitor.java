@@ -9,41 +9,41 @@ import java.io.IOException;
 
 import org.antlr.v4.runtime.*;
 /*
-	ArrayList<String> res = new ArrayList<String>();
-	String s = "";
+        ArrayList<String> res = new ArrayList<String>();
+        String s = "";
 
-	res.add(s);
-	return res;
+        res.add(s);
+        return res;
 
-	var framenow = env.get(env.size()-1);
-	var symbolInfo = getIdInfo(symbol);
+        var framenow = env.get(env.size()-1);
+        var symbolInfo = getIdInfo(symbol);
 */
 
 public class XCD2PromelaVisitor extends ConnectorVisitor {
     XCD2PromelaVisitor() {
-	String compilationUnitID = ""; // root
-	// initialise env, so that "result", etc. are known IDs
-	env = new ArrayList<ContextInfo>();
-	env.add(new ContextInfo(compilationUnitID, XCD_type.unknownt, false));
-	String array_sz = "";
-	String initVal = "";
-	String var_prefix = "";
-	// String kword = "\\result";
-	LstStr kwords = new LstStr();
-	kwords.add("\\result");
-	kwords.add("\\exception");
-	kwords.add("\\nothing");
-	kwords.add("\\in");
-	for (String kword : kwords )
-	    { String bigname = kword;
-		addIdInfo(kword
-			  , XCD_type.resultt
-			  , kword
-			  , false
-			  , false, array_sz // array?
-			  , false, initVal  // initial value?
-			  , bigname, var_prefix
-			  , compilationUnitID); }
+        String compilationUnitID = ""; // root
+        // initialise env, so that "result", etc. are known IDs
+        env = new ArrayList<ContextInfo>();
+        env.add(new ContextInfo(compilationUnitID, XCD_type.unknownt, false));
+        String array_sz = "";
+        String initVal = "";
+        String var_prefix = "";
+        // String kword = "\\result";
+        LstStr kwords = new LstStr();
+        kwords.add("\\result");
+        kwords.add("\\exception");
+        kwords.add("\\nothing");
+        kwords.add("\\in");
+        for (String kword : kwords )
+            { String bigname = kword;
+                addIdInfo(kword
+                          , XCD_type.resultt
+                          , kword
+                          , false
+                          , false, array_sz // array?
+                          , false, initVal  // initial value?
+                          , bigname, var_prefix
+                          , compilationUnitID); }
     }
 
     /*
