@@ -94,7 +94,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
 	}
 	
 	mywarning("\tTODO: complete the component code");
-	LstStr body_res = visit(ctx.body);
+	// LstStr body_res = visit(ctx.body);
 
 	instance += "}\n";
 	// Create instance & header files
