@@ -228,9 +228,24 @@ public abstract
 	    s = "UNKNOWNtrue";
 	else if (ctx.falseToken != null)
 	    s = "UNKNOWNfalse";
-	else if (ctx.at != null)
-	    s = "UNKNOWN@";
-	else if (ctx.varid != null) {
+	else if (ctx.at != null) {
+	    /* The @ is used as a nameless parameter when initialising arrays.
+	     * E.g., int arr[N] = @+3; means for (int i=0;i<N;++i) arr[i]=i+3;
+	     *
+	     * So, we need a local symbol to represent this index (or
+	     * a function that does this initialisation)
+	     *
+	     * Composite (component/connector role), port (or
+	     * portvar), line, char-of-at
+	     */
+	    var framenow = env.get(env.size()-1);
+	    var compId = framenow.compilationUnitID;
+	    var port_name = "UNKNOWN_port";
+	    String big_name = compId + "_" + port_name
+		+ "_" + ln + "_" + atchar;
+
+	    s = "UNKNOWN"+big_name;
+	} else if (ctx.varid != null) {
 	    s = "UNKNOWN" + ctx.varid.getText();
 	    if (ctx.varindex != null)
 		s += visit(ctx.varindex).get(0);
