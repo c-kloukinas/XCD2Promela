@@ -380,70 +380,149 @@ public abstract
     int ln=-1;
     int atchar=-1;
     void resetln() {ln=-1; atchar=-1;}
-    /* Generic types used here (even though not needed - could have
-     * used proper types Token,RuleContext,Tree,Object instead)
-     * because they *look* like the type case I want to implement (and
-     * stand out more).
-     */
-    <T extends Token> Token getAtoken(T tkn) { return (Token)tkn; }
-    <T extends RuleContext> Token getAtoken(T rc) {
-	var chld = rc.getChild(0);
-	if (chld == null) return null;
-	var pld = chld.getPayload();
-	return getAtoken(pld);
-    }
-    <T extends Tree> Token getAtoken(T ptree) {
-	var chld = ptree.getChild(0);
-	if (chld == null) return null;
-	var pld = chld.getPayload();
-	return getAtoken(pld);
-    }
-    <T> Token getAtoken(T arg) {
-	if (null==arg) return null; // sanity check
-	if (arg instanceof Token) return getAtoken((Token)arg);
-	else if (arg instanceof RuleContext) return getAtoken((RuleContext)arg);
-	else if (arg instanceof Tree) return getAtoken((Tree)arg);
-	var cl = arg.getClass();
-	// return getAtoken( cl.cast(arg) ); // Doesn't enable dynamic binding
-	myAssert(false
-		 , "ParseTree payload: more than a Token or a RuleContext!"
-		 + cl.toString());
-	return null;
-    }
     void updateln(Tree ctx) {
 	Token tk = getAtoken(ctx);
 	if (tk==null)
 	    { resetln(); return; }
 	ln = tk.getLine(); atchar = tk.getStartIndex();
     }
-    // void updateln1(Tree ctx) {
-    // 	Tree tree = ctx.getChild(0);
-    // 	if (tree == null) {
-    // 	    resetln(); return; }
-    // 	Object pld = tree.getPayload();
-    // 	Token tk = null;
-    // 	int depth = 3;
-    // 	while (!(pld instanceof Token) && depth>0) {
-    // 	    if (pld instanceof RuleContext) {
-    // 		var rc = (RuleContext) pld;
-    // 		if (rc == null) {
-    // 		    resetln(); return; // bailout, reset them
-    // 		} else {
-    // 		    Tree tree2 = rc.getChild(0);
-    // 		    if (tree2 == null) {
-    // 			resetln(); return; }
-    // 		    pld = tree2.getPayload();
-    // 		}
-    // 	    } // else: just decrement depth, eventually fall through
-    // 	    --depth;
+    Token getAtoken(Tree tr) {	// took me a while... - simplified
+				// version of updateln1 really
+	if (null==tr || (tr instanceof Token)) return (Token)tr;
+	Object pl = tr;
+	do {
+	    Tree ch = ((Tree)pl).getChild(0);
+	    pl = (null==ch)?null:ch.getPayload();
+	} while (null!=pl && !(pl instanceof Token));
+	return (Token)pl;
+    }
+    // /*
+    //  * Double dispatch used for getAtoken/getit - got tired in
+    //  * makeTop... Which of course begs the question - why do double
+    //  * dispatch at all, if you're going to end up with a test using
+    //  * instanceof?!?
+    //  */
+    // static class Top<T> {
+    // 	T field;
+    // 	Top<Object> makeTop(Object obj) {
+    // 	    if (obj instanceof Tree)
+    // 		return new Two<Tree>((Tree)obj);
+    // 	    else if (obj instanceof Token)
+    // 		return new One<Token>((Token)obj);
+    // 	    else
+    // 		return new Top<Object>(obj);
     // 	}
-    // 	if ((pld instanceof Token) && pld != null) {
-    // 	    tk = (Token) pld;	// non-null since pld non-null
-    // 	    ln = tk.getLine(); atchar = tk.getStartIndex();
-    // 	} else {
-    // 	    resetln();		// bailout, reset them
+    // 	Top(T arg) {field=arg;}
+    // 	org.antlr.v4.runtime.Token getAtoken() {
+    // 	    return this.getit(field);
+    // 	}
+    // 	org.antlr.v4.runtime.Token getit(org.antlr.v4.runtime.Token x)
+    // 	{ return x; }
+    // 	org.antlr.v4.runtime.Token getit(org.antlr.v4.runtime.tree.Tree x)
+    // 	{ return new Two(x).getAtoken(); }
+    // 	org.antlr.v4.runtime.Token getit(Object x) {
+    // 	    	var cl = field.getClass();
+    // 		myAssert(false
+    // 		     , "ParseTree payload: more than a Token or a RuleContext!"
+    // 		     + cl.toString());
+    // 	    return null;
     // 	}
     // }
+    // static class One<T extends org.antlr.v4.runtime.Token> extends Top<Object> {
+    // 	One(T tk) {super(tk);}
+    // 	@Override org.antlr.v4.runtime.Token getAtoken() {
+    // 	    return this.getit(field);
+    // 	}
+    // 	@Override org.antlr.v4.runtime.Token getit(org.antlr.v4.runtime.Token x)
+    // 	{   return (org.antlr.v4.runtime.Token)x; }
+    // 	@Override org.antlr.v4.runtime.Token getit(Object x) {
+    // 	    return this.getit((org.antlr.v4.runtime.Token)x); } }
+    // /* RuleContext & Tree have the same code for finding the payload,
+    //  * therefore no need to distinguish between them, esp. given that
+    //  * RuleContext inherits from Tree. So, no need for a Three<T
+    //  * extends RuleContext> class/extra getit.
+    //  */
+    // static class Two<T extends org.antlr.v4.runtime.tree.Tree> extends Top<Object> {
+    // 	Two(T tree) { super(tree); }
+    // 	@Override org.antlr.v4.runtime.Token getAtoken() {
+    // 	    return this.getit(field); }
+    // 	@Override org.antlr.v4.runtime.Token getit(org.antlr.v4.runtime.tree.Tree x)
+    // 	{   var chld = x.getChild(0);
+    // 	    if (chld == null) return null;
+    // 	    var pld = chld.getPayload();
+    // 	    return makeTop(pld).getAtoken(); }
+    // 	@Override org.antlr.v4.runtime.Token getit(Object x) {
+    // 	    return this.getit((org.antlr.v4.runtime.tree.Tree)x); } }
+    // void updateln3(Tree ctx) {
+    // 	Token tk = new Two<Tree>(ctx).getAtoken();
+    // 	if (tk==null)
+    // 	    { resetln(); return; }
+    // 	ln = tk.getLine(); atchar = tk.getStartIndex();
+    // }
+    // // /* Generic types used here (even though not needed - could have
+    // //  * used proper types Token,RuleContext,Tree,Object instead)
+    // //  * because they *look* like the type case I want to implement (and
+    // //  * stand out more).
+    // //  */
+    // // <T extends Token> Token getAtoken(T tkn) { return (Token)tkn; }
+    // // <T extends RuleContext> Token getAtoken(T rc) {
+    // // 	var chld = rc.getChild(0);
+    // // 	if (chld == null) return null;
+    // // 	var pld = chld.getPayload();
+    // // 	return getAtoken(pld);
+    // // }
+    // // <T extends Tree> Token getAtoken(T ptree) {
+    // // 	var chld = ptree.getChild(0);
+    // // 	if (chld == null) return null;
+    // // 	var pld = chld.getPayload();
+    // // 	return getAtoken(pld);
+    // // }
+    // // <T> Token getAtoken(T arg) {
+    // // 	if (null==arg) return null; // sanity check
+    // // 	if (arg instanceof Token) return getAtoken((Token)arg);
+    // // 	else if (arg instanceof RuleContext) return getAtoken((RuleContext)arg);
+    // // 	else if (arg instanceof Tree) return getAtoken((Tree)arg);
+    // // 	var cl = arg.getClass();
+    // // 	// return getAtoken( cl.cast(arg) ); // Doesn't enable dynamic binding
+    // // 	myAssert(false
+    // // 		 , "ParseTree payload: more than a Token or a RuleContext!"
+    // // 		 + cl.toString());
+    // // 	return null;
+    // // }
+    // // void updateln2(Tree ctx) {
+    // // 	Token tk = getAtoken(ctx);
+    // // 	if (tk==null)
+    // // 	    { resetln(); return; }
+    // // 	ln = tk.getLine(); atchar = tk.getStartIndex();
+    // // }
+    // // // void updateln1(Tree ctx) {
+    // // // 	Tree tree = ctx.getChild(0);
+    // // // 	if (tree == null) {
+    // // // 	    resetln(); return; }
+    // // // 	Object pld = tree.getPayload();
+    // // // 	Token tk = null;
+    // // // 	int depth = 3;
+    // // // 	while (!(pld instanceof Token) && depth>0) {
+    // // // 	    if (pld instanceof RuleContext) {
+    // // // 		var rc = (RuleContext) pld;
+    // // // 		if (rc == null) {
+    // // // 		    resetln(); return; // bailout, reset them
+    // // // 		} else {
+    // // // 		    Tree tree2 = rc.getChild(0);
+    // // // 		    if (tree2 == null) {
+    // // // 			resetln(); return; }
+    // // // 		    pld = tree2.getPayload();
+    // // // 		}
+    // // // 	    } // else: just decrement depth, eventually fall through
+    // // // 	    --depth;
+    // // // 	}
+    // // // 	if ((pld instanceof Token) && pld != null) {
+    // // // 	    tk = (Token) pld;	// non-null since pld non-null
+    // // // 	    ln = tk.getLine(); atchar = tk.getStartIndex();
+    // // // 	} else {
+    // // // 	    resetln();		// bailout, reset them
+    // // // 	}
+    // // // }
     static void myAssert(boolean cond, String msg) {
 	assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
     void myassert(boolean cond, String msg) {
@@ -480,7 +559,7 @@ public abstract
 		&& (info.big_name.equals(newInfo.big_name))
 		&& (info.parent.equals(newInfo.parent));
 	    if (!matches) {
-		mywarning("Symbol \"" +symbol+"\" aldeary in the map"
+		mywarning("Symbol \"" +symbol+"\" already in the map"
 			  + "\n" + info.type + " vs " + newInfo.type
 			  + "\n" + info.sType + " vs " + newInfo.sType
 			  + "\n" + info.is_param + " vs " + newInfo.is_param
