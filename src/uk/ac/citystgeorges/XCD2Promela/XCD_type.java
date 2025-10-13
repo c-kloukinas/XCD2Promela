@@ -4,8 +4,8 @@ enum XCD_type {
     unknownt, voidt, boolt, bytet, intt
     , paramt, vart
     , resultt, exceptiont
-    , emittert, receivert, consumert, producert
-    , emittervart, receivervart, consumervart, producervart
+    , emittert, consumert, requiredt, providedt
+    , emittervart, consumervart, requiredvart, providedvart
     , methodt, functiont
     , componentpart, connectorpart
     , componentt, connectort, rolet, configt, typedeft, enumt
