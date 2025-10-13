@@ -323,13 +323,10 @@ public abstract
                     + ",CompInstanceID,Instance,"
                     + id                // varid
                     + ")");
+        s = id;
         myassert(s.equals(idInfo.big_name)
                  , "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
-        return ("Component_i_Param_N(CompositeName,CompositeID,"
-                + compTypeid    // compType.id
-                + ",CompInstanceID,Instance,"
-                + id            // varid
-                + ")");
+        return s;
     }
     boolean is_enumConstant(String id) {
         var idInfo = getIdInfo(id);
@@ -394,6 +391,12 @@ public abstract
 
     int ln=-1;
     int atchar=-1;
+    int gensymcounter=0;
+    String newgensym(String prefix) {
+        return "gensym_"
+            + ((null==prefix) ? "" : (prefix+"_"))
+            + ln +"_"+atchar +"_"+(gensymcounter++); }
+    String newgensym() { return newgensym(null); }
     void resetln() {ln=-1; atchar=-1;}
     void updateln(Tree ctx) {
         Token tk = getAtoken(ctx);
