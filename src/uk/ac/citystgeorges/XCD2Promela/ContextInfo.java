@@ -16,6 +16,9 @@ public class ContextInfo {
     LstStr paramsORvars;
     LstStr params;
     LstStr vars;
+    LstStr subcomponents;
+    LstStr providedprts; LstStr requiredprts;
+    LstStr consumerprts; LstStr emitterprts;
     ContextInfo(String compUnitID, XCD_type tp, boolean is_paramp) {
         BasicVisitor.myAssert(compUnitID!=null, "compUnitID is null");
         compilationUnitID = compUnitID;
@@ -23,6 +26,11 @@ public class ContextInfo {
         paramsORvars = new LstStr();
         params = new LstStr();
         vars = new LstStr();
+        subcomponents = new LstStr();
+        providedprts = new LstStr();
+        requiredprts = new LstStr();
+        consumerprts = new LstStr();
+        emitterprts = new LstStr();
         map = new HashMap<String,IdInfo>();
         map.put(compilationUnitID,
                 new IdInfo(tp
