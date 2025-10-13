@@ -74,6 +74,7 @@ $(CLLIST): $(JAVA_CLASSES) makefile
 $(THINJAR): $(CLLIST)
 	-@cd $(BLDCLS); rm -f $(THINJAR)
 	@cd $(BLDCLS); jar -c -f $(THINJAR) -e $(MAIN) @$(CLLIST)
+	@cd $(SRCDIR); jar -u -f $(THINJAR) resources
 
 $(TARGETJAR): $(THINJAR)
 	-@rm -rf jar-build
