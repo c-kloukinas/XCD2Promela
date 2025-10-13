@@ -4,6 +4,9 @@ package uk.ac.citystgeorges.XCD2Promela;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.ArrayList;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Files;
 
 // import uk.ac.citystgeorges.XCD2Promela.XCDBaseVisitor;
 
@@ -36,5 +39,21 @@ public class XCD2Promela {
         walker.walk(new ShortToUnicodeString(), tree);
         System.out.println(); // print a \n after translation
 */
+        // Read the XcD_PACKAGE.h file and write it in the output directory
+        try (InputStream in
+             = XCD2Promela.class.getResourceAsStream("/resources/XcD_PACKAGE.h");
+             BufferedReader reader
+             = new BufferedReader(new InputStreamReader(in));
+             FileWriter xcdhdr
+             = mynewoutput("XcD_PACKAGE.h")) {
+            // Write header file to output
+            int inputchar = -1;
+            while ((inputchar = reader.read()) != -1)
+                xcdhdr.write(inputchar);
+        }
     }
+    static public String outputdir = "src-gen/";
+    static public FileWriter mynewoutput(String fname) throws IOException {
+        Files.createDirectories(Path.of(outputdir));
+        return new FileWriter(XCD2Promela.outputdir + fname); }
 }
