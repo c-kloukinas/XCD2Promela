@@ -14,9 +14,9 @@ public abstract class ComponentVisitor extends BasicVisitor {
     @Override
     public LstStr visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
         updateln(ctx);
-        String compId = ctx.id.getText();
+        String compName = ctx.id.getText();
         ContextInfo newctx
-            = new ContextInfo(compId, XCD_type.componentt, false);
+            = new ContextInfo(compName, XCD_type.componentt, false);
         env.add(newctx);
         // For components we create two files - an instance and a header.
         LstStr res = new LstStr(2);
@@ -24,26 +24,27 @@ public abstract class ComponentVisitor extends BasicVisitor {
         String instance = "";
         LstStr argList = visit(ctx.param); // Identify parameters
 
-        String compName = ctx.id.getText();
-        instance += "proctype instance_name(CompositeName,CompositeID,"
-            + compName + ",CompInstanceID,Instance)(";
-        // int prmsz = argList.size();
-        // if (prmsz>0) {
-        //     instance += argList.get(0);
-        //     if (prmsz>1)
-        //      for (int i=1; i<prmsz; ++i)
-        //          instance += ","+argList.get(i);
-        // }
+        instance += Names.componentHeaderName(compName) + "(";
+        int prmsz = argList.size();
+        if (prmsz!=0) {  // these seem to be ignored by the translator
+            instance += "/* Parameters ignored, passed through macros */ /* " +
+                argList.get(0);
+            if (prmsz>1)
+             for (int i=1; i<prmsz; ++i)
+                 instance += ","+argList.get(i);
+            instance += " */";
+        }
         for (String var : newctx.paramsORvars) {
             IdInfo info = getIdInfo(var);
             info.type = XCD_type.paramt;
             info.is_param = true;
+            info.big_name = Names.paramName(compName, var);
         }
         newctx.params.addAll(newctx.paramsORvars);
         newctx.paramsORvars = new LstStr();
-        instance += ") {" + "\n\n" ;
+        instance += ")" + " {" + "\n\n" ;
 
-        visit(ctx.body);        // Visit the component body
+        LstStr body_res = visit(ctx.body); // Visit the component body
         for (String var : newctx.paramsORvars) { // Identify variables
             IdInfo info = getIdInfo(var);
             info.type = XCD_type.vart;
@@ -52,62 +53,95 @@ public abstract class ComponentVisitor extends BasicVisitor {
         newctx.vars.addAll(newctx.paramsORvars);
         newctx.paramsORvars = new LstStr();
 
+                mywarning("\tTODO: complete the component code");
+        // Any sub-component instances declared?
+        if (newctx.subcomponents.size()>0) {
+            String loop_offset = newgensym(compName);
+            instance += "/* Loop to start all sub-component instances */\natomic_step {\n  int " + loop_offset
+                + ";\n  " +loop_offset+" = 0;\n";
+            for (String instance_name : newctx.subcomponents) {
+                IdInfo info = getIdInfo(instance_name);
+                String component_def = info.sType;
+                boolean is_array = info.is_array;
+                String sz = info.arraySz;
+                if (is_array)
+                    instance += "  do\n"
+                        + "  :: "+ loop_offset + " < " + sz + " -> \n   ";
+                instance +=
+                    Names
+                    .componentRunInstanceName(component_def
+                                              , instance_name
+                                              , ((is_array)
+                                                 ? (loop_offset+ "++")
+                                                 : "0"))
+                    + "\n";
+                if (is_array)
+                    instance += "  :: else -> break;\n  od;\n"
+                        + "  " + loop_offset + " = 0;\n";
+            }
+            instance += "}\n\n";
+        }
 
+        // only if it has a provided/consumer port
+        if (hasProvidedPorts(newctx) || hasConsumerPorts(newctx))
+            instance += Names.componentIConstraintsName(compName)+";\n\n";
 
-        instance += "Component_i_c_code(CompositeName,CompositeID,"
-            + compName
-            + ",CompInstanceID, Instance);\n\n"
-            + "Component_i_roleData("
-            + compName
-            + ",CompInstanceID, Instance);\n\n";
+        // only if it has a port (of any kind)
+        if (hasPorts(newctx))
+            instance += Names.componentRoleDataName(compName) + ";\n\n";
 
-
-
-
+        // Action (i.e., port) parameters missing here
+        mywarning("TODO: Action/port parameters missing)");
+        instance += "// missing action/port parameters\n";
 
         for (String var : newctx.vars) {
             IdInfo info = getIdInfo(var);
             String big = info.big_name;
-            header += "#define TYPEOF_COMPONENT_"
-                + compName + "_VAR_" + var + " "
+            header += "#define "
+                + Names.typeOfVarDefName(compName, var)
+                + " "
                 + info.sType + "\n";
             String arrSz = "1"; // when there's no array, just a single instance
-            if (info.is_array)
-                arrSz=("Component_i_Param_N(CompositeName,CompositeID,"
-                       + compName
-                       + ",CompInstanceID,Instance,"
-                       + var + ")");
+            if (info.is_array) {
+                /* See getDataSize in XcdGenerator - seems to assume
+                 * it'll be either a number or a component
+                 * parameter */
+                // arrSz=("Component_i_Param_N(CompositeName,CompositeID,"
+                //        + compName
+                //        + ",CompInstanceID,Instance,"
+                //        + var + ")");
+                arrSz = info.arraySz;
+            }
 
-            String type = "TypeOf("
-                + big
-                + ")";
-            String nm = big
-                + "["
-                + arrSz
-                + "]";
-            String init = "=InitialValue(COMPONENT_"
-                + compName
-                + "_VAR_" + var +");";
-            String pre_nm = "PRE(" + nm + ")";
-            instance += type + " " + nm + init +"\n";
-            instance += type + " " + pre_nm + init +"\n";
+            String type = component_typeof_id(big);
+            String nm = component_variable_id(big, arrSz);
+            String init = "";
+            if (info.has_initVal) {
+                mywarning("TODO: If value is a component param, the following doesn't work");
+                // for component params it should be "Component_i_Param_N(CompositeName,CompositeID,"+ compName + ",CompInstanceID,Instance,"+ var + ")"
+                // init = "=InitialValue(COMPONENT_"
+                //     + compName
+                //     + "_VAR_" + var +")";
+                init = "="+info.initVal; /* wrong (?) on purpose, to
+                                            see what comes out */
+            } else init = "=000"; // default value
+            String pre_nm = Names.varPreName(nm);
+            instance += type + " " + nm + init +";\n";
+            instance += type + " " + pre_nm + init +";\n";
         }
-
-        mywarning("\tTODO: complete the component code");
-        // LstStr body_res = visit(ctx.body);
 
         instance += "}\n";
         // Create instance & header files
-        try (FileWriter inst
-             = new FileWriter("COMPONENT_TYPE_"+compId+"_INSTANCE.pml");
-             FileWriter hdr
-             = new FileWriter("COMPONENT_TYPE_"+compId+".h")) {
-            hdr.write(header);
-            inst.write(instance);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+        { try (FileWriter inst
+               = XCD2Promela.mynewoutput("COMPONENT_TYPE_"+compName+"_INSTANCE.pml");
+               FileWriter hedr
+               = XCD2Promela.mynewoutput("COMPONENT_TYPE_"+compName+".h")) {
+                hedr.write(header);
+                inst.write(instance);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }}
         int last = env.size()-1;
         ContextInfo lastctx = env.get(last);
         myassert(newctx == lastctx, "Context not the last element");
@@ -117,10 +151,39 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
-    /*
-      Provisionally empty methods.
-    */
-    @Override public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) { return visitChildren(ctx); }
+    @Override
+    public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
+        updateln(ctx);
+        var res = new LstStr();
+        String s = "";          // Source
+        var framenow = env.get(env.size()-1);
+        String compUnitId = framenow.compilationUnitID;
+
+        Token tk = (Token) ctx.elType;
+        if (tk.getType() == XCDParser.TK_COMPONENT) { // sub-component instance
+
+            String sz = (ctx.size!=null) ? ctx.size.getText() : "1";
+            String component_def = ctx.userdefined.getText();
+            String instance_name = ctx.id.getText();
+            addIdInfo(instance_name
+                      , XCD_type.componentt
+                      , component_def
+                      , false
+                      , (ctx.size!=null), sz
+                      , false, "" // no init value
+                      , "", ""    // big_name, prefix -- unused
+                      , compUnitId);
+            framenow.subcomponents
+                .add(instance_name);
+            res.add(s);
+            return res;
+        } else
+            if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
+
+        } else {myassert(false, "Unknown element type inside component");}
+
+        return visitChildren(ctx);
+    }
 
     @Override
     public LstStr visitFormalParameters(XCDParser.FormalParametersContext ctx) {
@@ -142,9 +205,9 @@ public abstract class ComponentVisitor extends BasicVisitor {
             resrec.remove(0);
             for (var p : resrec)
                 s += "," + p;
+            // System.err.println(" FormalParameters: "+s);
+            res.add(s);
         }
-        // System.err.println(" FormalParameters: "+s);
-        res.add(s);
         return res;
     }
 
@@ -157,10 +220,12 @@ public abstract class ComponentVisitor extends BasicVisitor {
         var compId = framenow.compilationUnitID;
         var info = getIdInfo(nm);
         // A parameter's big name is:
-        info.big_name = "Component_i_Param_N(CompositeName,CompositeID,"
-            + compId
-            + ",CompInstanceID,Instance,"
-            + nm + ")";
+        // // info.big_name = "Component_i_Param_N(CompositeName,CompositeID,"
+        // //     + compId
+        // //     + ",CompInstanceID,Instance,"
+        // //     + nm + ")";
+        // info.big_name = nm;     // Params don't need big names, they're fine.
+        info.big_name = Names.paramName(compId, nm);
         var res = new LstStr();
         // System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
         // mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
@@ -190,13 +255,15 @@ public abstract class ComponentVisitor extends BasicVisitor {
         String s = "";
 
         if (ctx.itrue!=null)
-            s = "true";
+            s = Names.True;
         else if (ctx.ifalse!=null)
-            s = "false";
+            s = Names.False;
         else if (ctx.inum!=null)
             s = ctx.inum.getText();
-        else                    // ID
+        else {                    // ID
+            mywarning("DANGER: Seems to assume that only a component parameter can be used as an initial value"); // see getInitialValue
             s = getIdInfo(ctx.icons.getText()).big_name;
+        }
 
         res.add(s);
         return res;
@@ -247,7 +314,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         XCD_type tp = framenow.type;
         String bigname = "";
         if (tp == XCD_type.componentt) {
-            bigname = "COMPONENT_" + compUnitId + "_VAR_" + varName;
+            bigname = Names.varName(compUnitId, varName);
         } else if (tp == XCD_type.rolet) {
 // connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
 //   role Customer{
@@ -255,14 +322,13 @@ public abstract class ComponentVisitor extends BasicVisitor {
 //
 // "CONNECTOR_" + Customer_Cashier + _conn1_0 + "_ROLE_" + Customer + "_VAR_" + dummyVariable3
             String myConnector = getIdInfo(compUnitId).parent;
-            bigname = "CONNECTOR_" + myConnector
+            bigname = Names.xVarInstanceName(myConnector
                 // // "conn1" is a connector instance, "0" is its array index
                 // + "MISSING_CONNECTOR_INSTANCE_UNKNOWN"
-                + "_ROLE_" + myConnector
-                + "_VAR_" + varName
+                                             , myConnector
+                                             , varName
                 // "conn1" is a connector instance, "0" is its array index
-                + "MISSING_CONNECTOR_INSTANCE_UNKNOWN"
-                ;
+                                             , "MISSING_CONNECTOR_INSTANCE_UNKNOWN");
         } else
             myassert(false
                      , "Unknown context of variable declaration: "
@@ -290,13 +356,13 @@ public abstract class ComponentVisitor extends BasicVisitor {
         if (ctx.basic!=null) {
             Token tk = (Token) ctx.basic;
             if (tk.getType() == XCDParser.TK_INTEGER)
-                s = "XCDINT";
+                s = Names.Short;
             else if (tk.getType() == XCDParser.TK_BYTE)
-                s = "XCDBYTE";
+                s = Names.Byte;
             else if (tk.getType() == XCDParser.TK_BOOL)
-                s = "XCDBOOL";
+                s = Names.Bit;
             else if (tk.getType() == XCDParser.TK_VOID)
-                s = "XCDVOID";
+                s = Names.Void;
             // System.err.println("Basic type: "+ctx.basic.getText() +" "+s);
         } else                  // ID
             s = getIdInfo(ctx.getText()).big_name;
@@ -304,4 +370,22 @@ public abstract class ComponentVisitor extends BasicVisitor {
         // System.err.println("TYPE READ: " + s);
         return res;
     }
+
+    boolean hasProvidedPorts(ContextInfo info)
+    { return info.providedprts.size()!=0; }
+    boolean hasRequiredPorts(ContextInfo info)
+    { return info.requiredprts.size()!=0; }
+    boolean hasEmitterPorts(ContextInfo info)
+    { return info.emitterprts.size()!=0; }
+    boolean hasConsumerPorts(ContextInfo info)
+    { return info.consumerprts.size()!=0; }
+    boolean hasPorts(ContextInfo info)
+    { return hasProvidedPorts(info) || hasRequiredPorts(info)
+            || hasEmitterPorts(info) || hasConsumerPorts(info); }
+
+String component_typeof_id(String var) { return Names.typeOfVar(var);
+    // "TypeOf("+ var + ")";
+}
+    String component_variable_id(String var, String index)
+    { return var + "[" + index + "]"; }
 }
