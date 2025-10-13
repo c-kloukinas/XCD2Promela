@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import java.lang.reflect.*;
+
 import org.antlr.v4.runtime.*;
 
 public abstract class ComponentVisitor extends BasicVisitor {
@@ -150,6 +152,60 @@ public abstract class ComponentVisitor extends BasicVisitor {
         res.add(header);
         return res;
     }
+
+    LstStr visitSomePort(ParserRuleContext ctx, XCD_type tp, LstStr ports) {
+        updateln(ctx);
+        var res = new LstStr();
+        String s = "";          // Source
+        var framenow = env.get(env.size()-1);
+        String compUnitId = framenow.compilationUnitID;
+
+        try {
+            Class ctxcl = ctx.getClass();
+            Field fldid = ctxcl.getDeclaredField("id");
+            Object theid = fldid.get(ctx);
+            Class fldcl = theid.getClass();
+            Method getText = fldcl.getDeclaredMethod("getText");
+            String portName = (String) (getText.invoke(theid));
+
+            Field fldsz = ctxcl.getDeclaredField("size");
+            Object thesz = fldsz.get(ctx);
+            boolean is_arrayp = thesz!=null;
+            String array_sz = (is_arrayp)
+                ? visit((ParserRuleContext)thesz).get(0)
+                : "1";
+
+            String big_name = Names.portName(compUnitId, portName);
+            addIdInfo(portName
+                      , tp
+                      , "portType"
+                      , false
+                      , is_arrayp, array_sz
+                      , false, ""
+                      , big_name, ""
+                      , compUnitId);
+            ports.add(portName);
+            // Lot's missing!!!
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return visitChildren(ctx); }
+    @Override
+    public LstStr visitEmitterPort(XCDParser.EmitterPortContext ctx) {
+        var framenow = env.get(env.size()-1);
+        return visitSomePort(ctx, XCD_type.emittert, framenow.emitterprts); }
+    @Override
+    public LstStr visitConsumerPort(XCDParser.ConsumerPortContext ctx) {
+        var framenow = env.get(env.size()-1);
+        return visitSomePort(ctx, XCD_type.consumert, framenow.consumerprts); }
+    @Override
+    public LstStr visitRequiredPort(XCDParser.RequiredPortContext ctx) {
+        var framenow = env.get(env.size()-1);
+        return visitSomePort(ctx, XCD_type.requiredt, framenow.requiredprts); }
+    @Override
+    public LstStr visitProvidedPort(XCDParser.ProvidedPortContext ctx) {
+        var framenow = env.get(env.size()-1);
+        return visitSomePort(ctx, XCD_type.providedt, framenow.providedprts); }
 
     @Override
     public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
