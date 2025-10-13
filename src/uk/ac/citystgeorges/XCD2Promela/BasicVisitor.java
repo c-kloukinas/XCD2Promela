@@ -53,12 +53,11 @@ public abstract
             return res;
         } else if (ctx.var_withpar != null) {
             if (ctx.pre != null)
-                s = "PRE";
-                s += "(" + visit(ctx.var_withpar).get(0) + ")";
+                s = Names.varPreName(visit(ctx.var_withpar).get(0));
         } else if (ctx.trueToken != null)
-            s = "true";
+            s = Names.True;
         else if (ctx.falseToken != null)
-            s = "false";
+            s = Names.False;
         else if (ctx.at != null) {
             var framenow = env.get(env.size()-1);
             var compTypeid = framenow.compilationUnitID;
@@ -225,9 +224,9 @@ public abstract
                 s = "(" + visit(ctx.var_withpar).get(0) + ")";
             }
         } else if (ctx.trueToken != null)
-            s = "UNKNOWNtrue";
+            s = "UNKNOWN"+Names.True;
         else if (ctx.falseToken != null)
-            s = "UNKNOWNfalse";
+            s = "UNKNOWN"+Names.False;
         else if (ctx.at != null) {
             /* The @ is used as a nameless parameter when initialising arrays.
              * E.g., int arr[N] = @+3; means for (int i=0;i<N;++i) arr[i]=i+3;
@@ -241,8 +240,7 @@ public abstract
             var framenow = env.get(env.size()-1);
             var compId = framenow.compilationUnitID;
             var port_name = "UNKNOWN_port";
-            String big_name = compId + "_" + port_name
-                + "_" + ln + "_" + atchar;
+            String big_name = Names.portName(compId, port_name);
 
             s = "UNKNOWN"+big_name;
         } else if (ctx.varid != null) {
@@ -279,13 +277,13 @@ public abstract
         var framenow = env.get(env.size()-1);
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;
-        return "COMPONENT_" + compTypeid + "_VAR_PORT_" + portid + "_ACTION_" + actionid + "_RESULT";
+        return Names.portActionNameRes(compTypeid, portid, actionid);
     }
     private String component_variable_exception(String actionid) {
         var framenow = env.get(env.size()-1);
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;
-        return "COMPONENT_" + compTypeid + "_VAR_PORT_" + portid + "_ACTION_" + actionid + "_EXCEPTION" ;
+        return Names.portActionNameExc(compTypeid, portid, actionid);
     }
 
     private boolean isVarComponentParamOld(String variable) {
@@ -318,12 +316,8 @@ public abstract
         var idInfo = framenow.map.get(id);
         // var portid = framenow.portID;
         // var var_prefix = framenow.varPrefix;
-        String s = ("Component_i_Param_N(CompositeName,CompositeID,"
-                    + compTypeid        // compType.id
-                    + ",CompInstanceID,Instance,"
-                    + id                // varid
-                    + ")");
-        s = id;
+        String s = Names.paramName(compTypeid, id);
+        // s = id;
         myassert(s.equals(idInfo.big_name)
                  , "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
         return s;
@@ -389,8 +383,8 @@ public abstract
         return s;
     }
 
-    int ln=-1;
-    int atchar=-1;
+    static int ln=-1;
+    static int atchar=-1;
     int gensymcounter=0;
     String newgensym(String prefix) {
         return "gensym_"
