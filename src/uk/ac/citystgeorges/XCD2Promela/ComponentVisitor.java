@@ -17,8 +17,9 @@ public abstract class ComponentVisitor extends BasicVisitor {
     public LstStr visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
         updateln(ctx);
         String compName = ctx.id.getText();
-        ContextInfo newctx
-            = new ContextInfo(compName, XCD_type.componentt, false);
+        ContextInfo framenow = env.get(env.size()-1);
+        ContextInfoComp newctx
+            = framenow.makeContextInfoComp(compName, false);
         env.add(newctx);
         // For components we create two files - an instance and a header.
         LstStr res = new LstStr(2);
@@ -63,7 +64,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
                 + ";\n  " +loop_offset+" = 0;\n";
             for (String instance_name : newctx.subcomponents) {
                 IdInfo info = getIdInfo(instance_name);
-                String component_def = info.sType;
+                String component_def = info.variableTypeName;
                 boolean is_array = info.is_array;
                 String sz = info.arraySz;
                 if (is_array)
@@ -102,7 +103,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
             header += "#define "
                 + Names.typeOfVarDefName(compName, var)
                 + " "
-                + info.sType + "\n";
+                + info.variableTypeName + "\n";
             String arrSz = "1"; // when there's no array, just a single instance
             if (info.is_array) {
                 /* See getDataSize in XcdGenerator - seems to assume
@@ -157,7 +158,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         updateln(ctx);
         var res = new LstStr();
         String s = "";          // Source
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         String compUnitId = framenow.compilationUnitID;
 
         try {
@@ -178,7 +179,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
             String big_name = Names.portName(compUnitId, portName);
             addIdInfo(portName
                       , tp
-                      , "portType"
+                      // , "portType"
                       , false
                       , is_arrayp, array_sz
                       , false, ""
@@ -192,19 +193,19 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return visitChildren(ctx); }
     @Override
     public LstStr visitEmitterPort(XCDParser.EmitterPortContext ctx) {
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         return visitSomePort(ctx, XCD_type.emittert, framenow.emitterprts); }
     @Override
     public LstStr visitConsumerPort(XCDParser.ConsumerPortContext ctx) {
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         return visitSomePort(ctx, XCD_type.consumert, framenow.consumerprts); }
     @Override
     public LstStr visitRequiredPort(XCDParser.RequiredPortContext ctx) {
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         return visitSomePort(ctx, XCD_type.requiredt, framenow.requiredprts); }
     @Override
     public LstStr visitProvidedPort(XCDParser.ProvidedPortContext ctx) {
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         return visitSomePort(ctx, XCD_type.providedt, framenow.providedprts); }
 
     @Override
@@ -212,12 +213,11 @@ public abstract class ComponentVisitor extends BasicVisitor {
         updateln(ctx);
         var res = new LstStr();
         String s = "";          // Source
-        var framenow = env.get(env.size()-1);
-        String compUnitId = framenow.compilationUnitID;
 
         Token tk = (Token) ctx.elType;
         if (tk.getType() == XCDParser.TK_COMPONENT) { // sub-component instance
-
+            var framenow = env.get(env.size()-1).you();
+            String compUnitId = framenow.compilationUnitID;
             String sz = (ctx.size!=null) ? ctx.size.getText() : "1";
             String component_def = ctx.userdefined.getText();
             String instance_name = ctx.id.getText();
@@ -229,12 +229,21 @@ public abstract class ComponentVisitor extends BasicVisitor {
                       , false, "" // no init value
                       , "", ""    // big_name, prefix -- unused
                       , compUnitId);
-            framenow.subcomponents
-                .add(instance_name);
+            if (!(framenow instanceof ContextInfoComp)) {
+                myassert(false
+                         , "CompilationUnitID=\"" + framenow.compilationUnitID
+                         + "\"\nType=\"" + framenow.type
+                         + "\"\nParent=\"" + framenow.parent
+                         + "\"\n# of Children=\"" + framenow.children.size()
+                         + "\"\n"
+                         + "Configuration is \"" + instance_name
+                         + "\" of type \"" + component_def + "\"\n");
+            } else {
+                ((ContextInfoComp)framenow).subcomponents.add(instance_name);
+            }
             res.add(s);
             return res;
-        } else
-            if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
+        } else if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
 
         } else {myassert(false, "Unknown element type inside component");}
 
@@ -272,7 +281,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         visitFormalParameter(XCDParser.FormalParameterContext ctx) {
         updateln(ctx);
         String nm = visit(ctx.prim_param).get(0);
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         var compId = framenow.compilationUnitID;
         var info = getIdInfo(nm);
         // A parameter's big name is:
@@ -285,7 +294,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         var res = new LstStr();
         // System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
         // mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
-        String s = info.sType + " " + info.big_name;
+        String s = info.variableTypeName + " " + info.big_name;
         if (info.is_array) {
             mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " is an array - good luck!");
             s += info.arraySz; }
@@ -348,7 +357,11 @@ public abstract class ComponentVisitor extends BasicVisitor {
         String varName = ctx.id.getText();
         String s = varName;
         String dtype = visit(ctx.type).get(0); // int, byte, bool, void, ID(long name)
-
+        // if (dtype.equals("int")
+        //     || dtype.equals("byte")
+        //     || dtype.equals("bool")
+        //     || dtype.equals("void"))
+        //     {}
         boolean is_arrayp = ctx.size!=null;
         String array_sz = "1";  /* all variables are treated as arrays
                                  * (of size 1), to simplify
@@ -365,7 +378,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
             mywarning("DANGER: \"" + varName + "\" has an initial value");
             initVal = visit(ctx.initval).get(0);
         }
-        var framenow = env.get(env.size()-1);
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
         String bigname = "";
@@ -427,15 +440,15 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
-    boolean hasProvidedPorts(ContextInfo info)
+    boolean hasProvidedPorts(ContextInfoComp info)
     { return info.providedprts.size()!=0; }
-    boolean hasRequiredPorts(ContextInfo info)
+    boolean hasRequiredPorts(ContextInfoComp info)
     { return info.requiredprts.size()!=0; }
-    boolean hasEmitterPorts(ContextInfo info)
+    boolean hasEmitterPorts(ContextInfoComp info)
     { return info.emitterprts.size()!=0; }
-    boolean hasConsumerPorts(ContextInfo info)
+    boolean hasConsumerPorts(ContextInfoComp info)
     { return info.consumerprts.size()!=0; }
-    boolean hasPorts(ContextInfo info)
+    boolean hasPorts(ContextInfoComp info)
     { return hasProvidedPorts(info) || hasRequiredPorts(info)
             || hasEmitterPorts(info) || hasConsumerPorts(info); }
 
