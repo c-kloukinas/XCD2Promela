@@ -1,0 +1,20 @@
+//#define IMPOSE_ATOMICITY
+//#define CHECK_LTL
+//#define CHECK_MONITOR
+bit free = true;
+#define CHECK_RACE
+#define CHECK_CHAOS
+//#define CHECK_BUFFEROVERFLOW
+#ifndef COMPOSITE
+#include "$<compType>_COMPOSITE.h"
+#define COMPOSITE
+#endif
+#define CompositeName $<compType>
+#define CompositeID 0
+#define CompInstanceID 0
+#define Instance 0
+#include "COMPONENT_TYPE_$<compType>_INSTANCE.pml"
+
+init{
+   run instance_name(CompositeName,CompositeID,$<compType>,CompInstanceID, Instance)()
+}
