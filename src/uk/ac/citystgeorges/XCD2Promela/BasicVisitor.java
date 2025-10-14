@@ -548,12 +548,23 @@ public abstract
 
     ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
     IdInfo addIdInfo(String symbol
-                     , XCD_type tp, String stype, boolean is_paramp
+                     , XCD_type tp, String varTypeName, boolean is_paramp
                      , boolean is_arrayp, String arraySize
                      , boolean has_initValp, String initVal
                      , String big_name, String var_prefix
                      , String parentId) {
-        var newInfo = new IdInfo(tp, stype, is_paramp
+        IdInfo res
+            = addIdInfo(symbol, tp, is_paramp, is_arrayp, arraySize,
+                        has_initValp, initVal, big_name, var_prefix, parentId);
+        res.variableTypeName = varTypeName;
+        return res; }
+    IdInfo addIdInfo(String symbol
+                     , XCD_type tp, boolean is_paramp
+                     , boolean is_arrayp, String arraySize
+                     , boolean has_initValp, String initVal
+                     , String big_name, String var_prefix
+                     , String parentId) {
+        var newInfo = new IdInfo(tp, is_paramp
                                 , is_arrayp, arraySize
                                 , has_initValp, initVal
                                 , big_name, var_prefix
@@ -562,7 +573,7 @@ public abstract
         if (currentMap.containsKey(symbol)) {
             IdInfo info = currentMap.get(symbol);
             boolean matches = (info.type == newInfo.type)
-                && (info.sType.equals(newInfo.sType))
+                // && (info.sType.equals(newInfo.sType))
                 && (info.is_param == newInfo.is_param)
                 && (info.is_array == newInfo.is_array)
                 && (info.arraySz.equals(newInfo.arraySz))
@@ -573,7 +584,7 @@ public abstract
             if (!matches) {
                 mywarning("Symbol \"" +symbol+"\" already in the map"
                           + "\n" + info.type + " vs " + newInfo.type
-                          + "\n" + info.sType + " vs " + newInfo.sType
+                          // + "\n" + info.sType + " vs " + newInfo.sType
                           + "\n" + info.is_param + " vs " + newInfo.is_param
                           + "\n" + info.is_array + " vs " + newInfo.is_array
                           + "\n" + info.arraySz + " vs " + newInfo.arraySz
