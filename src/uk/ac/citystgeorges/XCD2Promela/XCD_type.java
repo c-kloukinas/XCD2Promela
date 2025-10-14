@@ -6,7 +6,7 @@ enum XCD_type {
     , resultt, exceptiont
     , emittert, consumert, requiredt, providedt
     , emittervart, consumervart, requiredvart, providedvart
-    , methodt, functiont
+    , eventt, methodt, functiont
     , componentpart, connectorpart
     , componentt, connectort, rolet, configt, typedeft, enumt
 }
