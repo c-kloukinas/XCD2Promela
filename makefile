@@ -19,6 +19,9 @@ SRCDIR=$(TOPDIR)/src
 TESTDIR=$(BLDDIR)/test
 TESTCASESDIR=$(TOPDIR)/xcd-test-cases
 
+JAVAC?=javac
+JFLAGS?=-Xlint:unchecked
+
 EXTERNAL_LIBS=0-external-libs
 ANTLR_HOME=$(TOPDIR)
 ANTLR_JAR_COMPLETE?=$(wildcard $(ANTLR_HOME)/$(EXTERNAL_LIBS)/antlr-*-complete.jar)
@@ -45,10 +48,10 @@ JAVA_CLASSES=$(PJC) $(NJC)
 .PRECIOUS: $(JAVA_SRC)
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
-	CLASSPATH=$(CLASSPATH) javac -d $(BLDCLS) --source-path $(SRCDIR) $(SRCDIR)/$(PKGDIR)/$*.java
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR) $(SRCDIR)/$(PKGDIR)/$*.java
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
-	CLASSPATH=$(CLASSPATH) javac -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
 
 all:	compile
 
