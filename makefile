@@ -108,7 +108,7 @@ backupf:	backup-full
 backupi:	backup-incremental
 
 backup-full:
-	@sh 1-scripts/files-outside-build | xargs tar cvzf $(BACKUPDIR)/z-`date -I`.tgz
+	@sh 1-scripts/files-outside-build | (cd .. ; xargs tar cvzf $(BACKUPDIR)/z-`date -I`.tgz)
 
 backup-incremental:
-	@sh 1-scripts/files-outside-build -n | xargs tar cvzf $(BACKUPDIR)/z-`date -I`-bis.tgz
+	@sh 1-scripts/files-outside-build -n | (cd .. ; xargs tar cvzf $(BACKUPDIR)/z-`date -I`-bis.tgz)
