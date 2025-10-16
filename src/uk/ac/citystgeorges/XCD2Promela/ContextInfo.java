@@ -44,6 +44,13 @@ public class ContextInfo {
                                                   , this);
         children.add(res);
         return res; }
+    ContextInfoCompPort makeContextInfoCompPort(String portname, XCD_type portType, boolean is_paramp)
+    {   ContextInfoCompPort res = new ContextInfoCompPort(portname
+                                                          , portType
+                                                          , is_paramp
+                                                          , this);
+        children.add(res);
+        return res; }
 }
 
 class ContextInfoComp extends ContextInfo {
@@ -69,5 +76,20 @@ class ContextInfoComp extends ContextInfo {
         requiredprts = new LstStr();
         consumerprts = new LstStr();
         emitterprts = new LstStr();
+    }
+}
+class ContextInfoCompPort extends ContextInfo {
+    LstStr events = new LstStr();
+    LstStr methods = new LstStr();
+    Map<String, String> interaction_constraints
+        = new HashMap<String, String>(); // event/method to IC
+    Map<String, String> functional_constraints
+        = new HashMap<String, String>(); // event/method to FC
+    Map<String, LstStr> params
+        = new HashMap<String, LstStr>(); // event/method to params
+
+        ContextInfoCompPort(String portname, XCD_type portType
+                        , boolean is_paramp, ContextInfo parent) {
+        super(portname, portType, is_paramp, parent);
     }
 }
