@@ -148,7 +148,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         int last = env.size()-1;
         ContextInfo lastctx = env.get(last);
         myassert(newctx == lastctx, "Context not the last element");
-        env.remove(env.size()-1); // should match what was added
+        env.remove(last);       // should match what was added
         res.add(instance);
         res.add(header);
         return res;
@@ -165,7 +165,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
             Class ctxcl = ctx.getClass();
             Field fldid = ctxcl.getDeclaredField("id");
             Object theid = fldid.get(ctx);
-            Class fldcl = theid.getClass();
+            Class<?> fldcl = theid.getClass();
             Method getText = fldcl.getDeclaredMethod("getText");
             String portName = (String) (getText.invoke(theid));
 
@@ -186,7 +186,15 @@ public abstract class ComponentVisitor extends BasicVisitor {
                       , big_name, ""
                       , compUnitId);
             ports.add(portName);
+            ContextInfoCompPort newctx
+                = framenow.makeContextInfoCompPort(portName, tp, false);
+            env.add(newctx);
             // Lot's missing!!!
+
+            int last = env.size()-1;
+            ContextInfo lastctx = env.get(last);
+            myassert(newctx == lastctx, "Context not the last element");
+            env.remove(last);   // should match what was added
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -207,6 +215,39 @@ public abstract class ComponentVisitor extends BasicVisitor {
     public LstStr visitProvidedPort(XCDParser.ProvidedPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
         return visitSomePort(ctx, XCD_type.providedt, framenow.providedprts); }
+
+    @Override
+    public LstStr visitEventSignature(XCDParser.EventSignatureContext ctx) {
+        /*
+          One may wish to overload events(/methods).
+
+          So we need to use the full event(/method) signature, i.e.,
+          <name, param type...>. The parameter names are not part of
+          the signature. Neither are the return type (methods) or any
+          exceptions the method can throw (events don't return
+          anything by definition, so cannot throw exceptions either),
+          since exceptions are just a kind of (abnormal) return value.
+
+          To represent these, we need:
+          1) Name=String
+          2) Type=String
+          3) Sig=Pair<Name,Tuple<Type...>> // event/method name, param types...
+          4) EventOverloads=Map<Name,Map<Sig>> // it's an error if a
+                                               // sig is defined more
+                                               // than once
+
+          Also:
+          5) FullSig=Tuple<Name // event/method name
+                          , Tuple<<Pair<Type, Name>... // param types & names
+                                  , Type // result type
+                                  , Tuple<Type...>> // exception types
+        */
+        return visitChildren(ctx); }
+    @Override
+    public LstStr visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
+        /* Check comment in visitEventSignature() about overloading
+         * and required types to support it. */
+        return visitChildren(ctx); }
 
     @Override
     public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
@@ -440,6 +481,8 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
+    boolean isComposite(ContextInfoComp info)
+    { return info.subcomponents.size()!=0; }
     boolean hasProvidedPorts(ContextInfoComp info)
     { return info.providedprts.size()!=0; }
     boolean hasRequiredPorts(ContextInfoComp info)
