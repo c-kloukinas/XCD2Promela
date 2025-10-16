@@ -18,6 +18,7 @@ CLLIST=$(BLDDIRFULL)/list$(TARGET).list
 SRCDIR=$(TOPDIR)/src
 TESTDIR=$(BLDDIR)/test
 TESTCASESDIR=$(TOPDIR)/xcd-test-cases
+BACKUPDIR=$(TOPDIR)/y-ignore-me/z-keep-backups
 
 JAVAC?=javac
 JFLAGS?=-Xlint:unchecked
@@ -101,3 +102,13 @@ test:  jar $(TESTDIR)
 clean:
 	-rm -rf $(TARGETJAR) $(BLDDIR)/* $(CLLIST) $(THINJAR)
 	-rm -rf jar-build
+
+backupf:	backup-full
+
+backupi:	backup-incremental
+
+backup-full:
+	@sh 1-scripts/files-outside-build | xargs tar cvzf $(BACKUPDIR)/z-`date -I`.tgz
+
+backup-incremental:
+	@sh 1-scripts/files-outside-build -n | xargs tar cvzf $(BACKUPDIR)/z-`date -I`-bis.tgz
