@@ -10,4 +10,4 @@ else
 fi
 
 cd ..
-find "${DIR}" -type f ${FILT} | grep -v '/build/' | grep -v .jar
+find "${DIR}" -type f ${FILT} | grep -v '/build/' | grep -v .jar | sort
