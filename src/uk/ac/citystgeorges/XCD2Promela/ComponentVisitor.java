@@ -154,7 +154,48 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
-    LstStr visitSomePort(ParserRuleContext ctx, XCD_type tp, LstStr ports) {
+    /*
+     * The need for this method to avoid copying the same code in each
+     * of the four port types, points to two solutions - 1) move the
+     * common parts of the grammar rules to a new rule; 2) use
+     * generics in this method to avoid using reflection.
+     *
+     * The 2nd way didn't work, at least as described in
+     * https://stackoverflow.com/questions/9141960/generic-class-that-accepts-either-of-two-types
+     * (factories for just the specific types we want to consider -
+     * the type of ctx is still `T extends ParserRuleContext', so
+     * reflection is still needed (probably would have worked in C++,
+     * where for each type a different instantiation is created).
+     *
+     * So to avoid both code duplication and reflection, we need to
+     * change the grammar itself.
+     */
+    class SomePort<T extends ParserRuleContext> {
+        T ctx;
+        XCD_type tp;
+        LstStr ports;
+        private SomePort(T actx, XCD_type atp, LstStr somePorts) {
+            ctx = actx; tp = atp; ports = somePorts; } // use below factories
+        /* Extra ComponentVisitor param in the factories for the
+         * reason explained here (inner class needs an instance of the
+         * enclosing class:
+         * https://stackoverflow.com/questions/10301907/why-do-i-get-non-static-variable-this-cannot-be-referenced-from-a-static-contex
+         */
+        static SomePort<XCDParser.EmitterPortContext>
+            makeNew(ComponentVisitor cv, XCDParser.EmitterPortContext ctx, XCD_type tp, LstStr p) {
+            return cv.new SomePort<XCDParser.EmitterPortContext>(ctx, tp, p); }
+        static SomePort<XCDParser.ConsumerPortContext>
+            makeNew(ComponentVisitor cv, XCDParser.ConsumerPortContext ctx, XCD_type tp, LstStr p) {
+            return cv.new SomePort<XCDParser.ConsumerPortContext>(ctx, tp, p); }
+        static SomePort<XCDParser.RequiredPortContext>
+            makeNew(ComponentVisitor cv, XCDParser.RequiredPortContext ctx, XCD_type tp, LstStr p) {
+            return cv.new SomePort<XCDParser.RequiredPortContext>(ctx, tp, p); }
+        static SomePort<XCDParser.ProvidedPortContext>
+            makeNew(ComponentVisitor cv, XCDParser.ProvidedPortContext ctx, XCD_type tp, LstStr p) {
+            return cv.new SomePort<XCDParser.ProvidedPortContext>(ctx, tp, p); }
+
+    LstStr visitSomePort(// ParserRuleContext ctx, XCD_type tp, LstStr ports
+                         ) {
         updateln(ctx);
         var res = new LstStr();
         String s = "";          // Source
@@ -162,15 +203,17 @@ public abstract class ComponentVisitor extends BasicVisitor {
         String compUnitId = framenow.compilationUnitID;
 
         try {
-            Class ctxcl = ctx.getClass();
-            Field fldid = ctxcl.getDeclaredField("id");
-            Object theid = fldid.get(ctx);
-            Class<?> fldcl = theid.getClass();
-            Method getText = fldcl.getDeclaredMethod("getText");
-            String portName = (String) (getText.invoke(theid));
+            // Class ctxcl = ctx.getClass();
+            // Field fldid = ctxcl.getDeclaredField("id");
+            // Object theid = fldid.get(ctx);
+            // Class<?> fldcl = theid.getClass();
+            // Method getText = fldcl.getDeclaredMethod("getText");
+            // String portName = (String) (getText.invoke(theid));
+            String portName = ctx.id.getText();
 
-            Field fldsz = ctxcl.getDeclaredField("size");
-            Object thesz = fldsz.get(ctx);
+            // Field fldsz = ctxcl.getDeclaredField("size");
+            // Object thesz = fldsz.get(ctx);
+            var thesz = ctx.size;
             boolean is_arrayp = thesz!=null;
             String array_sz = (is_arrayp)
                 ? visit((ParserRuleContext)thesz).get(0)
@@ -199,22 +242,23 @@ public abstract class ComponentVisitor extends BasicVisitor {
             throw new RuntimeException(e);
         }
         return visitChildren(ctx); }
+    }
     @Override
     public LstStr visitEmitterPort(XCDParser.EmitterPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return visitSomePort(ctx, XCD_type.emittert, framenow.emitterprts); }
+        return SomePort.makeNew(this, ctx, XCD_type.emittert, framenow.emitterprts).visitSomePort(); }
     @Override
     public LstStr visitConsumerPort(XCDParser.ConsumerPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return visitSomePort(ctx, XCD_type.consumert, framenow.consumerprts); }
+        return SomePort.makeNew(this, ctx, XCD_type.consumert, framenow.consumerprts).visitSomePort(); }
     @Override
     public LstStr visitRequiredPort(XCDParser.RequiredPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return visitSomePort(ctx, XCD_type.requiredt, framenow.requiredprts); }
+        return SomePort.makeNew(this, ctx, XCD_type.requiredt, framenow.requiredprts).visitSomePort(); }
     @Override
     public LstStr visitProvidedPort(XCDParser.ProvidedPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return visitSomePort(ctx, XCD_type.providedt, framenow.providedprts); }
+        return SomePort.makeNew(this, ctx, XCD_type.providedt, framenow.providedprts).visitSomePort(); }
 
     @Override
     public LstStr visitEventSignature(XCDParser.EventSignatureContext ctx) {
