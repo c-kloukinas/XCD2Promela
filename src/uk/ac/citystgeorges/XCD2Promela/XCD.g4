@@ -412,7 +412,8 @@ methodSignature:
 eventSignature:
     id=ID
     params=formalParameters
-    (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
+/* An event cannot return a value, so it cannot throw an exception either */
+//    (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
      TK_SEMICOLON
         ;
 
