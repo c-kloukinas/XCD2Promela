@@ -439,7 +439,7 @@ assertDeclaration :
 typeDefDeclaration:
         TK_TYPEDEF
         id=ID
-        replacement=ID
+        replaces=ID
         TK_SEMICOLON
 ;
 
