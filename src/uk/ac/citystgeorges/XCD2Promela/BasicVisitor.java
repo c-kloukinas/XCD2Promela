@@ -313,14 +313,8 @@ public abstract
     String nameOfVarComponentParam(String id) {
         var framenow = env.get(env.size()-1);
         var compTypeid = framenow.compilationUnitID;
-        var idInfo = framenow.map.get(id);
-        // var portid = framenow.portID;
-        // var var_prefix = framenow.varPrefix;
-        String s = Names.paramName(compTypeid, id);
-        // s = id;
-        myassert(s.equals(idInfo.big_name)
-                 , "Parameter's \""+id+"\" big name differs: was\n\""+idInfo.big_name+"\"\n\tbut should be\n\""+s+"\"\n");
-        return s;
+        var idInfo = getIdInfo(id);
+        return idInfo.big_name;
     }
     boolean is_enumConstant(String id) {
         var idInfo = getIdInfo(id);
@@ -608,6 +602,26 @@ public abstract
             if (the_map.containsKey(id))
                 res=the_map.get(id);
             --last;
+        }
+        /*
+         * Is it an enum/typedef defined globally?
+         */
+        if (null==res) {
+            ContextInfo root = env.get(0);
+            ArrayList<ContextInfo> rootchildren = root.children;
+            boolean found=false;
+            for (ContextInfo chld : rootchildren) { // same id could
+                                                    // have been
+                                                    // defined in
+                                                    // multiple
+                                                    // children?
+                var the_map = chld.map;
+                if (the_map.containsKey(id))
+                    if (!found) {
+                        res=the_map.get(id); found=true;
+                    } else
+                        myassert(false, "Symbol \""+id+"\" defined in multiple children of the root context");
+            }
         }
         myassert(res!=null, "Symbol \""+id+"\" not found");
         return res;
