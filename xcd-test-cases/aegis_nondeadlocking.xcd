@@ -31,7 +31,7 @@ component client(byte numOfPorts){
 		@functional{
 		  promises:\nothing;
 		  requires:true;				
-		  ensures: data:= result;
+		  ensures: data:= \result;
 		} 
 		byte request();				
 	}
@@ -86,7 +86,7 @@ component mixedComponent(byte numOfClientPorts, byte numOfServerPorts){
 		@functional{
 		  promises: \nothing;
 		  requires:true;				
-		  ensures: data := result;
+		  ensures: data := \result;
 		}  
 		byte request();				
 	}
