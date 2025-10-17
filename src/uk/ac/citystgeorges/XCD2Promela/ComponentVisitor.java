@@ -26,7 +26,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
         LstStr res = new LstStr(2);
         String header = "";
         String instance = "";
-        LstStr argList = visit(ctx.param); // Identify parameters
+        LstStr argList = (ctx.param!=null)?visit(ctx.param):new LstStr(); // Identify parameters
 
         instance += Names.componentHeaderName(compName) + "(";
         int prmsz = argList.size();
@@ -42,7 +42,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
             IdInfo info = getIdInfo(var);
             info.type = XCD_type.paramt;
             info.is_param = true;
-            info.big_name = Names.paramName(compName, var);
+            info.big_name = newctx.getParamName(var);
         }
         newctx.params.addAll(newctx.paramsORvars);
         newctx.paramsORvars = new LstStr();
@@ -155,73 +155,56 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
-    /*
-     * The need for this method to avoid copying the same code in each
-     * of the four port types, points to two solutions - 1) move the
-     * common parts of the grammar rules to a new rule; 2) use
-     * generics in this method to avoid using reflection.
-     *
-     * The 2nd way, as described in the first answer in the following,
-     * didn't work. Using the 2nd answer there it worked, but there's
-     * quite a bit of code repetition in declaring the intermediate
-     * classes.
-     * https://stackoverflow.com/questions/9141960/generic-class-that-accepts-either-of-two-types
-     *
-     * So to avoid both code duplication and reflection, we need to
-     * change the grammar itself.
-     */
-    abstract class hasIDandSize extends ParserRuleContext {
-        abstract Token getID();
-        abstract ParserRuleContext getSize();
-    }
-    class hasIDandSizeImplEmitterPortContext extends hasIDandSize {
-        XCDParser.EmitterPortContext ctx;
-        hasIDandSizeImplEmitterPortContext(XCDParser.EmitterPortContext actx)
-        { ctx = actx; }
-        @Override public Token getID() {return ctx.id;}
-        @Override public ParserRuleContext getSize() {return ctx.size;}
-    }
-    class hasIDandSizeImplConsumerPortContext extends hasIDandSize {
-        XCDParser.ConsumerPortContext ctx;
-        hasIDandSizeImplConsumerPortContext(XCDParser.ConsumerPortContext actx)
-        { ctx = actx; }
-        @Override public Token getID() {return ctx.id;}
-        @Override public ParserRuleContext getSize() {return ctx.size;}
-    }
-    class hasIDandSizeImplRequiredPortContext extends hasIDandSize {
-        XCDParser.RequiredPortContext ctx;
-        hasIDandSizeImplRequiredPortContext(XCDParser.RequiredPortContext actx)
-        { ctx = actx; }
-        @Override public Token getID() {return ctx.id;}
-        @Override public ParserRuleContext getSize() {return ctx.size;}
-    }
-    class hasIDandSizeImplProvidedPortContext extends hasIDandSize {
-        XCDParser.ProvidedPortContext ctx;
-        hasIDandSizeImplProvidedPortContext(XCDParser.ProvidedPortContext actx)
-        { ctx = actx; }
-        @Override public Token getID() {return ctx.id;}
-        @Override public ParserRuleContext getSize() {return ctx.size;}
-    }
-    class SomePort<T extends hasIDandSize & RuleNode> {
-        T ctx;
-        XCD_type tp;
-        LstStr ports;
-        SomePort(T actx, XCD_type atp, LstStr somePorts) {
-            ctx = actx; tp = atp; ports = somePorts; }
-    LstStr visitSomePort() {
-        updateln((Tree)ctx);
+    @Override
+    public LstStr visitComponentPort(XCDParser.ComponentPortContext ctx) {
+        updateln(ctx);
         var res = new LstStr();
         String s = "";          // Source
         var framenow = (ContextInfoComp) env.get(env.size()-1);
         String compUnitId = framenow.compilationUnitID;
-        String portName = ctx.getID().getText();
-
-        var thesz = ctx.getSize();
+        int flag
+            = ((ctx.provided!=null)?8:0)
+            + ((ctx.required!=null)?4:0)
+            + ((ctx.consumer!=null)?2:0)
+            + ((ctx.emitter !=null)?1:0);
+        XCD_type tp = XCD_type.unknownt;//emittert,consumert,requiredt,providedt
+        LstStr ports = null;
+        String portName = null;
+        XCDParser.ArraySizeContext thesz = null;
+        switch (flag) {
+        case 1:
+            tp = XCD_type.emittert;
+            portName = ctx.emitter.id.getText();
+            thesz = ctx.emitter.size;
+            ports = framenow.emitterprts;
+            break;
+        case 2:
+            tp = XCD_type.consumert;
+            portName = ctx.consumer.id.getText();
+            thesz = ctx.consumer.size;
+            ports = framenow.consumerprts;
+            break;
+        case 4:
+            tp = XCD_type.requiredt;
+            portName = ctx.required.id.getText();
+            thesz = ctx.required.size;
+            ports = framenow.requiredprts;
+            break;
+        case 8:
+            tp = XCD_type.providedt;
+            portName = ctx.provided.id.getText();
+            thesz = ctx.provided.size;
+            ports = framenow.providedprts;
+            break;
+        }
+        myassert(tp!=XCD_type.unknownt
+                 && portName!=null
+                 // && thesz != null
+                 && ports != null, "Error: unknown kind of port");
         boolean is_arrayp = thesz!=null;
         String array_sz = (is_arrayp)
-            ? visit((ParserRuleContext)thesz).get(0)
+            ? visit(thesz).get(0)
             : "1";
-
         String big_name = Names.portName(compUnitId, portName);
         addIdInfo(portName
                   , tp
@@ -236,32 +219,73 @@ public abstract class ComponentVisitor extends BasicVisitor {
             = framenow.makeContextInfoCompPort(portName, tp, false);
         env.add(newctx);
         // Lot's missing!!!
+        res = visitChildren(ctx);
 
         int last = env.size()-1;
         ContextInfo lastctx = env.get(last);
         myassert(newctx == lastctx, "Context not the last element");
         env.remove(last);   // should match what was added
-        return visitChildren((RuleNode)ctx); }
+        return res;
     }
     @Override
     public LstStr visitEmitterPort(XCDParser.EmitterPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return new SomePort<hasIDandSizeImplEmitterPortContext>(new hasIDandSizeImplEmitterPortContext(ctx), XCD_type.emittert, framenow.emitterprts).visitSomePort(); }
+        return visitChildren(ctx); }
+    @Override
+    public LstStr visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) {
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
+        // Need to visit the eventSignature *before* the constraints!
+        LstStr res = visit(ctx.port_event);
+        if (ctx.icontract!=null) res.addAll(visit(ctx.icontract));
+        if (ctx.fcontract!=null) res.addAll(visit(ctx.fcontract));
+        return res;
+    }
+    @Override
+    public LstStr visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) {
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
+        // Need to visit the eventSignature *before* the constraints!
+        LstStr res = visit(ctx.port_event);
+        if (ctx.icontract!=null) res.addAll(visit(ctx.icontract));
+        if (ctx.fcontract!=null) res.addAll(visit(ctx.fcontract));
+        return res;
+ }
+    @Override
+    public LstStr visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) {
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
+        // Need to visit the methodSignature *before* the constraints!
+        LstStr res = visit(ctx.port_method);
+        if (ctx.icontract!=null) res.addAll(visit(ctx.icontract));
+        if (ctx.fcontract!=null) res.addAll(visit(ctx.fcontract));
+        return res;
+ }
+    @Override
+    public LstStr visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) {
+        var framenow = (ContextInfoComp) env.get(env.size()-1);
+        // Need to visit the methodSignature *before* the constraints!
+        LstStr res = visit(ctx.port_method);
+        if (ctx.icontract!=null) res.addAll(visit(ctx.icontract));
+        if (ctx.fcontract!=null) res.addAll(visit(ctx.fcontract));
+        return res;
+ }
+
     @Override
     public LstStr visitConsumerPort(XCDParser.ConsumerPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return new SomePort<hasIDandSizeImplConsumerPortContext>(new hasIDandSizeImplConsumerPortContext(ctx), XCD_type.consumert, framenow.consumerprts).visitSomePort(); }
+        return visitChildren(ctx); }
     @Override
     public LstStr visitRequiredPort(XCDParser.RequiredPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return new SomePort<hasIDandSizeImplRequiredPortContext>(new hasIDandSizeImplRequiredPortContext(ctx), XCD_type.requiredt, framenow.requiredprts).visitSomePort(); }
+        return visitChildren(ctx); }
     @Override
     public LstStr visitProvidedPort(XCDParser.ProvidedPortContext ctx) {
         var framenow = (ContextInfoComp) env.get(env.size()-1);
-        return new SomePort<hasIDandSizeImplProvidedPortContext>(new hasIDandSizeImplProvidedPortContext(ctx), XCD_type.providedt, framenow.providedprts).visitSomePort(); }
+        return visitChildren(ctx); }
+
+
 
     @Override
     public LstStr visitEventSignature(XCDParser.EventSignatureContext ctx) {
+        // mywarning("visitEventSignature!!!");
         /*
           One may wish to overload events(/methods).
 
@@ -276,7 +300,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
           1) Name=String
           2) Type=String
           3) Sig=Pair<Name,Tuple<Type...>> // event/method name, param types...
-          4) EventOverloads=Map<Name,Map<Sig>> // it's an error if a
+          4) EventOverloads=Map<Name,Map<Sig, FullSig>> // it's an error if a
                                                // sig is defined more
                                                // than once
 
@@ -286,12 +310,72 @@ public abstract class ComponentVisitor extends BasicVisitor {
                                   , Type // result type
                                   , Tuple<Type...>> // exception types
         */
-        return visitChildren(ctx); }
+        Name event = new Name(ctx.id.getText());
+        LstStr params = visit(ctx.params);
+        // System.err.println("Params (size=" + params.size() + ") are \"" + params.toString() + "\"\n");
+        Sig sig = new Sig();
+        SeqOfNameTypePairs fullsig = new SeqOfNameTypePairs();
+        int i=0;
+        while (params.size()-i>0) {
+            NameTypePair nt = new NameTypePair( new Name(params.get(i+0))
+                                                , new Type(params.get(i+1)) );
+            sig.add(nt.type);
+            fullsig.add(nt);
+            i+=2;
+        }
+        // System.err.println("Params (size=" + params.size() + ") are \"" + params.toString() + "\"\n"
+        //                    + "Sig is \"" + sig.toString() + "\"\n"
+        //                    + "Fullsig is \"" + fullsig.toString() + "\"\n");
+        LstStr res = new LstStr();
+        res.add(sig.toString());
+        return res; }
     @Override
     public LstStr visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
         /* Check comment in visitEventSignature() about overloading
          * and required types to support it. */
-        return visitChildren(ctx); }
+        // mywarning("visitMethodSignature!!!");
+        /*
+          One may wish to overload events(/methods).
+
+          So we need to use the full event(/method) signature, i.e.,
+          <name, param type...>. The parameter names are not part of
+          the signature. Neither are the return type (methods) or any
+          exceptions the method can throw (events don't return
+          anything by definition, so cannot throw exceptions either),
+          since exceptions are just a kind of (abnormal) return value.
+
+          To represent these, we need:
+          1) Name=String
+          2) Type=String
+          3) Sig=Pair<Name,Tuple<Type...>> // event/method name, param types...
+          4) EventOverloads=Map<Name,Map<Sig, FullSig>> // it's an error if a
+                                               // sig is defined more
+                                               // than once
+
+          Also:
+          5) FullSig=Tuple<Name // event/method name
+                          , Tuple<<Pair<Type, Name>... // param types & names
+                                  , Type // result type
+                                  , Tuple<Type...>> // exception types
+        */
+        Name event = new Name(ctx.id.getText());
+        LstStr params = visit(ctx.params);
+        Sig sig = new Sig();
+        SeqOfNameTypePairs fullsig = new SeqOfNameTypePairs();
+        int i=0;
+        while (params.size()-i>0) {
+            NameTypePair nt = new NameTypePair( new Name(params.get(i+0))
+                                                , new Type(params.get(i+1)) );
+            sig.add(nt.type);
+            fullsig.add(nt);
+            i+=2;
+        }
+        // System.err.println("Params (size=" + params.size() + ") are \"" + params.toString() + "\"\n"
+        //                    + "Sig is \"" + sig.toString() + "\"\n"
+        //                    + "Fullsig is \"" + fullsig.toString() + "\"\n");
+        LstStr res = new LstStr();
+        res.add(sig.toString());
+        return res; }
 
     @Override
     public LstStr visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
@@ -343,20 +427,21 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
         if (ctx.par_pre!=null) {
             var resrec = visitChildren(ctx);
-            int len1=(resrec!=null)?resrec.size():-1;
-            int len2=ctx.pars.size()+1;
-            myassert(len1 == len2 || len1==-1,
-                     "Number of parameters doesn't match ("+len1+") vs ("+len2+")");
+            // int len1=(resrec!=null)?resrec.size():-1;
+            // int len2=ctx.pars.size()+1;
+            // myassert(len1 == len2 || len1==-1,
+            //          "Number of parameters doesn't match ("+len1+") vs ("+len2+")");
 
-            //     s += visit(ctx.par_pre).get(0);
-            //     for (var p : ctx.pars)
-            //  s += ","+visit(p).get(0);
-            s += resrec.get(0);
-            resrec.remove(0);
-            for (var p : resrec)
-                s += "," + p;
-            // System.err.println(" FormalParameters: "+s);
-            res.add(s);
+            // //     s += visit(ctx.par_pre).get(0);
+            // //     for (var p : ctx.pars)
+            // //  s += ","+visit(p).get(0);
+            // s += resrec.get(0);
+            // resrec.remove(0);
+            // for (var p : resrec)
+            //     s += "," + p;
+            // // System.err.println(" FormalParameters: "+s);
+            // res.add(s);
+            res = resrec;
         }
         return res;
     }
@@ -375,11 +460,13 @@ public abstract class ComponentVisitor extends BasicVisitor {
         // //     + ",CompInstanceID,Instance,"
         // //     + nm + ")";
         // info.big_name = nm;     // Params don't need big names, they're fine.
-        info.big_name = Names.paramName(compId, nm);
+        info.big_name = framenow.getParamName(nm);
         var res = new LstStr();
         // System.err.println(" FormalParameter: \""+nm+"\" nm=\""+nm+"\"");
         // mywarning("MUSTFIX: Ignores type, array, initial value) - start from the bottom and move up...");
-        String s = info.variableTypeName + " " + info.big_name;
+        // String s = info.variableTypeName + " " + info.big_name;
+        res.add(info.variableTypeName);
+        String s = info.big_name;
         if (info.is_array) {
             mywarning("DANGER: parameter \"" + nm + "\" on line " + ctx.getSourceInterval().toString() + " is an array - good luck!");
             s += info.arraySz; }
@@ -468,7 +555,12 @@ public abstract class ComponentVisitor extends BasicVisitor {
         XCD_type tp = framenow.type;
         String bigname = "";
         if (tp == XCD_type.componentt) {
-            bigname = Names.varName(compUnitId, varName);
+            bigname = Names.varNameComponent(compUnitId, varName);
+        } else if ( (tp == XCD_type.emittert)
+                    || (tp == XCD_type.consumert)
+                    || (tp == XCD_type.requiredt)
+                    || (tp == XCD_type.providedt) ) {
+            bigname = Names.varNamePort(compUnitId, varName);
         } else if (tp == XCD_type.rolet) {
 // connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
 //   role Customer{
