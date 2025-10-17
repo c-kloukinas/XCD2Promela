@@ -26,13 +26,18 @@ public class Names {
             + comp
             + ",CompInstanceID, Instance)"; }
 
-    static String paramName( String comp, String param ) {
+    static String paramNameComponent( String comp, String param ) {
         return "Component_i_Param_N(CompositeName,CompositeID,"
             + comp + ",CompInstanceID,Instance," + param + ")"; }
-    static String varName( String comp, String var ) {
+    static String paramNamePort( String comp, String param ) {
+        return varNameComponent(comp, param); } // STRANGE
+
+    static String varNameComponent( String comp, String var ) {
         return componentName(comp) + "_VAR_" + var; }
+    static String varNamePort( String comp, String var ) {
+        return varNameComponent(comp, var); } // STRANGE
     static String typeOfVarDefName( String comp, String var ) {
-        return "TYPEOF_" + varName(comp, var); }
+        return "TYPEOF_" + varNameComponent(comp, var); }
     static String typeOfVar( String var ) {
         return "TypeOf(" + var + ")"; }
     static String varPreName( String var ) {
