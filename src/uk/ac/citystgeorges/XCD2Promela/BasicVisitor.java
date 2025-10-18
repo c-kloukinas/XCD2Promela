@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-import java.io.FileWriter;
-import java.io.IOException;
-
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.Tree;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
@@ -377,31 +374,6 @@ public abstract
         return s;
     }
 
-    static int ln=-1;
-    static int atchar=-1;
-    int gensymcounter=0;
-    String newgensym(String prefix) {
-        return "gensym_"
-            + ((null==prefix) ? "" : (prefix+"_"))
-            + ln +"_"+atchar +"_"+(gensymcounter++); }
-    String newgensym() { return newgensym(null); }
-    void resetln() {ln=-1; atchar=-1;}
-    void updateln(Tree ctx) {
-        Token tk = getAtoken(ctx);
-        if (tk==null)
-            { resetln(); return; }
-        ln = tk.getLine(); atchar = tk.getStartIndex();
-    }
-    Token getAtoken(Tree tr) {  // took me a while... - simplified
-                                // version of updateln1 really
-        if (null==tr || (tr instanceof Token)) return (Token)tr;
-        Object pl = tr;
-        do {
-            Tree ch = ((Tree)pl).getChild(0);
-            pl = (null==ch)?null:ch.getPayload();
-        } while (null!=pl && !(pl instanceof Token));
-        return (Token)pl;
-    }
     // /*
     //  * Double dispatch used for getAtoken/getit - got tired in
     //  * makeTop... Which of course begs the question - why do double
@@ -529,16 +501,16 @@ public abstract
     // // //        resetln();          // bailout, reset them
     // // //    }
     // // // }
-    static void myAssert(boolean cond, String msg) {
-        assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
-    void myassert(boolean cond, String msg) {
-        msg = "error(line " +ln + ", char " + atchar + "): " + msg;
-        BasicVisitor.myAssert(cond,msg); }
-    static void myWarning(String msg) {
-        System.err.println(msg); }
-    void mywarning(String msg) {
-        msg = "warning(line " +ln + ", char " + atchar + "): " + msg;
-        BasicVisitor.myWarning(msg); }
+    /* redefine them here so I don't need to type Utils. each time*/
+    static public void updateln(Tree ctx) {Utils.updateln(ctx); }
+    static public String newgensym() { return Utils.newgensym(null); }
+    static public String newgensym(String pref) {return Utils.newgensym(pref);}
+    public static void myAssert(boolean cond, String msg) {
+        Utils.myAssert(cond, msg); }
+    public void myassert(boolean cond, String msg) {
+        Utils.util.myassert(cond,msg); }
+    public static void myWarning(String msg) { Utils.myWarning(msg); }
+    public void mywarning(String msg) { Utils.util.mywarning(msg); }
 
     ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
     IdInfo addIdInfo(String symbol
