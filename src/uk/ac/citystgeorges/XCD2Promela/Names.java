@@ -58,7 +58,7 @@ public class Names {
     static String portActionNameExc( String comp, String port, String action) {
         return portActionName(comp, port, action) + "_EXCEPTION"; }
     static String portName( String comp, String port ) {
-        return comp + "_" + port + "_" + BasicVisitor.ln + "_" + BasicVisitor.atchar; }
+        return comp + "_" + port + "_" + Utils.ln + "_" + Utils.atchar; }
 
     static String Void = "XCDVOID";
     static String Bit = "bit";
