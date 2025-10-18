@@ -97,7 +97,7 @@ test1:  jar $(TESTDIR)
 	(cd $(TESTDIR); java -jar $(TARGETJAR) < $(TESTCASESDIR)/aegis_deadlocking.xcd)
 
 test:  jar $(TESTDIR)
-	(cd $(TESTDIR); for f in $(TESTCASESDIR)/*.xcd ; do echo $$f ; java -jar $(TARGETJAR) <$$f  >/dev/null; if [ $$? != 0 ]; then break; fi; done)
+	(cd $(TESTDIR); for f in $(TESTCASESDIR)/*.xcd ; do echo $$f ; d=`basename $$f .xcd` ; mkdir $$d ; (cd $$d ; java -jar $(TARGETJAR) <$$f) ; done)
 
 clean:
 	-rm -rf $(TARGETJAR) $(BLDDIR)/* $(CLLIST) $(THINJAR)
