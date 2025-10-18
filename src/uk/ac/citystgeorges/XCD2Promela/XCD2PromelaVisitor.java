@@ -170,7 +170,7 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
         return res;
     }
 
-    public LstStr visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
+    private LstStr visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
         LstStr res=null;
         ContextInfo framenow = env.get(env.size()-1); // root
         ContextInfoComp newctx
