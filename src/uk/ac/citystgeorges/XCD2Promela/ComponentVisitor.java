@@ -49,6 +49,23 @@ public abstract class ComponentVisitor extends BasicVisitor {
         instance += ")" + " {" + "\n\n" ;
 
         LstStr body_res = visit(ctx.body); // Visit the component body
+
+        // add local enums here
+        Map<String,IdInfo> compMap = newctx.map;
+        // compMap.forEach((key, value) -> {
+        //         if (value.type == XCD_type.enumt) {
+        //             instance += value.variableTypeName;
+        //         }
+        //     });
+        for (var key : compMap.keySet()) {
+            var value = compMap.get(key);
+            if (value.type == XCD_type.enumt) {
+                mywarning("UNCHARTED: There's a local enum definition here! "
+                          + value.variableTypeName);
+                instance += value.variableTypeName;
+            }
+        }
+
         for (String var : newctx.paramsORvars) { // Identify variables
             IdInfo info = getIdInfo(var);
             info.type = XCD_type.vart;
