@@ -163,50 +163,56 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
     public LstStr visitCompilationUnit(XCDParser.CompilationUnitContext ctx) {
         LstStr res=null;
         if (ctx.config!=null) {
-            ContextInfo framenow = env.get(env.size()-1); // root
-            ContextInfoComp newctx
-                = framenow.makeContextInfoComp("@configuration", false);
-            env.add(newctx);
-            res=visitChildren(ctx);
-            Utils.withInputAndFileToWrite
-                ("/resources/configuration.pml.template"
-                 , "configuration.pml"
-                 , (String confFileContents) -> {
-                    if (newctx.map.size()!=2) {
-                        mywarning("Configuration should have exactly one"
-                                  + " component instance, but instead, it has "
-                                  + newctx.map.size());
-                        for (var key : newctx.map.keySet()) {
-                            var val=newctx.map.get(key);
-                            System.err.println("Instance \"" + key
-                                               + "\" of component type \""
-                                               + val.variableTypeName + "\"\n");
-                        }
-                        myassert(false, "");
-                    }
-                    myassert(newctx.subcomponents.size()==1
-                             , "Configuration should have exactly one"
-                             + " component, but instead it has "
-                             + newctx.subcomponents.size());
-                    String instName = newctx.subcomponents.get(0);
-                    IdInfo compTypeInfo = newctx.map.get(instName);
-                    String compType = compTypeInfo.variableTypeName;
-                    myassert(compTypeInfo.type == XCD_type.componentt
-                             , "Configuration instance type is not a component"
-                             + "Instance \"" + instName
-                             + "\" of component type \"" + compType
-                             + "\"");
-                    String out = confFileContents
-                        .replace("$<compType>", compType);
-                    return out;
-                });
-            int last = env.size()-1;
-            ContextInfo lastctx = env.get(last);
-            myassert(newctx == lastctx, "Context not the last element");
-            env.remove(last);   // should match what was added
+            res=visitTheConfiguration(ctx);
         } else {
             res=visitChildren(ctx);
         }
+        return res;
+    }
+
+    public LstStr visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
+        LstStr res=null;
+        ContextInfo framenow = env.get(env.size()-1); // root
+        ContextInfoComp newctx
+            = framenow.makeContextInfoComp("@configuration", false);
+        env.add(newctx);
+        res=visitChildren(ctx);
+        Utils.withInputAndFileToWrite
+            ("/resources/configuration.pml.template"
+             , "configuration.pml"
+             , (String confFileContents) -> {
+                if (newctx.map.size()!=2) {
+                    mywarning("Configuration should have exactly one"
+                              + " component instance, but instead, it has "
+                              + newctx.map.size());
+                    for (var key : newctx.map.keySet()) {
+                        var val=newctx.map.get(key);
+                        System.err.println("Instance \"" + key
+                                           + "\" of component type \""
+                                           + val.variableTypeName + "\"\n");
+                    }
+                    myassert(false, "");
+                }
+                myassert(newctx.subcomponents.size()==1
+                         , "Configuration should have exactly one"
+                         + " component, but instead it has "
+                         + newctx.subcomponents.size());
+                String instName = newctx.subcomponents.get(0);
+                IdInfo compTypeInfo = newctx.map.get(instName);
+                String compType = compTypeInfo.variableTypeName;
+                myassert(compTypeInfo.type == XCD_type.componentt
+                         , "Configuration instance type is not a component"
+                         + "Instance \"" + instName
+                         + "\" of component type \"" + compType
+                         + "\"");
+                String out = confFileContents
+                    .replace("$<compType>", compType);
+                return out;
+            });
+        int last = env.size()-1;
+        ContextInfo lastctx = env.get(last);
+        myassert(newctx == lastctx, "Context not the last element");
+        env.remove(last);   // should match what was added
         return res;
     }
 }
