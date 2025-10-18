@@ -17,7 +17,7 @@ Unlike other ADLs that support connectors (e.g., Wright), XCD designs are always
 
 ### How's XCD's realisability guaranteed?
 
-XCD is realisable because there is no way to express *shared* state among the components in it. Nor any primitives that depend on shared state (like *synchronous send*). So, if your choreography/property can be met by whatever XCD solution you've come up with you know you have a design - otherwise, you know you don't have one (and don't fool yourself that you do when you don't - a bit like giving someone a drawing of a [Penrose stairway](https://en.wikipedia.org/wiki/Penrose_stairs) and telling them that that's the architecture for an infinite stairway, the builders can get on with it now).
+XCD is realisable because there is no way to express *shared* state among the components in it. Nor any primitives that depend on shared state (like *synchronous send*). So, if your choreography/property can be met by whatever XCD solution you've come up with you know you have a design - otherwise, you know you don't have one (and don't fool yourself that you do when you don't - a bit like giving someone a drawing of a [Penrose stairway](https://en.wikipedia.org/wiki/Penrose_stairs) and telling them that that's the architecture for an infinite stairway, the builders can get on with it now [^chop-chop]).
 
 ## Where can I find more info on XCD?
 
@@ -25,8 +25,8 @@ A web page collecting some info on XCD (original papers, etc.) is [https://www.s
 
 # OK, so what's this project all about?
 
-The purpose of this project is to create a *new* compiler for the translation to the model-checker [Spin's](https://spinroot.com/) ProMeLa language, that is more modular than the original compiler and [easier](#easier) to understand. Hopefully once that is achieved it'll be easier to make changes to the language/translation/etc.
+The purpose of this project is to create a *new* compiler for the translation to the model-checker [Spin's](https://spinroot.com/) ProMeLa language, that is more modular [^easier] than the original compiler and [^easier] to understand. Hopefully once that is achieved it'll be easier to make changes to the language/translation/etc.
 
-## Notes:
-### Easier?
-"more modular"/"easier to understand" does *not* mean "modular"/"easy to understand" - I'm sure that the code could be improved.
+[^chop-chop]: chop-chop!
+
+[^easier]: "more modular"/"easier to understand" does *not* mean "modular"/"easy to understand" - I'm sure that the code could be improved.
