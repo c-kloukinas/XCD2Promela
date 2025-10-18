@@ -4,16 +4,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.stream.Collectors;
-// import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import org.antlr.v4.runtime.*;
 /*
   ArrayList<String> res = new ArrayList<String>();
@@ -27,37 +17,6 @@ import org.antlr.v4.runtime.*;
 */
 
 public class XCD2PromelaVisitor extends ConnectorVisitor {
-
-    public static void withFileToWrite(String fname
-                                       , Supplier<String> supl) {
-        try (FileWriter theConfig
-             = XCD2Promela.mynewoutput(fname)) {
-            String res = supl.get();
-            theConfig.write(res);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void withInputAndFileToWrite(String fin
-                                               , String fout
-                                               , Function<String, String> func) {
-        try (InputStream in
-             = XCD2Promela.class.getResourceAsStream(fin)
-             ; BufferedReader reader
-             = new BufferedReader(new InputStreamReader(in))) {
-            withFileToWrite
-                (fout
-                 , () -> {
-                    return
-                        func.apply(reader.lines()
-                                   .collect(Collectors.joining("\n")));
-                });
-            // theConfig.write(res);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     XCD2PromelaVisitor() {
         String compilationUnitID = "@root"; // root
@@ -101,12 +60,8 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
                     // System.err.println("Creating file for enum/typedef: "
                     //                    + key
                     //                    + " Value : " + value.variableTypeName);
-                    try (FileWriter typeFile
-                         = XCD2Promela.mynewoutput("TYPE_"+key+".h")) {
-                        typeFile.write(value.variableTypeName);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Utils.withFileWriteString("TYPE_"+key+".h"
+                                              , value.variableTypeName);
                 }//  else {
                 //     System.err.println("No, the type of \""
                 //                        + key
@@ -213,7 +168,7 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
                 = framenow.makeContextInfoComp("@configuration", false);
             env.add(newctx);
             res=visitChildren(ctx);
-            withInputAndFileToWrite
+            Utils.withInputAndFileToWrite
                 ("/resources/configuration.pml.template"
                  , "configuration.pml"
                  , (String confFileContents) -> {
@@ -253,17 +208,5 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
             res=visitChildren(ctx);
         }
         return res;
-    }
-
-    String getStringfromFile(String fname){
-        try (InputStream in
-             = XCD2Promela.class.getResourceAsStream(fname);
-             BufferedReader reader
-             = new BufferedReader(new InputStreamReader(in))) {
-            return reader.lines()
-                .collect(Collectors.joining("\n"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
