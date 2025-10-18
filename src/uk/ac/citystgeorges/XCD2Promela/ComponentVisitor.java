@@ -153,16 +153,12 @@ public abstract class ComponentVisitor extends BasicVisitor {
 
         instance += "}\n";
         // Create instance & header files
-        { try (FileWriter inst
-               = XCD2Promela.mynewoutput("COMPONENT_TYPE_"+compName+"_INSTANCE.pml");
-               FileWriter hedr
-               = XCD2Promela.mynewoutput("COMPONENT_TYPE_"+compName+".h")) {
-                hedr.write(header);
-                inst.write(instance);
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-            }}
+        {
+            Utils.withFileWriteString("COMPONENT_TYPE_"+compName+".h"
+                                      , header);
+            Utils.withFileWriteString("COMPONENT_TYPE_"+compName+"_INSTANCE.pml"
+                                      , instance);
+        }
         int last = env.size()-1;
         ContextInfo lastctx = env.get(last);
         myassert(newctx == lastctx, "Context not the last element");
