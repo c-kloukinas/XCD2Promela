@@ -10,6 +10,9 @@ import java.io.InputStreamReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.stream.Collectors;
+// import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.antlr.v4.runtime.*;
 /*
@@ -24,6 +27,38 @@ import org.antlr.v4.runtime.*;
 */
 
 public class XCD2PromelaVisitor extends ConnectorVisitor {
+
+    public static void withFileToWrite(String fname
+                                       , Supplier<String> supl) {
+        try (FileWriter theConfig
+             = XCD2Promela.mynewoutput(fname)) {
+            String res = supl.get();
+            theConfig.write(res);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void withInputAndFileToWrite(String fin
+                                               , String fout
+                                               , Function<String, String> func) {
+        try (InputStream in
+             = XCD2Promela.class.getResourceAsStream(fin)
+             ; BufferedReader reader
+             = new BufferedReader(new InputStreamReader(in))) {
+            withFileToWrite
+                (fout
+                 , () -> {
+                    return
+                        func.apply(reader.lines()
+                                   .collect(Collectors.joining("\n")));
+                });
+            // theConfig.write(res);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     XCD2PromelaVisitor() {
         String compilationUnitID = "@root"; // root
         // initialise env, so that "result", etc. are known IDs
@@ -178,41 +213,38 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
                 = framenow.makeContextInfoComp("@configuration", false);
             env.add(newctx);
             res=visitChildren(ctx);
-            try (InputStream in
-                 = XCD2Promela.class.getResourceAsStream("/resources/configuration.pml.template");
-                 BufferedReader reader
-                 = new BufferedReader(new InputStreamReader(in));
-                 FileWriter theConfig
-                 = XCD2Promela.mynewoutput("configuration.pml")) {
-                if (newctx.map.size()!=2) {
-                    mywarning("Configuration should have exactly one component instance - instead, it has " + newctx.map.size());
-                    for (var key : newctx.map.keySet()) {
-                        var val=newctx.map.get(key);
-                        System.err.println("Instance \"" + key
-                                           + "\" of component type \""
-                                           + val.variableTypeName + "\"\n");
+            withInputAndFileToWrite
+                ("/resources/configuration.pml.template"
+                 , "configuration.pml"
+                 , (String confFileContents) -> {
+                    if (newctx.map.size()!=2) {
+                        mywarning("Configuration should have exactly one"
+                                  + " component instance, but instead, it has "
+                                  + newctx.map.size());
+                        for (var key : newctx.map.keySet()) {
+                            var val=newctx.map.get(key);
+                            System.err.println("Instance \"" + key
+                                               + "\" of component type \""
+                                               + val.variableTypeName + "\"\n");
+                        }
+                        myassert(false, "");
                     }
-                    myassert(false, "");
-                }
-                myassert(newctx.subcomponents.size()==1
-                         , "Configuration should have exactly one component,"
-                         + " instead it has "
-                         + newctx.subcomponents.size());
-                String instName = newctx.subcomponents.get(0);
-                IdInfo compTypeInfo = newctx.map.get(instName);
-                String compType = compTypeInfo.variableTypeName;
-                myassert(compTypeInfo.type == XCD_type.componentt
-                         , "Configuration instance type is not a component"
-                         + "Instance \"" + instName
-                         + "\" of component type \"" + compType
-                         + "\"");
-                String out = reader.lines() // Stream<String>
-                    .collect(Collectors.joining("\n")) // String
-                    .replace("$<compType>", compType);
-                theConfig.write(out);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+                    myassert(newctx.subcomponents.size()==1
+                             , "Configuration should have exactly one"
+                             + " component, but instead it has "
+                             + newctx.subcomponents.size());
+                    String instName = newctx.subcomponents.get(0);
+                    IdInfo compTypeInfo = newctx.map.get(instName);
+                    String compType = compTypeInfo.variableTypeName;
+                    myassert(compTypeInfo.type == XCD_type.componentt
+                             , "Configuration instance type is not a component"
+                             + "Instance \"" + instName
+                             + "\" of component type \"" + compType
+                             + "\"");
+                    String out = confFileContents
+                        .replace("$<compType>", compType);
+                    return out;
+                });
             int last = env.size()-1;
             ContextInfo lastctx = env.get(last);
             myassert(newctx == lastctx, "Context not the last element");
@@ -223,4 +255,15 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
         return res;
     }
 
+    String getStringfromFile(String fname){
+        try (InputStream in
+             = XCD2Promela.class.getResourceAsStream(fname);
+             BufferedReader reader
+             = new BufferedReader(new InputStreamReader(in))) {
+            return reader.lines()
+                .collect(Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
