@@ -55,22 +55,29 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
     */
     @Override
     public LstStr visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
+        updateln(ctx);
         LstStr res = visitChildren(ctx);
+        // mywarning("visitCompilationUnits called");
         ContextInfo framenow = env.get(env.size()-1);
         Map<String,IdInfo> map = framenow.map;
         map.forEach((key, value) -> {
                 if ((value.type == XCD_type.enumt)
                     || (value.type == XCD_type.typedeft)) {
-                    System.err.println("Creating file for enum/typedef: "
-                                       + key
-                                       + " Value : " + value.variableTypeName);
+                    // System.err.println("Creating file for enum/typedef: "
+                    //                    + key
+                    //                    + " Value : " + value.variableTypeName);
                     try (FileWriter typeFile
                          = XCD2Promela.mynewoutput("TYPE_"+key+".h")) {
                         typeFile.write(value.variableTypeName);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                }
+                }//  else {
+                //     System.err.println("No, the type of \""
+                //                        + key
+                //                        + "(" + value.big_name + ")\" is \""
+                //                        + value.type + "\" - ignored\n");
+                // }
             });
         return res;
     }
@@ -78,6 +85,7 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
     @Override
     public LstStr visitEnumDeclaration(XCDParser.EnumDeclarationContext ctx) {
         updateln(ctx);
+        // mywarning("visitEnumDeclaration called");
         ContextInfo framenow = env.get(env.size()-1);
         Name enumName = new Name(ctx.id.getText());
         LstStr res = new LstStr();
@@ -86,21 +94,21 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
 
         s = "#ifndef " + enumName.toString() + "\n"
             + "#define " + enumName.toString() + "  mtype\n"
-            + "mtype = {\n\t";
+            + "mtype = { ";
         var constants = ctx.constants;
         int size = constants.size();
         myassert(constants!=null && size>0
                  , "ERROR: An enum type must have values");
-        var name1st = constants.get(0).getText();
+        var name1st = ctx.constant_pre.getText();
         values.add(new Type(name1st));
         s += name1st;
-        int i=1;
-        while (i<size) {
-            String name = constants.get(i++).getText();
+        for (var cnst : constants) {
+            String name = cnst.getText();
             values.add(new Type(name));
             s += ", " + name;
         }
-        s += " }\n#endif\n";
+        s += " }\n#else\n#error \"Enum "
+            + enumName.toString() + " defined already\"\n#endif\n";
 
         addIdInfo(enumName.toString()
                   , XCD_type.enumt
@@ -110,39 +118,51 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
                   , false, ""
                   , enumName.toString(), ""
                   , framenow.compilationUnitID);
-        for (var value : values)
+        // mywarning("Added enum type \"" + enumName.toString()
+        //           + "\" with values " + values.toString()
+        //           + " and s is \n" + s);
+        for (var value : values) {
             addIdInfo(value.toString()
-                      , XCD_type.enumt
+                      , XCD_type.enumvalt
                       , false
                       , false, ""
                       , false, ""
                       , value.toString(), ""
                       , enumName.toString());
+           // mywarning("Added enum value \"" + value.toString()
+           //        + "\" for enum type \"" + enumName.toString()
+           //        + "\"");
+        }
         res.add(s);
         return res;
     }
     @Override
     public LstStr visitTypeDefDeclaration(XCDParser.TypeDefDeclarationContext ctx) {
         updateln(ctx);
+        // mywarning("visitTypeDefDeclaration called");
         ContextInfo framenow = env.get(env.size()-1);
-        String typedefOf = ctx.replacementOf.getText();
-        String definition = ctx.id.getText();
+        String newtype = ctx.newtype.getText();
+        String definition = visit(ctx.existingtype).get(0);
+
         LstStr res = new LstStr();
         Sig values = new Sig();
         String s = "";
 
-        s = "#ifndef " + typedefOf + "\n"
-            + "#define " + typedefOf + " " + definition + "\n"
-            + "#endif\n";
+        s = "#ifndef " + newtype + "\n"
+            + "#define " + newtype + " " + definition + "\n"
+            + "#else\n#error \"Typedef "
+            + newtype + " defined already\"\n#endif\n";
 
-        addIdInfo(typedefOf
+        addIdInfo(newtype
                   , XCD_type.typedeft
                   , s
                   , false
                   , false, ""
                   , false, ""
-                  , typedefOf, ""
+                  , newtype, ""
                   , framenow.compilationUnitID);
+        // mywarning("Added type \"" + newtype + "\" as a newname for \""
+        //           + definition + "\" and s is\n" + s);
         res.add(s);
         return res;
     }
@@ -169,8 +189,8 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
                     for (var key : newctx.map.keySet()) {
                         var val=newctx.map.get(key);
                         System.err.println("Instance \"" + key
-                                           + "\" of component type \"" + val.variableTypeName
-                                           + "\"\n");
+                                           + "\" of component type \""
+                                           + val.variableTypeName + "\"\n");
                     }
                     myassert(false, "");
                 }
@@ -193,6 +213,10 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            int last = env.size()-1;
+            ContextInfo lastctx = env.get(last);
+            myassert(newctx == lastctx, "Context not the last element");
+            env.remove(last);   // should match what was added
         } else {
             res=visitChildren(ctx);
         }
