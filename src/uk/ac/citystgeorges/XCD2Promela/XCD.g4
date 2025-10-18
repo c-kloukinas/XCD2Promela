@@ -438,10 +438,9 @@ assertDeclaration :
 
 typeDefDeclaration:
         TK_TYPEDEF
-        id=ID
-        replaces=ID
-        TK_SEMICOLON
-;
+        existingtype=dataType
+        newtype=ID
+        TK_SEMICOLON;
 
 variableDeclaration:
     prim=primitiveVariableDeclaration TK_SEMICOLON
