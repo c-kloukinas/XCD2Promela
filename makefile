@@ -10,7 +10,9 @@ TARGET=$(GRAMMAR)$(MAIN)
 TARGET=$(MAIN)
 TARGETJAR=$(TOPDIR)/$(TARGET).jar
 BLDDIR=build
-BLDDIRFULL=$(TOPDIR)/build
+BLDDIRFULL=$(TOPDIR)/$(BLDDIR)
+JBLDDIR=$(BLDDIR)/jar-build
+JBLDDIRFULL=$(TOPDIR)/$(JBLDDIR)
 THINJAR=$(BLDDIRFULL)/$(TARGET)-thin.jar
 BLDSRC=$(BLDDIR)/src
 BLDCLS=$(BLDDIR)/classes
@@ -81,14 +83,14 @@ $(THINJAR): $(CLLIST)
 	@cd $(SRCDIR); jar -u -f $(THINJAR) resources
 
 $(TARGETJAR): $(THINJAR)
-	-@rm -rf jar-build
-	@mkdir -p jar-build/lib jar-build/main
-	@cd jar-build; jar -xf $(ONEJAR)
-	-@rm -rf jar-build/src
-	@cp -p $(THINJAR) jar-build/main/
-	@cp -p $(ANTLR_JAR_RUNTIME) jar-build/lib/
-	@echo 'One-Jar-Main-Class: '$(PKG).$(MAIN) >> jar-build/boot-manifest.mf
-	cd jar-build ; jar -cvfm $(TARGETJAR) boot-manifest.mf . > /dev/null 2>&1
+	-@rm -rf $(JBLDDIRFULL)
+	@mkdir -p $(JBLDDIRFULL)/lib $(JBLDDIRFULL)/main
+	@cd $(JBLDDIRFULL); jar -xf $(ONEJAR)
+	-@rm -rf $(JBLDDIRFULL)/src
+	@cp -p $(THINJAR) $(JBLDDIRFULL)/main/
+	@cp -p $(ANTLR_JAR_RUNTIME) $(JBLDDIRFULL)/lib/
+	@echo 'One-Jar-Main-Class: '$(PKG).$(MAIN) >> $(JBLDDIRFULL)/boot-manifest.mf
+	cd $(JBLDDIRFULL) ; jar -cvfm $(TARGETJAR) boot-manifest.mf . > /dev/null 2>&1
 
 $(TESTDIR):
 	mkdir -p $(TESTDIR)
@@ -100,8 +102,7 @@ test:  jar $(TESTDIR)
 	(cd $(TESTDIR); for f in $(TESTCASESDIR)/*.xcd ; do echo $$f ; d=`basename $$f .xcd` ; mkdir $$d ; (cd $$d ; java -jar $(TARGETJAR) <$$f) ; done)
 
 clean:
-	-rm -rf $(TARGETJAR) $(BLDDIR)/* $(CLLIST) $(THINJAR)
-	-rm -rf jar-build
+	-rm -rf $(TARGETJAR) $(JBLDDIRFULL) $(BLDDIRFULL)
 
 backupf:	backup-full
 
