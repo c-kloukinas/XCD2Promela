@@ -8,5 +8,5 @@ enum XCD_type {
     , emittervart, consumervart, requiredvart, providedvart
     , eventt, methodt, functiont
     , componentpart, connectorpart
-    , componentt, connectort, rolet, configt, typedeft, enumt
+    , componentt, connectort, rolet, configt, typedeft, enumt, enumvalt
 }
