@@ -12,6 +12,8 @@ public class ContextInfo {
     // Above are old, kept so old code compiles - remove them eventually XXX
     String compilationUnitID; // enclosing context
     XCD_type type; // which is of type (root,comp,conn,conf,tdef,enum)
+    LstStr typedefs;
+    LstStr enums;
     Map<String,IdInfo> map;
     ContextInfo parent = null;
     ArrayList<ContextInfo> children;
@@ -24,6 +26,8 @@ public class ContextInfo {
         compilationUnitID = compUnitID;
         type = tp;
         parent = myparent;
+        typedefs = new LstStr();
+        enums = new LstStr();
         children = new ArrayList<ContextInfo>();
         map = new HashMap<String,IdInfo>();
         map.put(compilationUnitID,
