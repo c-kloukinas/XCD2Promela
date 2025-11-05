@@ -74,9 +74,68 @@ public abstract class ComponentVisitor extends BasicVisitor {
         newctx.vars.addAll(newctx.paramsORvars);
         newctx.paramsORvars = new LstStr();
 
-                mywarning("\tTODO: complete the component code");
+        mywarning("\tTODO: complete the component code");
+        java.util.function.BiFunction<String, LstStr, String> def
+            = (String what, LstStr namelist) -> {
+            String out = "";
+            for (String name : namelist) {
+                out += "#ifndef "+ what + name + "\n"
+                    + "#define " + what + name + "\n"
+                    + "#include \"" + what + name + ".h\"\n"
+                    + "#endif\n";
+            }
+            return out;
+        };
+        // Collect typedefs
+        String all_typedefs = def.apply("TYPE_", newctx.typedefs);
+        // Collect enums
+        String all_enums = def.apply("TYPE_", newctx.enums);
+        // Collect sub-components
+        LstStr subcomponent_types = new LstStr();
+        for (var sub : newctx.subcomponents) {
+            String st = getIdInfo(sub).variableTypeName;
+            subcomponent_types.add(st);
+        }
+        String all_subcomponents = def.apply("COMPONENT_TYPE_", subcomponent_types);
+        // Collector connectors
+        String all_connectors = // def.apply("CONNECTOR_TYPE_", newctx.connectorInstances)
+            "";
         // Any sub-component instances declared?
-        if (newctx.subcomponents.size()>0) {
+        if (newctx.subcomponents.size()>0) { // It's a composite component
+            // for (var s : newctx.subcomponents)
+            //     mywarning("Component " + compName
+            //               + " has subcomponent instance " + s);
+            // mywarning("XXXX: " + all_subcomponents);
+            Utils.withInputAndFileToWrite
+            ("/resources/composite-component.pml.template"
+             , compName + "_COMPOSITE.h"
+             , (String confFileContents) -> {
+                String typedefsOrEnums = all_typedefs + all_enums;
+                String composite_subType_HeaderFileOutput
+                    = all_subcomponents + all_connectors;
+                String composite_channelList = "";
+                String subComponent_connectorActionArgsAndPvIndex_defines = "";
+                String component_chans_param_ports_refinedICs_connectedPorts_sumOfConnectedPorts_roleDataUpdates_roleDataDecls_compCode_Instances = "";
+                mywarning("\tTODO: Missing composite component code!");
+
+                // XXX
+
+                if (!typedefsOrEnums.equals(""))
+                    typedefsOrEnums += "\n";
+                String out=confFileContents
+                    .replace("FOR$<typedefsOrEnums>", typedefsOrEnums)
+                    .replace("$<compName>", compName)
+                    .replace("$<composite_subType_HeaderFileOutput>"
+                             , composite_subType_HeaderFileOutput)
+                    .replace("FOR$<composite_channelList>"
+                             , composite_channelList)
+                    .replace("FOR$<subComponent_connectorActionArgsAndPvIndex_defines>"
+                             , subComponent_connectorActionArgsAndPvIndex_defines)
+                    .replace("FOR$<component_chans_param_ports_refinedICs_connectedPorts_sumOfConnectedPorts_roleDataUpdates_roleDataDecls_compCode_Instances>"
+                             , component_chans_param_ports_refinedICs_connectedPorts_sumOfConnectedPorts_roleDataUpdates_roleDataDecls_compCode_Instances);
+                return out;
+            });
+
             String loop_offset = newgensym(compName);
             instance += "/* Loop to start all sub-component instances */\natomic_step {\n  int " + loop_offset
                 + ";\n  " +loop_offset+" = 0;\n";
@@ -145,6 +204,7 @@ public abstract class ComponentVisitor extends BasicVisitor {
                 //     + "_VAR_" + var +")";
                 init = "="+info.initVal; /* wrong (?) on purpose, to
                                             see what comes out */
+                init = "=" + Names.varNameComponentInitialValue(compName, var);
             } else init = "=000"; // default value
             String pre_nm = Names.varPreName(nm);
             instance += type + " " + nm + init +";\n";
@@ -397,12 +457,14 @@ public abstract class ComponentVisitor extends BasicVisitor {
         String s = "";          // Source
 
         Token tk = (Token) ctx.elType;
+        var framenow = env.get(env.size()-1).you();
+        String compUnitId = framenow.compilationUnitID;
+        String instance_name = ctx.id.getText();
         if (tk.getType() == XCDParser.TK_COMPONENT) { // sub-component instance
-            var framenow = env.get(env.size()-1).you();
-            String compUnitId = framenow.compilationUnitID;
             String sz = (ctx.size!=null) ? ctx.size.getText() : "1";
             String component_def = ctx.userdefined.getText();
-            String instance_name = ctx.id.getText();
+            String params = visit(ctx.params).get(0);
+            mywarning("visitElementVariableDeclaration: I ignore component instance parameters");
             addIdInfo(instance_name
                       , XCD_type.componentt
                       , component_def
@@ -422,14 +484,31 @@ public abstract class ComponentVisitor extends BasicVisitor {
                          + "\" of type \"" + component_def + "\"\n");
             } else {
                 ((ContextInfoComp)framenow).subcomponents.add(instance_name);
+                // mywarning(framenow.compilationUnitID
+                //        + "'s subcomponent of type "
+                //           + instance_name);
             }
-            res.add(s);
-            return res;
         } else if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
+            String sz = (ctx.connsize!=null) ? visit(ctx.connsize).get(0) : "1";
+            String connector_def
+                = (ctx.userdefined!=null)
+                ? ctx.userdefined.getText()
+                : visit(ctx.basicConn).get(0);
+            String params = visit(ctx.conn_params).get(0);
+            addIdInfo(instance_name
+                      , XCD_type.connectort
+                      , connector_def
+                      , false
+                      , (ctx.connsize!=null), sz
+                      , false, "" // no init value
+                      , "", ""    // big_name, prefix -- unused
+                      , compUnitId);
+            mywarning("visitElementVariableDeclaration: I ignore connector instances");
 
         } else {myassert(false, "Unknown element type inside component");}
 
-        return visitChildren(ctx);
+        res.add(s);
+        return res;
     }
 
     @Override
@@ -495,8 +574,25 @@ public abstract class ComponentVisitor extends BasicVisitor {
         return res;
     }
 
-    @Override public LstStr visitActualParameters(XCDParser.ActualParametersContext ctx) { return visitChildren(ctx); }
-    @Override public LstStr visitActualParameter(XCDParser.ActualParameterContext ctx) { return visitChildren(ctx); }
+    @Override public LstStr visitActualParameters(XCDParser.ActualParametersContext ctx) {
+        LstStr res = new LstStr();
+        String s = "";
+        if (ctx.arg_pre!=null) {
+            s += visit(ctx.arg_pre).get(0);
+            for (var another : ctx.args)
+                s += visit(another);
+        }
+        res.add(s);
+        return res; }
+    @Override public LstStr visitActualParameter(XCDParser.ActualParameterContext ctx) {
+        LstStr res = new LstStr();
+        String s = ((ctx.id!=null)
+                    ? ctx.id.getText()
+                    : ((ctx.constant!=null)
+                       ? ctx.constant.getText()
+                       : "XCD@Expression"));
+        res.add(s);
+        return res; }
 
     @Override public LstStr
         visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) {
