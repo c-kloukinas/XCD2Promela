@@ -78,12 +78,13 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
         // mywarning("visitEnumDeclaration called");
         ContextInfo framenow = env.get(env.size()-1);
         Name enumName = new Name(ctx.id.getText());
+        framenow.enums.add(""+enumName);
         LstStr res = new LstStr();
         Sig values = new Sig();
         String s = "";
 
-        s = "#ifndef " + enumName.toString() + "\n"
-            + "#define " + enumName.toString() + "  mtype\n"
+        s = "#ifndef " + enumName + "\n"
+            + "#define " + enumName + "  mtype\n"
             + "mtype = { ";
         var constants = ctx.constants;
         int size = constants.size();
@@ -98,7 +99,7 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
             s += ", " + name;
         }
         s += " }\n#else\n#error \"Enum "
-            + enumName.toString() + " defined already\"\n#endif\n";
+            + enumName + " defined already\"\n#endif\n";
 
         addIdInfo(enumName.toString()
                   , XCD_type.enumt
@@ -133,6 +134,7 @@ public class XCD2PromelaVisitor extends ConnectorVisitor {
         ContextInfo framenow = env.get(env.size()-1);
         String newtype = ctx.newtype.getText();
         String definition = visit(ctx.existingtype).get(0);
+        framenow.typedefs.add(newtype);
 
         LstStr res = new LstStr();
         Sig values = new Sig();
