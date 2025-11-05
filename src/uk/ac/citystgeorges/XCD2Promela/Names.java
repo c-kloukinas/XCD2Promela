@@ -42,6 +42,10 @@ public class Names {
         return "TypeOf(" + var + ")"; }
     static String varPreName( String var ) {
         return "PRE(" + var + ")"; }
+    static String varNameComponentInitialValue( String comp, String var ) {
+        return "InitialValue("
+            + varNameComponent(comp, var)
+            + ")"; }
 
     static String connectorName(String x) {
         return "CONNECTOR_" + x; }
