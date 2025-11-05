@@ -1,0 +1,19 @@
+#ifndef TYPE_Action
+#define TYPE_Action
+#include "TYPE_Action.h"
+#endif
+#ifndef TYPE_Exceptions
+#define TYPE_Exceptions
+#include "TYPE_EXCEPTIONS.h"
+#endif
+FOR$<typedefsOrEnums>#include "XcD_PACKAGE.h"
+#define CompositeName $<compName>
+#ifndef CompositeID
+#define CompositeID 0
+#endif
+
+$<composite_subType_HeaderFileOutput>
+FOR$<composite_channelList>
+FOR$<subComponent_connectorActionArgsAndPvIndex_defines>
+FOR$<component_chans_param_ports_refinedICs_connectedPorts_sumOfConnectedPorts_roleDataUpdates_roleDataDecls_compCode_Instances>
+
