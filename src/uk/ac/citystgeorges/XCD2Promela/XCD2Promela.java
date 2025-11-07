@@ -22,7 +22,8 @@ public class XCD2Promela {
 
         ParseTree tree = parser.compilationUnits(); // begin parsing at "compilationUnits" parse rule
 
-        ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
+        // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
+        Void res = new EnvironmentCreationVisitor().visit(tree);
         // if (res != null)
         //     for (String s : res) {
         //      System.err.println("RES: " + s);
