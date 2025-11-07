@@ -135,8 +135,8 @@ public class EnvironmentCreationVisitor extends XCDBaseVisitor<Void> {
                   , compUnitId);
         ports.add(portName);
 
-        ContextInfoCompPort newctx
-            = framenow.makeContextInfoCompPort(portName, ctx, tp, false);
+        ContextInfoConnRolePort newctx
+            = framenow.makeContextInfoConnRolePort(portName, ctx, tp, false);
         return registerNewEnvironment(portName, ctx, tp, newctx);
     }
 
