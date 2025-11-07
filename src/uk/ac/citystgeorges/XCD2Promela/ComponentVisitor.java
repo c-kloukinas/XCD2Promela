@@ -98,8 +98,19 @@ public abstract class ComponentVisitor extends BasicVisitor {
         }
         String all_subcomponents = def.apply("COMPONENT_TYPE_", subcomponent_types);
         // Collector connectors
-        String all_connectors = // def.apply("CONNECTOR_TYPE_", newctx.connectorInstances)
-            "";
+        LstStr subconnector_types = new LstStr();
+        for (var sub : newctx.subconnectors) {
+            IdInfo info = getIdInfo(sub);
+            String varName = info.variableTypeName;
+            int sz = Integer. parseInt(info.arraySz);
+            for (int i = 0; i < sz; ++i) {
+                String st = varName + "_" + sub + "_" + i + "_ROLE_";
+                mywarning("TODO: need to do this for all roles of this connector");
+                subconnector_types.add(st);
+            }
+        }
+        String all_connectors = def.apply("CONNECTOR_TYPE_"
+                                          , subconnector_types);
         // Any sub-component instances declared?
         if (newctx.subcomponents.size()>0) { // It's a composite component
             // for (var s : newctx.subcomponents)
@@ -504,7 +515,21 @@ public abstract class ComponentVisitor extends BasicVisitor {
                       , "", ""    // big_name, prefix -- unused
                       , compUnitId);
             mywarning("visitElementVariableDeclaration: I ignore connector instances");
-
+            if (!(framenow instanceof ContextInfoComp)) {
+                myassert(false
+                         , "CompilationUnitID=\"" + framenow.compilationUnitID
+                         + "\"\nType=\"" + framenow.type
+                         + "\"\nParent=\"" + framenow.parent
+                         + "\"\n# of Children=\"" + framenow.children.size()
+                         + "\"\n"
+                         + "Configuration is \"" + instance_name
+                         + "\" of type \"" + connector_def + "\"\n");
+            } else {
+                ((ContextInfoComp)framenow).subconnectors.add(instance_name);
+                // mywarning(framenow.compilationUnitID
+                //        + "'s subcomponent of type "
+                //           + instance_name);
+            }
         } else {myassert(false, "Unknown element type inside component");}
 
         res.add(s);
@@ -723,6 +748,47 @@ public abstract class ComponentVisitor extends BasicVisitor {
             s = getIdInfo(ctx.getText()).big_name;
         res.add(s);
         // System.err.println("TYPE READ: " + s);
+        return res;
+    }
+    @Override
+    public LstStr visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) {
+        LstStr res = new LstStr();
+        String portVar = ctx.pv.getText();
+        String index = (ctx.index!=null)
+            ? visit(ctx.index).get(0)
+            : "0";
+        res.add(portVar);
+        res.add(index);
+        return res;
+    }
+
+    @Override
+    public LstStr visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) {
+        LstStr res = new LstStr();
+        String s = "";
+        if (ctx.prim_val!=null) {
+            s = visit(ctx.prim_val).get(0);
+        } else {
+            String role = ctx.role.getText();
+            String index = (ctx.index!=null)
+                ? visit(ctx.index).get(0)
+                : "0";
+            LstStr pv_pre = visit(ctx.pv_pre);
+            String port_var = pv_pre.get(0);
+            String port_var_index = pv_pre.get(1);
+            // List<ConnectorArgument_pvContext>
+            var pvs = ctx.pvs;
+            if (pvs != null && pvs.size()>0) {
+                // for (int i=0; i < pvs.size(); ++i) {
+                //     // ConnectorArgument_pvContext
+                //     var pvi = pvs.get(i);
+                //     mywarning("HUH?!? role / port variable " + pvi);
+                // }
+                myassert(ctx.pvs==null || ctx.pvs.size()==0, "Don't know how to treat multiple port variable assignements!" + visit(ctx.pvs.get(0)).get(0));
+            }
+            s = port_var;
+        }
+        res.add(s);
         return res;
     }
 
