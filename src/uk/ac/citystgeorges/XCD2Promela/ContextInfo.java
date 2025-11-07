@@ -66,6 +66,7 @@ class ContextInfoComp extends ContextInfo {
     LstStr params;
     LstStr vars;
     LstStr subcomponents;
+    LstStr subconnectors;
     LstStr providedprts; LstStr requiredprts;
     LstStr consumerprts; LstStr emitterprts;
 
@@ -80,6 +81,7 @@ class ContextInfoComp extends ContextInfo {
         params = new LstStr();
         vars = new LstStr();
         subcomponents = new LstStr();
+        subconnectors = new LstStr();
         providedprts = new LstStr();
         requiredprts = new LstStr();
         consumerprts = new LstStr();
