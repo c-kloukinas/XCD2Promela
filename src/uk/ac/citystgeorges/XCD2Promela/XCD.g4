@@ -452,6 +452,10 @@ primitiveVariableDeclaration:
       type=dataType  id=ID (size=arraySize)?
       (op=TK_ASSIGN initval=variable_initialValue)?
      ;
+formalParameter:
+      type=dataType  id=ID (size=arraySize)?
+      (op=TK_ASSIGN initval=variable_initialValue)?
+     ;
 
 arraySize:
         TK_LBRACKET
@@ -485,7 +489,8 @@ inlineFunctionDeclaration:
 elementVariableDeclaration:
     (elType=TK_COMPONENT
     userdefined=ID
-    id=ID (TK_LBRACKET size=NATURAL TK_RBRACKET)? (params=actualParameters)?)
+//    id=ID (TK_LBRACKET size=NATURAL TK_RBRACKET)? (params=argumentList)?)
+    id=ID (TK_LBRACKET size=arraySize TK_RBRACKET)? (params=argumentList)?)
     |
     (elType=TK_CONNECTOR
     (userdefined=ID|basicConn=basicConnectorType)
@@ -562,7 +567,7 @@ nullaryExpression:
   | falseToken=TK_FALSE
   | at=TK_AT
   | varid=ID (varindex=arrayIndex)?
-  | inline_id=ID inline_args= actualParameters
+  | inline_id=ID inline_args= argumentList
   |  (pre=TK_PRE)? TK_LPARANT var_withpar=conditionalExpression TK_RPARANT
   | result=TK_RESULT
   | xcd_exception = TK_EXCEPTION /* looks like "exception" is a reserved word in ANTLR */
@@ -576,15 +581,15 @@ range:
     TK_RBRACKET
     ;
 
-actualParameters:
+argumentList:
      TK_LPARANT
-     (arg_pre=actualParameter
-      (TK_COMMA args+=actualParameter)*
+     (arg_pre=paramArgument
+      (TK_COMMA args+=paramArgument)*
      )?
      TK_RPARANT
     ;
 
-actualParameter:
+paramArgument:
         id=ID
   | constant = integerLiteral
   | at = TK_AT
@@ -598,7 +603,7 @@ connectorParameter:
         TK_LBRACE
         pv_pre = ID (TK_COMMA pvs+=ID)*
         TK_RBRACE)
-        | prim_param =primitiveVariableDeclaration
+        | prim_param =formalParameter
 ;
 
 connectorArgumentList:
@@ -609,7 +614,7 @@ connectorArgument:
         TK_LBRACE
         pv_pre = connectorArgument_pv ( TK_COMMA pvs+=connectorArgument_pv)*
         TK_RBRACE)
-        | prim_val= actualParameter
+        | prim_val= paramArgument
 ;
 
 connectorIndex:
@@ -632,9 +637,9 @@ formalParameters:
         TK_RPARANT
     ;
 
-formalParameter:
-          prim_param=primitiveVariableDeclaration
-       ;
+// formalParameter:
+//           prim_param=primitiveParamDeclaration
+//        ;
 
 dataType:
      basic=TK_INTEGER
