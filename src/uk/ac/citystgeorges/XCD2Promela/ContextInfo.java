@@ -134,7 +134,6 @@ public class ContextInfo {
 }
 
 class ContextInfoComp extends ContextInfo {
-    LstStr paramsORvars;
     LstStr params;
     LstStr vars;
     LstStr subcomponents;
@@ -154,7 +153,6 @@ class ContextInfoComp extends ContextInfo {
         EnvironmentCreationVisitor
             .myAssert(compUnitID!=null, "compUnitID is null");
 
-        paramsORvars = new LstStr();
         params = new LstStr();
         vars = new LstStr();
         subcomponents = new LstStr();
@@ -251,11 +249,12 @@ class ContextInfoCompPort extends ContextInfoComp {
 }
 
 class ContextInfoConn extends ContextInfo {
-    LstStr paramsORvars;
     LstStr params;
     LstStr vars;
     LstStr roles;
-
+    // LstStr rolesInParameters;
+    LstStr subconnectors;
+    Map<String, LstStr> roles2portvarsInParams;
     @Override
     ContextInfoConn you() {// System.err.println("I'm a ContextInfoComp!");
         return this;}
@@ -268,10 +267,12 @@ class ContextInfoConn extends ContextInfo {
         EnvironmentCreationVisitor
             .myAssert(compUnitID!=null, "compUnitID is null");
 
-        paramsORvars = new LstStr();
         params = new LstStr();
         vars = new LstStr();
         roles = new LstStr();
+        // rolesInParameters = new LstStr();
+        subconnectors = new LstStr();
+        roles2portvarsInParams = new HashMap<String,LstStr>();
     }
 
     String getParamName(String param) {
@@ -279,10 +280,7 @@ class ContextInfoConn extends ContextInfo {
     }
 }
 
-class ContextInfoConnRole extends ContextInfo {
-    LstStr paramsORvars;
-    LstStr params;
-    LstStr vars;
+class ContextInfoConnRole extends ContextInfoConn {
     LstStr enums;
     LstStr inlineFunctionDecls;
     LstStr providedprts; LstStr requiredprts;
@@ -300,9 +298,6 @@ class ContextInfoConnRole extends ContextInfo {
         EnvironmentCreationVisitor
             .myAssert(compUnitID!=null, "compUnitID is null");
 
-        paramsORvars = new LstStr();
-        params = new LstStr();
-        vars = new LstStr();
         enums = new LstStr();
         inlineFunctionDecls = new LstStr();
         providedprts = new LstStr();
