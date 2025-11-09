@@ -20,7 +20,8 @@ public class XCD2Promela {
         // create a parser that feeds off the tokens buffer
         XCDParser parser = new XCDParser(tokens);
 
-        ParseTree tree = parser.compilationUnits(); // begin parsing at "compilationUnits" parse rule
+        // begin parsing at "compilationUnits" parse rule
+        ParseTree tree = parser.compilationUnits();
 
         // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
         Void res = new EnvironmentCreationVisitor().visit(tree);
@@ -28,6 +29,11 @@ public class XCD2Promela {
         //     for (String s : res) {
         //      System.err.println("RES: " + s);
         //     }
+        /**
+         * Now translate the AST, using the environments, to Promela
+         * (with cpp)
+         */
+        res = new Translate2CppPromelaVisitor().visit(tree);
 
         // XCD2PromelaListener translator = new XCD2PromelaListener();
         // ParseTreeWalker.DEFAULT.walk(translator, tree); // initiate tree walk with listener translator
