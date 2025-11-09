@@ -287,6 +287,41 @@ public class Translate2CppPromelaVisitor extends BaseVisitor {
      */
     protected ContextInfoComp getContext4Comp(String nm) {
         ContextInfoComp res = null; // rootContext;
+        for (var chld : rootContext.children) {
+            if (chld.compilationUnitID.equals(nm))
+                return (ContextInfoComp)chld;
+        }
+        return res;
+    }
+
+    protected ContextInfoConn getContext4Conn(String nm) {
+        ContextInfoConn res = null; // rootContext;
+        for (var chld : rootContext.children) {
+            if (chld.compilationUnitID.equals(nm))
+                return (ContextInfoConn)chld;
+        }
+        return res;
+    }
+
+    protected ContextInfoConnRole getContext4Role(String conn, String nm) {
+        ContextInfoConnRole res = null; // rootContext;
+        ContextInfoConn connContext = getContext4Conn(conn);
+        for (var chld : connContext.children) {
+            if (chld.compilationUnitID.equals(nm))
+                return (ContextInfoConnRole)chld;
+        }
+        return res;
+    }
+
+    protected ContextInfoConnRolePort getContext4PortVar(String conn
+                                                         , String role
+                                                         , String nm) {
+        ContextInfoConnRolePort res = null; // rootContext;
+        ContextInfoConnRole roleContext = getContext4Role(conn, role);
+        for (var chld : roleContext.children) {
+            if (chld.compilationUnitID.equals(nm))
+                return (ContextInfoConnRolePort)chld;
+        }
         return res;
     }
 
