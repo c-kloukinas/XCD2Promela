@@ -36,7 +36,7 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
 
     protected ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
-    final protected ContextInfo rootContext = new ContextInfo();
+    final static protected ContextInfo rootContext = new ContextInfo();
 
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, String varTypeName
@@ -92,36 +92,15 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
             currentMap.put(symbol, newInfo); }
         return newInfo;
     }
-    protected IdInfo getIdInfo(String id) {
-        int last = env.size()-1;
+    protected IdInfo getIdInfo(ContextInfo currEnv, String id) {
         IdInfo res = null;
-        while (res == null && last > -1) {
-            Map<String,IdInfo> the_map = env.get(last).map;
+        while (res == null && currEnv!=null) {
+            Map<String,IdInfo> the_map = currEnv.map;
             if (the_map.containsKey(id))
                 res=the_map.get(id);
-            --last;
+            currEnv=currEnv.parent;
         }
-        /*
-         * Is it an enum/typedef defined globally?
-         */
-        // if (null==res) {
-        //     ContextInfo root = env.get(0);
-        //     ArrayList<ContextInfo> rootchildren = root.children;
-        //     boolean found=false;
-        //     for (ContextInfo chld : rootchildren) { // same id could
-        //                                             // have been
-        //                                             // defined in
-        //                                             // multiple
-        //                                             // children?
-        //         var the_map = chld.map;
-        //         if (the_map.containsKey(id))
-        //             if (!found) {
-        //                 res=the_map.get(id); found=true;
-        //             } else
-        //                 myassert(false, "Symbol \""+id+"\" defined in multiple children of the root context");
-        //     }
-        // }
-        myassert(res!=null, "Symbol \""+id+"\" not found");
+        myassert(res!=null, "getIdInfo: Symbol \"" + id + "\" not found");
         return res;
     }
 
