@@ -59,4 +59,16 @@ public class USet<T> {
         return finalStream.collect(Collectors.toSet());
     }
 
+    public static <T> Set<? extends T>
+    /**
+     * disjunction(a, b) = union(difference(a, b), difference(b, a))
+     *
+     * Essentially, we're keeping just the elements that belong to
+     * only one set.
+     */
+        setDisjunction(Collection<? extends T> set1
+                       , Collection<? extends T> set2) {
+        return setUnion(setDifference(set1, set2)
+                        , setDifference(set2, set1));
+    }
 }
