@@ -24,6 +24,7 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
     @Override public Void visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
         String compilationUnitID = "@root"; // root
         // initialise env, so that "result", etc. are known IDs
+        myassert(env.size()==0, "Expected no environments!");
         env.add(rootContext);
         LstStr kwords = new LstStr();
         // kwords.add("\\result");
