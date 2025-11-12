@@ -15,21 +15,37 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 // Void is final unfortunately :-(
 // class MyReturnType extends Void { public Void() {super();} }
 
-public class EnvironmentCreationVisitor extends BaseVisitor {
+class EnvironmentCreationVisitor
+    extends BaseVisitor<uk.ac.citystgeorges.XCD2Promela.T> {
 
-    /**
+    /*
+      See:
+      https://www.antlr.org/api/Java/org/antlr/v4/runtime/tree/AbstractParseTreeVisitor.html#defaultResult()
+      https://www.antlr.org/api/Java/org/antlr/v4/runtime/tree/AbstractParseTreeVisitor.html#aggregateResult(T,T)
+    */
+    @Override
+    protected T defaultResult() {return new T();}
+    @Override
+    protected T aggregateResult​(T aggregate, T nextResult) {
+        if (nextResult!=null)
+            for (var s : nextResult)
+                aggregate.add(s);
+        return aggregate;
+    }
+
+   /**
      * Constructs that create their own environment.
      */
 
-    @Override public Void visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
+    @Override public T visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
         String compilationUnitID = "@root"; // root
         // initialise env, so that "result", etc. are known IDs
-        myassert(env.size()==0, "Expected no environments!");
-        env.add(rootContext);
+        myassert(getEnv().size()==0, "Expected no environments!");
+        getEnv().add(rootContext);
         LstStr kwords = new LstStr();
-        // kwords.add("\\result");
-        // kwords.add("\\exception");
-        // kwords.add("\\nothing");
+        // kwords.add(keywordResult);
+        // kwords.add(keywordException);
+        // kwords.add(keywordNothing);
         // kwords.add("\\in");
         for (String kword : kwords )
             { addIdInfo(kword
@@ -38,47 +54,58 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                         , false
                         , (ArraySizeContext)null
                         , (Variable_initialValueContext)null
-                        , kword, ""
                         , compilationUnitID); }
 
         return visitChildren(ctx);
     }
 
-    // private Void registerNewEnvironment(String name, ParserRuleContext ctx) {
+    // private T registerNewEnvironment(String name, ParserRuleContext ctx) {
     //     return registerNewEnvironment(name, ctx, XCD_type.unknownt);
     // }
-    private Void registerNewEnvironment(String name, ParserRuleContext ctx
-                                        , XCD_type tp
-                                        , ArraySizeContext arraySize
-                                        , ContextInfo newctx) {
+    private T registerNewEnvironment(String name, ParserRuleContext ctx
+                                     , XCD_type tp
+                                     , ArraySizeContext arraySize
+                                     , ContextInfo newctx) {
+        return registerNewEnvironment(name, ctx, tp, arraySize, newctx, null);
+    }
+    private T registerNewEnvironment(String name, ParserRuleContext ctx
+                                     , XCD_type tp
+                                     , ArraySizeContext arraySize
+                                     , ContextInfo newctx
+                                     , TranslatorI tr) {
         updateln(ctx);
-        ContextInfo framenow = env.get(env.size()-1);
-        // Add new context to the childer of the current one.
-        // framenow.children.add(newctx);
-        /* NO! The newctx has already been registered by
-           makeContext...!
-        */
+        ContextInfo framenow = frameNow();
+        /*
+         * // Add new context to the childer of the current one.
+         * // framenow.children.add(newctx);
+         *
+         * NO! The newctx has already been registered by
+         * makeContext...!
+         */
 
         // Add the name to the current environment
         addIdInfo(name, tp, false
                   , arraySize // roles, portvars, ports, sub-component/connector
-                  , null, "", "", framenow.compilationUnitID);
+                  , null, framenow.compilationUnitID);
 
         // push new environment context
-        env.add(newctx);
+        getEnv().add(newctx);
 
         // Add new names in the new context
-        Void res = visitChildren(ctx);
+        T res = visitChildren(ctx); // These results are ignored
+
+        // mywarning("***Currently env has size: "
+        //           + getEnv().size()
+        //           + " name is: " + name);
+        if (tr!=null)
+            res = tr.translate(this, ctx);
 
         // pop new environment context
-        int last = env.size()-1;
-        ContextInfo lastctx = env.get(last);
-        myassert(newctx == lastctx, "Context not the last element");
-        env.remove(last);   // should match what was added
+        popLastContext(newctx);
         return res;
     }
-    @Override public Void visitConnectorDeclaration(XCDParser.ConnectorDeclarationContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitConnectorDeclaration(XCDParser.ConnectorDeclarationContext ctx) {
+        ContextInfo framenow = frameNow();
         ContextInfoConn newctx
             = framenow.makeContextInfoConn(ctx.id.getText(), ctx, false);
         var res = registerNewEnvironment(ctx.id.getText(), ctx
@@ -152,8 +179,8 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         return res;
     }
 
-    @Override public Void visitRoleDeclaration(XCDParser.RoleDeclarationContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitRoleDeclaration(XCDParser.RoleDeclarationContext ctx) {
+        ContextInfo framenow = frameNow();
         ((ContextInfoConn)framenow).roles.add(ctx.id.getText());
         ContextInfoConnRole newctx
             = framenow.makeContextInfoConnRole(ctx.id.getText(), ctx, false);
@@ -163,9 +190,9 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                                       , newctx);
     }
 
-    @Override public Void visitRolePortvar(XCDParser.RolePortvarContext ctx) {
+    @Override public T visitRolePortvar(XCDParser.RolePortvarContext ctx) {
         updateln(ctx);
-        var framenow = (ContextInfoConnRole) env.get(env.size()-1);
+        var framenow = (ContextInfoConnRole) frameNow();
         String compUnitId = framenow.compilationUnitID;
         int flag
             = ((ctx.provided!=null)?8:0)
@@ -215,7 +242,6 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         //           , false
         //           , array_sz
         //           , (Variable_initialValueContext) null
-        //           , big_name, ""
         //           , compUnitId);
         ports.add(portName);
 
@@ -224,19 +250,25 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         return registerNewEnvironment(portName, ctx, tp, array_sz, newctx);
     }
 
-    @Override public Void visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
+        ContextInfo framenow = frameNow();
+        String compName = ctx.id.getText();
         ContextInfoComp newctx
-            = framenow.makeContextInfoComp(ctx.id.getText(), ctx, false);
-        return registerNewEnvironment(ctx.id.getText(), ctx
+            = framenow.makeContextInfoComp(compName, ctx, false);
+        var tr = new TranslatorComponentDeclarationContext();
+        // mywarning("***visitComponentDeclaration: Currently env has size: "
+        //           + getEnv().size()
+        //           + " name is: " + compName);
+        return registerNewEnvironment(compName, ctx
                                       , XCD_type.componentt
                                       , null // there's no size part
-                                      , newctx);
+                                      , newctx
+                                      , tr);
     }
 
-    @Override public Void visitComponentPort(XCDParser.ComponentPortContext ctx) {
+    @Override public T visitComponentPort(XCDParser.ComponentPortContext ctx) {
         updateln(ctx);
-        var framenow = (ContextInfoComp) env.get(env.size()-1);
+        var framenow = (ContextInfoComp) frameNow();
         String compUnitId = framenow.compilationUnitID;
         int flag
             = ((ctx.provided!=null)?8:0)
@@ -286,7 +318,6 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         //           , false
         //           , array_sz
         //           , (Variable_initialValueContext) null
-        //           , big_name, ""
         //           , compUnitId);
         ports.add(portName);
 
@@ -295,8 +326,8 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         return registerNewEnvironment(portName, ctx, tp, array_sz, newctx);
     }
 
-    @Override public Void visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
+        ContextInfo framenow = frameNow();
         ContextInfoMethod newctx
             = framenow.makeContextInfoMethod(ctx.id.getText(), ctx);
         return registerNewEnvironment(ctx.id.getText(), ctx
@@ -305,8 +336,8 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                                       , newctx);
     }
 
-    @Override public Void visitEventSignature(XCDParser.EventSignatureContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitEventSignature(XCDParser.EventSignatureContext ctx) {
+        ContextInfo framenow = frameNow();
         ContextInfoEvent newctx
             = framenow.makeContextInfoEvent(ctx.id.getText(), ctx);
         return registerNewEnvironment(ctx.id.getText(), ctx
@@ -315,8 +346,8 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                                       , newctx);
     }
 
-    @Override public Void visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1);
+    @Override public T visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
+        ContextInfo framenow = frameNow();
         ContextInfoFunction newctx
             = framenow.makeContextInfoFunction(ctx.id.getText(), ctx);
         return registerNewEnvironment(ctx.id.getText(), ctx
@@ -332,10 +363,10 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
      * However, they introduce new names into the current environment.
      */
 
-    @Override public Void visitEnumDeclaration(XCDParser.EnumDeclarationContext ctx) {
+    @Override public T visitEnumDeclaration(XCDParser.EnumDeclarationContext ctx) {
         updateln(ctx);
         // mywarning("visitEnumDeclaration called");
-        ContextInfo framenow = env.get(env.size()-1);
+        ContextInfo framenow = frameNow();
         Name enumName = new Name(ctx.id.getText());
         framenow.enums.add(""+enumName);
         Sig values = new Sig();
@@ -351,25 +382,25 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
             values.add(new Type(name));
         }
 
-        addIdInfo(enumName.toString()
-                  , XCD_type.enumt
-                  , ""
-                  , false
-                  , null
-                  , null
-                  , enumName.toString(), ""
-                  , framenow.compilationUnitID);
+        IdInfo enumTypeInfo = addIdInfo(enumName.toString()
+                                        , XCD_type.enumt
+                                        , ""
+                                        , false
+                                        , null
+                                        , null
+                                        , framenow.compilationUnitID);
+        enumTypeInfo.translation.add(Names.enumTypeName(enumName.toString()));
         // mywarning("Added enum type \"" + enumName.toString()
         //           + "\" with values " + values.toString()
         //           + " and s is \n" + s);
         for (var value : values) {
-            addIdInfo(value.toString()
-                      , XCD_type.enumvalt
-                      , false
-                      , null
-                      , null
-                      , value.toString(), ""
-                      , enumName.toString());
+            IdInfo valInfo = addIdInfo(value.toString()
+                                       , XCD_type.enumvalt
+                                       , false
+                                       , null
+                                       , null
+                                       , enumName.toString());
+            valInfo.translation.add(Names.enumValueName(value.toString()));
             // mywarning("Added enum value \"" + value.toString()
             //        + "\" for enum type \"" + enumName.toString()
             //        + "\"");
@@ -377,10 +408,10 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         return defaultResult();
     }
 
-    @Override public Void visitTypeDefDeclaration(XCDParser.TypeDefDeclarationContext ctx) {
+    @Override public T visitTypeDefDeclaration(XCDParser.TypeDefDeclarationContext ctx) {
         updateln(ctx);
         // mywarning("visitTypeDefDeclaration called");
-        ContextInfo framenow = env.get(env.size()-1);
+        ContextInfo framenow = frameNow();
         String newtype = ctx.newtype.getText();
         framenow.typedefs.add(newtype);
 
@@ -390,7 +421,6 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                   , false
                   , null
                   , null
-                  , newtype, ""
                   , framenow.compilationUnitID);
         // mywarning("Added type \"" + newtype + "\" as a newname for \""
         //           + definition + "\" and s is\n" + s);
@@ -398,61 +428,75 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
     }
 
 
-    @Override public Void visitPrimitiveVariableDeclaration(XCDParser.PrimitiveVariableDeclarationContext ctx) {
+    @Override public T visitPrimitiveVariableDeclaration(XCDParser.PrimitiveVariableDeclarationContext ctx) {
         updateln(ctx);
         String varName = ctx.id.getText();
         DataTypeContext dtype = ctx.type; // int, byte, bool, void, ID(long name)
         ArraySizeContext array_sz = ctx.size;
         Variable_initialValueContext initVal = ctx.initval;
-        Void res = visitPrimitiveVariableOrParamDeclaration(dtype
+        T res = visitPrimitiveVariableOrParamDeclaration(dtype
                                                             , varName
                                                             , array_sz
                                                             , initVal
                                                             , true);
         return res;
     }
-    @Override public Void visitFormalParameter(XCDParser.FormalParameterContext ctx) {
+    @Override public T visitFormalParameter(XCDParser.FormalParameterContext ctx) {
         updateln(ctx);
         String varName = ctx.id.getText();
         // dtype: int, byte, bool, void, ID(long name)
         DataTypeContext dtype = ctx.type;
         ArraySizeContext array_sz = ctx.size;
         Variable_initialValueContext initVal = ctx.initval;
-        Void res = visitPrimitiveVariableOrParamDeclaration(dtype
+        T res = visitPrimitiveVariableOrParamDeclaration(dtype
                                                             , varName
                                                             , array_sz
                                                             , initVal
                                                             , false);
         return res;
     }
-    private Void visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
-                                                          , String varName
-                                                          , ArraySizeContext array_sz
-                                                          , Variable_initialValueContext initVal
-                                                          , boolean isVar) {
-        var framenow = (ContextInfo) env.get(env.size()-1);
+    private T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
+                                                       , String varName
+                                                       , ArraySizeContext array_sz
+                                                       , Variable_initialValueContext initVal
+                                                       , boolean isVar) {
+        var framenow = (ContextInfo) frameNow();
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
 
-        addIdInfo(varName
-                  , (isVar) ? XCD_type.vart : XCD_type.paramt
-                  , dtype.getText()
-                  , !isVar
-                  , array_sz
-                  , initVal
-                  , "", ""
-                  , compUnitId);
+        IdInfo idinfo = addIdInfo(varName
+                                  , (isVar) ? XCD_type.vart : XCD_type.paramt
+                                  , dtype.getText()
+                                  , !isVar
+                                  , array_sz
+                                  , initVal
+                                  , compUnitId);
         LstStr paramsOrvars = null;
+        String trans = "";
         if (tp==XCD_type.componentt) {
             var theEnv = (ContextInfoComp)framenow;
             paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            trans = isVar
+                ? Names.varNameComponent(theEnv.compilationUnitID, varName)
+                : Names.paramNameComponent(theEnv.compilationUnitID, varName);
         } else if (tp==XCD_type.connectort) {
             ((ContextInfoConn)framenow).vars.add(varName);
             var theEnv = (ContextInfoConn)framenow;
             paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            myassert(!isVar, "Connectors cannot have variables of their own");
+            trans = isVar
+                ? Names.xVarName(theEnv.compilationUnitID
+                                 , "UNKNOWNROLE"
+                                 , varName)
+                : varName;
         } else if (tp==XCD_type.rolet) {
             var theEnv = (ContextInfoConnRole)framenow;
             paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            trans = isVar
+                ? Names.xVarName(theEnv.parent.compilationUnitID
+                                 , theEnv.compilationUnitID
+                                 , varName)
+                : varName;
         } else {
             myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
                      , (isVar?"Variable ":"Parameter ")
@@ -461,13 +505,14 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                      + tp);
         }
         paramsOrvars.add(varName);
+        idinfo.translation.add(trans);
         return defaultResult();
     }
 
-    @Override public Void visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
+    @Override public T visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
         updateln(ctx);
         Token tk = (Token) ctx.elType;
-        var framenow = env.get(env.size()-1).you();
+        var framenow = frameNow().you();
         String compUnitId = framenow.compilationUnitID;
         String instance_name = ctx.id.getText();
         if (tk.getType() == XCDParser.TK_COMPONENT) { // sub-component instance
@@ -481,7 +526,6 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                       , false
                       , sz
                       , null // no init value
-                      , "", ""    // big_name, prefix -- unused
                       , compUnitId);
             if (!(framenow instanceof ContextInfoComp)) {
                 myassert(false
@@ -512,7 +556,6 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                       , false
                       , sz
                       , null    // no init value
-                      , "", ""  // big_name, prefix -- unused
                       , compUnitId);
 
             if (framenow instanceof ContextInfoComp) {
@@ -540,8 +583,8 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
      * The configuration is treated here
      */
     @Override
-    public Void visitCompilationUnit(XCDParser.CompilationUnitContext ctx) {
-        Void res=null;
+    public T visitCompilationUnit(XCDParser.CompilationUnitContext ctx) {
+        T res=null;
         if (ctx.config!=null) {
             res=visitTheConfiguration(ctx);
         } else {
@@ -549,12 +592,12 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         }
         return res;
     }
-    private Void visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
-        ContextInfo framenow = env.get(env.size()-1); // root
+    private T visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
+        ContextInfo framenow = frameNow(); // root
         ContextInfoComp newctx
             = framenow.makeContextInfoComp("@configuration", ctx, false);
-        env.add(newctx);
-        Void res=visitChildren(ctx);
+        getEnv().add(newctx);
+        T res=visitChildren(ctx);
         Utils.withInputAndFileToWrite
             ("/resources/configuration.pml.template"
              , "configuration.pml"
@@ -569,7 +612,9 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                                            + "\" of component type \""
                                            + val.variableTypeName + "\"\n");
                     }
-                    myassert(false, "");
+                    myassert(false
+                             , "Assertion failed"
+                             + " - check previous warning for details");
                 }
                 myassert(newctx.subcomponents.size()==1
                          , "Configuration should have exactly one"
@@ -587,14 +632,14 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
                     .replace("$<compType>", compType);
                 return out;
             });
-        int last = env.size()-1;
-        ContextInfo lastctx = env.get(last);
+        int last = getEnv().size()-1;
+        ContextInfo lastctx = getEnv().get(last);
         myassert(newctx == lastctx, "Context not the last element");
-        env.remove(last);   // should match what was added
+        getEnv().remove(last);   // should match what was added
         return res;
     }
 
-    @Override public Void visitConnectorParameter(XCDParser.ConnectorParameterContext ctx) {
+    @Override public T visitConnectorParameter(XCDParser.ConnectorParameterContext ctx) {
         if (ctx.prim_param!=null) // let formalParameter treat it
             return visitChildren(ctx);
 
@@ -614,7 +659,7 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
         //
         // Why are we forcing people to define the role/portVars
         // twice? [cause we're mean!]
-        ContextInfoConn framenow = (ContextInfoConn) (env.get(env.size()-1));
+        ContextInfoConn framenow = (ContextInfoConn) frameNow();
         framenow.roles2portvarsInParams.put(roleName, portParamNames);
         return defaultResult();
     }
@@ -625,165 +670,107 @@ public class EnvironmentCreationVisitor extends BaseVisitor {
      * Neither do they introduce new names into the current environment.
      *
      * Therefore, these can be safely ignored at this phase, where
-     * we're creating/populating environments.
+     * we're creating/populating environments. We'll be using their
+     * default behaviour instead (i.e., just visit children).
      */
 
-    // @Override public Void visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorBody(XCDParser.ConnectorBodyContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorBody_Element(XCDParser.ConnectorBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRoleBody(XCDParser.RoleBodyContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRoleBody_Element(XCDParser.RoleBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPortvar(XCDParser.EmitterPortvarContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPortvar(XCDParser.ConsumerPortvarContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPortvar(XCDParser.RequiredPortvarContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPortvar(XCDParser.ProvidedPortvarContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPortvar_event(XCDParser.ConsumerPortvar_eventContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPortvar_complexmethod(XCDParser.ProvidedPortvar_complexmethodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPv_InteractionContract(XCDParser.EmitterPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPv_InteractionContract(XCDParser.ConsumerPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPv_InteractionContract(XCDParser.RequiredPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPv_InteractionContract(XCDParser.ProvidedPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPvcomplex_InteractionContract(XCDParser.ProvidedPvcomplex_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPv_InteractionConstraint(XCDParser.EmitterPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPv_InteractionConstraint(XCDParser.ConsumerPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPv_InteractionConstraint(XCDParser.RequiredPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPv_InteractionConstraint(XCDParser.ProvidedPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComponentBody(XCDParser.ComponentBodyContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComponentBody_Element(XCDParser.ComponentBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPort(XCDParser.EmitterPortContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPort(XCDParser.ConsumerPortContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPort(XCDParser.RequiredPortContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPort(XCDParser.ProvidedPortContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComplex_providedPort_method(XCDParser.Complex_providedPort_methodContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComplex_providedPort_functionalContract_Res(XCDParser.Complex_providedPort_functionalContract_ResContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComplex_provided_InteractionContract_Res(XCDParser.Complex_provided_InteractionContract_ResContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComplex_providedPort_functionalContract_Req(XCDParser.Complex_providedPort_functionalContract_ReqContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitComplex_provided_InteractionContract_Req(XCDParser.Complex_provided_InteractionContract_ReqContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterRequired_InteractionContract(XCDParser.EmitterRequired_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerProvided_InteractionContract(XCDParser.ConsumerProvided_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterRequired_InteractionConstraint(XCDParser.EmitterRequired_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerProvided_InteractionConstraint(XCDParser.ConsumerProvided_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPort_functionalContract(XCDParser.EmitterPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPort_functionalContract(XCDParser.RequiredPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPort_functionalContract(XCDParser.ConsumerPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPort_functionalContract(XCDParser.ProvidedPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEmitterPort_functionalConstraint(XCDParser.EmitterPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRequiredPort_functionalConstraint(XCDParser.RequiredPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConsumerPort_functionalConstraint(XCDParser.ConsumerPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitProvidedPort_functionalConstraint(XCDParser.ProvidedPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitCombinationKeyword(XCDParser.CombinationKeywordContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitAssertDeclaration(XCDParser.AssertDeclarationContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitArraySize(XCDParser.ArraySizeContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConditionalStatement(XCDParser.ConditionalStatementContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitPostStatement(XCDParser.PostStatementContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitSetExpression(XCDParser.SetExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitEqualityExpression(XCDParser.EqualityExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitTernaryExpression(XCDParser.TernaryExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRelationExpression(XCDParser.RelationExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitAdditiveExpression(XCDParser.AdditiveExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitMultiplicativeExpression(XCDParser.MultiplicativeExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitUnaryExpression(XCDParser.UnaryExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitNullaryExpression(XCDParser.NullaryExpressionContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitRange(XCDParser.RangeContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorIndex(XCDParser.ConnectorIndexContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitBasicConnectorType(XCDParser.BasicConnectorTypeContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitIntegerLiteral(XCDParser.IntegerLiteralContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitParamArgument(XCDParser.ParamArgumentContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitDataType(XCDParser.DataTypeContext ctx) { return visitChildren(ctx); }
-
-    // @Override public Void visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
-
+    @Override
+    public T visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorConditionalExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitSetExpression(XCDParser.SetExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorEqualityExpressionContext();
+        res = tr.translate(this, ctx.setexpr_var);
+        return res;
+    }
+
+    @Override
+    public T visitRange(XCDParser.RangeContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorRangeContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitEqualityExpression(XCDParser.EqualityExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorEqualityExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitTernaryExpression(XCDParser.TernaryExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorTernaryExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitRelationalExpression(XCDParser.RelationalExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorRelationalExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitAdditiveExpression(XCDParser.AdditiveExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorAdditiveExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitMultiplicativeExpression(XCDParser.MultiplicativeExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorMultiplicativeExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitUnaryExpression(XCDParser.UnaryExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorUnaryExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override public T visitNullaryExpression(XCDParser.NullaryExpressionContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorNullaryExpressionContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitIntegerLiteral(XCDParser.IntegerLiteralContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorIntegerLiteralContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
     /**
      * Miscellaneous helper functions
      */
