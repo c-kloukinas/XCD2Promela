@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import java.util.Iterator;
 import java.util.ArrayList;
 
-public class USet<T> {
+class USet<T> {
 
     @SafeVarargs
     public static <T> Set<? extends T>

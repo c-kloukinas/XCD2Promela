@@ -1,7 +1,7 @@
 package uk.ac.citystgeorges.XCD2Promela;
 
 /* serves as a single point of X (big)name definition */
-public class Names {
+class Names {
     static String True = "true";
     static String False = "false";
     static String componentName( String comp ) {
@@ -63,6 +63,11 @@ public class Names {
         return portActionName(comp, port, action) + "_EXCEPTION"; }
     static String portName( String comp, String port ) {
         return comp + "_" + port + "_" + Utils.ln + "_" + Utils.atchar; }
+
+    static String enumTypeName( String nm ) {
+        return nm; }
+    static String enumValueName( String nm ) {
+        return nm; }
 
     static String Void = "XCDVOID";
     static String Bit = "bit";
