@@ -8,7 +8,7 @@ import java.util.HashMap;
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 
-public class ContextInfo {
+class ContextInfo {
     // Context - inside what are we?
     //    String compTypeID; // supposed to have an id, a body, and a param field.
     // int portID;
@@ -44,8 +44,6 @@ public class ContextInfo {
                            , (ArraySizeContext)null
                            // no initial value
                            , (Variable_initialValueContext)null
-                           , compilationUnitID // what's my big name?
-                           , ""     // var_prefix
                            , ""     // parent (root)
                            ));
     }
