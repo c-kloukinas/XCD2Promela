@@ -23,8 +23,9 @@ public class XCD2Promela {
         // begin parsing at "compilationUnits" parse rule
         ParseTree tree = parser.compilationUnits();
 
+        Utils.myWarning("***First parser pass***");
         // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
-        Void res = new EnvironmentCreationVisitor().visit(tree);
+        T res1 = new EnvironmentCreationVisitor().visit(tree);
         // if (res != null)
         //     for (String s : res) {
         //      System.err.println("RES: " + s);
@@ -33,7 +34,8 @@ public class XCD2Promela {
          * Now translate the AST, using the environments, to Promela
          * (with cpp)
          */
-        res = new Translate2CppPromelaVisitor().visit(tree);
+        // Utils.myWarning("***Starting translation***");
+        // LstStr res = new Translate2CppPromelaVisitor().visit(tree);
 
         // XCD2PromelaListener translator = new XCD2PromelaListener();
         // ParseTreeWalker.DEFAULT.walk(translator, tree); // initiate tree walk with listener translator
