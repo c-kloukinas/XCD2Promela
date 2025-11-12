@@ -514,9 +514,9 @@ postStatement:
         | nothing=TK_NOTHING TK_SEMICOLON
 ;
 conditionalExpression:
-     condexpr1=relationExpression
+     condexpr1=relationalExpression
         (
-        op+=(TK_OR|TK_AND | TK_SEMICOLON) condexprs+=relationExpression
+        op+=(TK_OR|TK_AND | TK_SEMICOLON) condexprs+=relationalExpression
         )*
     ;
 
@@ -525,17 +525,17 @@ setExpression:
         ;
 
 equalityExpression:
-        eqexpr_pre=relationExpression
+        eqexpr_pre=relationalExpression
                 (op=TK_ASSIGN eqexpr=ternaryExpression
                 |op=TK_IN set=range
                 )
         ;
 
 ternaryExpression:
-        cond=relationExpression ( op=TK_QUESTIONMARK var2=relationExpression TK_COLON var3=ternaryExpression)?
+        cond=relationalExpression ( op=TK_QUESTIONMARK var2=relationalExpression TK_COLON var3=ternaryExpression)?
 ;
 
-relationExpression:
+relationalExpression:
         relexpr_pre=additiveExpression
         (
          op+=(TK_LESS|TK_GREATER|TK_GREATEROREQUAL
