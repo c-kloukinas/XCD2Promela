@@ -1,6 +1,7 @@
 package uk.ac.citystgeorges.XCD2Promela;
 // import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.Tree;
+import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
@@ -20,7 +21,15 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
  * classes, and to ensure that whoever extends it does not copy behaviour from
  * some other visitor.
  */
-public class BaseVisitor extends XCDBaseVisitor<Void> {
+ abstract class BaseVisitor<T>
+ /* Use the following to ensure that you haven't forgotten any methods */
+ //    extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
+     extends XCDBaseVisitor<T>
+{
+
+    static public String keywordResult = "\\result";
+    static public String keywordException = "\\exception";
+    static public String keywordNothing = "\\nothing";
 
     /**
      * Miscellaneous helper functions
@@ -35,7 +44,24 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
 
-    protected ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
+    private ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
+    ArrayList<ContextInfo> getEnv() { return env; }
+    public ContextInfo frameNow() {
+        int sz = env.size();
+        myassert(sz > 0
+                 , "frameNow called with empty env stack - env.size()=" + sz);
+        return env.get(env.size()-1);
+    }
+    protected void popLastContext(ContextInfo framenow) {
+        int sz = getEnv().size();
+        myassert(sz > 0
+                 , "Popped too many contexts - env.size()=" + sz);
+        ContextInfo lastctx = getEnv().get(sz-1);
+        myassert(framenow == lastctx
+                 , "Current context is not the last element!");
+        getEnv().remove(sz-1);
+    }
+
     final static protected ContextInfo rootContext = new ContextInfo();
 
     protected IdInfo addIdInfo(String symbol
@@ -43,23 +69,20 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
                                , boolean is_paramp
                                , ArraySizeContext arraySize
                                , Variable_initialValueContext initVal
-                               , String big_name, String var_prefix
                                , String parentId) {
         IdInfo res
             = addIdInfo(symbol, tp, is_paramp, arraySize
-                        , initVal, big_name, var_prefix, parentId);
+                        , initVal, parentId);
         res.variableTypeName = varTypeName;
         return res; }
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, boolean is_paramp
                                , ArraySizeContext arraySize
                                , Variable_initialValueContext initVal
-                               , String big_name, String var_prefix
                                , String parentId) {
         var newInfo = new IdInfo(tp, is_paramp
                                  , arraySize
                                  , initVal
-                                 , big_name, var_prefix
                                  , parentId);
         var currentMap = env.get(env.size()-1).map;
         if (currentMap.containsKey(symbol)) {
@@ -73,7 +96,6 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
                 && ( (info.initVal==null && newInfo.initVal==null)
                      || (info.initVal!=null && newInfo.initVal!=null
                          && (info.initVal.equals(newInfo.initVal))) )
-                && (info.big_name.equals(newInfo.big_name))
                 && (info.parent.equals(newInfo.parent));
             if (!matches) {
                 mywarning("Symbol \"" +symbol+"\" already in the map"
@@ -82,7 +104,6 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
                           + "\n" + info.is_param + " vs " + newInfo.is_param
                           + "\n" + info.arraySz + " vs " + newInfo.arraySz
                           + "\n" + info.initVal + " vs " + newInfo.initVal
-                          + "\n" + info.big_name + " vs " + newInfo.big_name
                           + "\n" + info.parent + " vs " + newInfo.parent);
                 myassert(false, "Symbol \""+symbol+"\" already in the map");
             } else
@@ -92,7 +113,9 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
             currentMap.put(symbol, newInfo); }
         return newInfo;
     }
-    protected IdInfo getIdInfo(ContextInfo currEnv, String id) {
+
+    public IdInfo getIdInfo(String id) { return getIdInfo(frameNow(), id); }
+    public IdInfo getIdInfo(ContextInfo currEnv, String id) {
         IdInfo res = null;
         while (res == null && currEnv!=null) {
             Map<String,IdInfo> the_map = currEnv.map;
@@ -102,6 +125,90 @@ public class BaseVisitor extends XCDBaseVisitor<Void> {
         }
         myassert(res!=null, "getIdInfo: Symbol \"" + id + "\" not found");
         return res;
+    }
+
+
+    boolean isComposite(ContextInfoComp info)
+    { return info.subcomponents.size()!=0; }
+    boolean hasProvidedPorts(ContextInfoComp info)
+    { return info.providedprts.size()!=0; }
+    boolean hasRequiredPorts(ContextInfoComp info)
+    { return info.requiredprts.size()!=0; }
+    boolean hasEmitterPorts(ContextInfoComp info)
+    { return info.emitterprts.size()!=0; }
+    boolean hasConsumerPorts(ContextInfoComp info)
+    { return info.consumerprts.size()!=0; }
+    boolean hasPorts(ContextInfoComp info)
+    { return hasProvidedPorts(info) || hasRequiredPorts(info)
+            || hasEmitterPorts(info) || hasConsumerPorts(info); }
+
+    String component_typeof_id(String var) { return Names.typeOfVar(var);
+        // "TypeOf("+ var + ")";
+    }
+    String component_variable_id(String var, String index)
+    { return var + "[" + index + "]"; }
+
+    String component_variable_id(String var, ArraySizeContext index)
+    { return var + "[" + index + "]"; }
+
+    boolean is_enumConstant(String id) {
+        var idInfo = getIdInfo(id);
+        return (idInfo.type == XCD_type.enumt);
+    }
+    public String component_variable_result(String actionid){
+        var framenow = frameNow();
+        var compTypeid = framenow.compilationUnitID;
+        var portid = "UNKNOWN_PORTID"; // framenow.portID;
+        return Names.portActionNameRes(compTypeid, portid, actionid);
+    }
+    public String component_variable_exception(String actionid) {
+        var framenow = frameNow();
+        var compTypeid = framenow.compilationUnitID;
+        var portid = "UNKNOWN_PORTID"; // framenow.portID;
+        return Names.portActionNameExc(compTypeid, portid, actionid);
+    }
+
+    public boolean isVarComponentParam(String id) {
+        var idInfo = getIdInfo(id);
+        return (idInfo.type == XCD_type.paramt);
+    }
+    public String nameOfVarComponentParam(String id) {
+        var idInfo = getIdInfo(id);
+        return Names.varNameComponent(idInfo.parent, id);
+    }
+    public boolean isVarConnectorParam(String id) {
+        var idInfo = getIdInfo(id);
+        return (idInfo.type == XCD_type.connectorpart);
+    }
+    public String nameOfVarConnectorParam(String id) { // supposedly also considers var_prefix
+        var framenow = frameNow();
+        var idInfo = framenow.map.get(id);
+        var compTypeid = framenow.compilationUnitID;
+        var portid = "UNKNOWN_PORTID"; // framenow.portID;
+        String s = Names.xVarName("UNKNOWN_conn", "UNKNOWN_role", id);
+
+        // var String output = "";
+        // var String connIns_i = "";
+        // for(element: root.elements){
+        //     if(element.connector != null ){
+        //      if(element.connector.params.par_pre.prim_param != null &&
+        //         element.connector.params.par_pre.prim_param.id == variable
+        //         ){
+        //          connIns_i =  var_prefix.substring(var_prefix.indexOf(element.connector.id) + element.connector.id.length() + 1 ,var_prefix.indexOf("_ROLE"));
+        //          output = "Connector_i_Param_N(CompositeName , CompositeID," + element.connector.id + "," + connIns_i + "," + variable +")";
+        //      }
+        //      else{
+        //          for(par: element.connector.params.pars){
+        //                      if(par.prim_param!= null && par.prim_param.id == variable){
+        //                  connIns_i =  var_prefix.substring(var_prefix.indexOf(element.connector.id) + element.connector.id.length() + 1 ,var_prefix.indexOf("_ROLE"));
+        //                     output = "Connector_i_Param_N(CompositeName , CompositeID," + element.connector.id + "," + connIns_i + "," + variable +")";
+        //                      }
+        //          }
+        //      }
+        //     }
+        // }
+
+        return s;
     }
 
 }
