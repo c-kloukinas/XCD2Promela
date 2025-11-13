@@ -49,14 +49,16 @@ class Names {
 
     static String connectorName(String x) {
         return "CONNECTOR_" + x; }
+    static String roleName( String x, String role ) {
+        return connectorName(x)+"_ROLE_"+role; }
 
     static String xVarName( String x, String role, String var ) {
-        return connectorName(x)+"_ROLE_"+role+ "_VAR_"+var; }
+        return roleName(x, role) + "_VAR_"+var; }
     static String xVarInstanceName(String x,String role,String var,String inst){
         return xVarName(x,role,var)+inst; }
 
     static String portActionName( String comp, String port, String act) {
-        return "COMPONENT_" + comp + "_VAR_PORT_" + port + "_ACTION_" + act; }
+        return  componentName(comp) + "_VAR_PORT_" + port + "_ACTION_" + act; }
     static String portActionNameRes( String comp, String port, String action) {
         return portActionName(comp, port, action) + "_RESULT"; }
     static String portActionNameExc( String comp, String port, String action) {
@@ -64,10 +66,18 @@ class Names {
     static String portName( String comp, String port ) {
         return comp + "_" + port + "_" + Utils.ln + "_" + Utils.atchar; }
 
-    static String enumTypeName( String nm ) {
-        return nm; }
-    static String enumValueName( String nm ) {
-        return nm; }
+    static String enumGlobalTypeName( String nm ) {
+        return "ENUMT_" + nm; }
+    static String enumGlobalValueName( String nm ) {
+        return "ENUMV_" + nm; }
+    static String enumCompTypeName( String comp, String nm ) {
+        return enumGlobalTypeName( componentName(nm) ); }
+    static String enumCompValueName( String comp, String nm ) {
+        return enumGlobalValueName( componentName(nm) ); }
+    static String enumRoleTypeName( String conn, String role, String nm ) {
+        return enumGlobalTypeName( roleName(conn, role) + "_" + nm ); }
+    static String enumRoleValueName( String conn, String role, String nm ) {
+        return enumGlobalValueName( roleName(conn, role) + "_" + nm ); }
 
     static String Void = "XCDVOID";
     static String Bit = "bit";
