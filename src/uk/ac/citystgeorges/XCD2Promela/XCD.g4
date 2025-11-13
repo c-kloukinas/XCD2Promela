@@ -459,6 +459,7 @@ formalParameter:
 
 arraySize:
         TK_LBRACKET
+// The following two cases should be replaced by conditionalExpression
         (constant = NATURAL |config_par = ID)
         TK_RBRACKET
 ;
@@ -471,6 +472,7 @@ arrayIndex:
 
 
 variable_initialValue:
+// The following two cases should be replaced by conditionalExpression
         icons=ID
   | inum=integerLiteral
   | itrue=TK_TRUE
@@ -516,7 +518,8 @@ postStatement:
 conditionalExpression:
      condexpr1=relationalExpression
         (
-        op+=(TK_OR|TK_AND | TK_SEMICOLON) condexprs+=relationalExpression
+        op+=(TK_OR|TK_AND // | TK_SEMICOLON // No idea what this is
+             ) condexprs+=relationalExpression
         )*
     ;
 

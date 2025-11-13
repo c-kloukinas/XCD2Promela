@@ -32,11 +32,11 @@ class TranslatorConditionalExpressionContext implements TranslatorI
             case XCDParser.TK_AND:
                 ops = "&&";
                 break;
-            case XCDParser.TK_SEMICOLON: // ?!?!?!?
-                ops = "XXX_UNKNOWN_SEMICOLON_OPERATOR_XXX";
-                bv.myassert(op!=XCDParser.TK_SEMICOLON
-                            , "Cannot translate a `;' operator");
-                break;
+            // case XCDParser.TK_SEMICOLON: // ?!?!?!?
+            //     ops = "XXX_UNKNOWN_SEMICOLON_OPERATOR_XXX";
+            //     bv.myassert(op!=XCDParser.TK_SEMICOLON
+            //                 , "Cannot translate a `;' operator");
+            //     break;
             }
             s += " "
                 + ops
