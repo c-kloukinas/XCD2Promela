@@ -23,7 +23,20 @@ connectorBody:
 
 connectorBody_Element:
          role=roleDeclaration
-        |variable=variableDeclaration
+     | cenum=enumDeclaration
+             /*
+              * Connectors CANNOT have (normal) variables! That would
+              * be distributed shared state, which XCD's goal is to
+              * make impossible (so as to guarantee realisability).
+              *
+              * Instead what these are are `configuration' variables,
+              * that define how role port variables are connected
+              * together (through which sub-connectors).
+              *
+              * So, we're talking about the 2nd case of
+              * elementVariableDeclaration.
+              */
+     | variable=variableDeclaration
     ;
 
 roleDeclaration:
@@ -495,7 +508,7 @@ elementVariableDeclaration:
     id=ID (TK_LBRACKET size=arraySize TK_RBRACKET)? (params=argumentList)?)
     |
     (elType=TK_CONNECTOR
-    (userdefined=ID|basicConn=basicConnectorType)
+    (userdefined=ID|basicConnProc=TK_PROC|basicConnAsync=TK_ASYNC)
     id=ID (connsize=arraySize)? conn_params=connectorArgumentList        )
     ;
 
@@ -593,6 +606,7 @@ argumentList:
     ;
 
 paramArgument:
+// The following two cases should be replaced by conditionalExpression
         id=ID
   | constant = integerLiteral
   | at = TK_AT
@@ -646,15 +660,16 @@ formalParameters:
 
 dataType:
      basic=TK_INTEGER
+    |basic=TK_SHORT
     |basic=TK_BYTE
     |basic=TK_BOOL
     |basic=TK_VOID
     |ID
     ;
 
- basicConnectorType:
-         TK_PROC|TK_ASYNC
- ;
+ // basicConnectorType:
+ //         TK_PROC|TK_ASYNC
+ // ;
 
 integerLiteral:
   //       (valueZero='0')
@@ -704,6 +719,7 @@ TK_PRE: 'pre';
 TK_BOOL: 'bool';
 TK_INTEGER: 'int';
 TK_BYTE: 'byte';
+TK_SHORT: 'short';
 TK_VOID: 'void';
 TK_ENUM: 'enum';
 
