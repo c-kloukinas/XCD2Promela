@@ -27,10 +27,14 @@ class TranslatorEqualityExpressionContext implements TranslatorI
                 + ")";
         } else if (ctx.set!=null) { // TK_IN
             var range = bv.visit(ctx.set);
-            s += " XXXISINSIDEXXX("
-                + range.get(0)
-                + ","
-                + range.get(1)
+            s = "("
+                + range.get(0)  // range min
+                + " <= "
+                + s
+                + ") && ("
+                + s
+                + "<="
+                + range.get(1)  // range max
                 + ")";
         }
 
