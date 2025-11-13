@@ -381,26 +381,55 @@ class EnvironmentCreationVisitor
             String name = cnst.getText();
             values.add(new Type(name));
         }
+        // Are you global, inside a component, or inside a role?
+        int globOrCompOrRole = 0; // Global
+        String myComp = "";
+        String myConn = "";
+        String myRole = "";
+        if (framenow.type==XCD_type.componentt && framenow!=rootContext) {
+            globOrCompOrRole = 1; // Inside a component
+            myComp = framenow.compilationUnitID;
+        } else if (framenow.type==XCD_type.rolet) {
+            globOrCompOrRole = 2; // Inside a role
+            myRole = framenow.compilationUnitID;
+            myConn = framenow.parent.compilationUnitID;
+        } else
+            myassert(false, "Enum " + enumName
+                     + " is inside a construct " + framenow.type
+                     + " that doesn't support enums");
 
-        IdInfo enumTypeInfo = addIdInfo(enumName.toString()
+        String en = enumName.toString();
+
+        IdInfo enumTypeInfo = addIdInfo(en
                                         , XCD_type.enumt
                                         , ""
                                         , false
                                         , null
                                         , null
                                         , framenow.compilationUnitID);
-        enumTypeInfo.translation.add(Names.enumTypeName(enumName.toString()));
+        enumTypeInfo.translation
+            .add(globOrCompOrRole==0
+                 ? Names.enumGlobalTypeName(en)
+                 : (globOrCompOrRole==1
+                    ? Names.enumCompTypeName(myComp, en)
+                    : Names.enumRoleTypeName(myConn, myRole, en)));
         // mywarning("Added enum type \"" + enumName.toString()
         //           + "\" with values " + values.toString()
         //           + " and s is \n" + s);
         for (var value : values) {
-            IdInfo valInfo = addIdInfo(value.toString()
+            String vl = value.toString();
+            IdInfo valInfo = addIdInfo(vl
                                        , XCD_type.enumvalt
                                        , false
                                        , null
                                        , null
                                        , enumName.toString());
-            valInfo.translation.add(Names.enumValueName(value.toString()));
+            valInfo.translation
+                .add(globOrCompOrRole==0
+                     ? Names.enumGlobalValueName(vl)
+                     : (globOrCompOrRole==1
+                        ? Names.enumCompValueName(myComp, vl)
+                        : Names.enumRoleValueName(myConn, myRole, vl)));
             // mywarning("Added enum value \"" + value.toString()
             //        + "\" for enum type \"" + enumName.toString()
             //        + "\"");
@@ -673,6 +702,24 @@ class EnvironmentCreationVisitor
      * we're creating/populating environments. We'll be using their
      * default behaviour instead (i.e., just visit children).
      */
+
+    @Override
+    public T visitConditionalStatement(XCDParser.ConditionalStatementContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorConditionalStatementContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitPostStatement(XCDParser.PostStatementContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorPostStatementContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override
     public T visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) {
