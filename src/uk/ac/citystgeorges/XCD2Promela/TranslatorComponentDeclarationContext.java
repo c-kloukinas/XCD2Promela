@@ -73,9 +73,11 @@ class TranslatorComponentDeclarationContext implements TranslatorI
             return out;
         };
         // Collect typedefs
-        String all_typedefs = def.apply("TYPE_", thisEnv.typedefs);
+        String all_typedefs = def.apply("TYPE_"
+                                        , thisEnv.compConstructs.typedefs);
         // Collect enums
-        String all_enums = def.apply("TYPE_", thisEnv.enums);
+        String all_enums = def.apply("TYPE_"
+                                     , thisEnv.compConstructs.enums);
         // Collect sub-components
         LstStr subcomponent_types = new LstStr();
         for (var sub : thisEnv.subcomponents) {
@@ -173,7 +175,7 @@ class TranslatorComponentDeclarationContext implements TranslatorI
         bv.mywarning("TODO: Action/port parameters missing)");
         instance += "// missing action/port parameters\n";
 
-        for (String var : thisEnv.vars) {
+        for (String var : thisEnv.compConstructs.vars) {
             IdInfo info = bv.getIdInfo(thisEnv, var);
             String big = Names.varNameComponent(compName, var);
             header += "#define "

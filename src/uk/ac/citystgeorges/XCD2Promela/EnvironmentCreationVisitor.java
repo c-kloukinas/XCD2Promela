@@ -159,10 +159,10 @@ class EnvironmentCreationVisitor
             ContextInfoConnRole roleEnv
                 = (ContextInfoConnRole) (rolesContext.get(0));
             Set<? extends String> portVarsDefined
-                = USet.setUnion(roleEnv.providedprts
-                                , roleEnv.consumerprts
-                                , roleEnv.requiredprts
-                                , roleEnv.emitterprts);
+                = USet.setUnion(roleEnv.compConstructs.providedprts
+                                , roleEnv.compConstructs.consumerprts
+                                , roleEnv.compConstructs.requiredprts
+                                , roleEnv.compConstructs.emitterprts);
             {
                 Set<? extends String> portVarsDefinedMinusPortVarsUsed
                     = USet.setDifference(portVarsDefined, portVarsUsed);
@@ -208,25 +208,25 @@ class EnvironmentCreationVisitor
             tp = XCD_type.emittervart;
             portName = ctx.emitter.id.getText();
             thesz = ctx.emitter.size;
-            ports = framenow.emitterprts;
+            ports = framenow.compConstructs.emitterprts;
             break;
         case 2:
             tp = XCD_type.consumervart;
             portName = ctx.consumer.id.getText();
             thesz = ctx.consumer.size;
-            ports = framenow.consumerprts;
+            ports = framenow.compConstructs.consumerprts;
             break;
         case 4:
             tp = XCD_type.requiredvart;
             portName = ctx.required.id.getText();
             thesz = ctx.required.size;
-            ports = framenow.requiredprts;
+            ports = framenow.compConstructs.requiredprts;
             break;
         case 8:
             tp = XCD_type.providedvart;
             portName = ctx.provided.id.getText();
             thesz = ctx.provided.size;
-            ports = framenow.providedprts;
+            ports = framenow.compConstructs.providedprts;
             break;
         }
         myassert(tp!=XCD_type.unknownt
@@ -284,25 +284,25 @@ class EnvironmentCreationVisitor
             tp = XCD_type.emittert;
             portName = ctx.emitter.id.getText();
             thesz = ctx.emitter.size;
-            ports = framenow.emitterprts;
+            ports = framenow.compConstructs.emitterprts;
             break;
         case 2:
             tp = XCD_type.consumert;
             portName = ctx.consumer.id.getText();
             thesz = ctx.consumer.size;
-            ports = framenow.consumerprts;
+            ports = framenow.compConstructs.consumerprts;
             break;
         case 4:
             tp = XCD_type.requiredt;
             portName = ctx.required.id.getText();
             thesz = ctx.required.size;
-            ports = framenow.requiredprts;
+            ports = framenow.compConstructs.requiredprts;
             break;
         case 8:
             tp = XCD_type.providedt;
             portName = ctx.provided.id.getText();
             thesz = ctx.provided.size;
-            ports = framenow.providedprts;
+            ports = framenow.compConstructs.providedprts;
             break;
         }
         myassert(tp!=XCD_type.unknownt
@@ -368,7 +368,17 @@ class EnvironmentCreationVisitor
         // mywarning("visitEnumDeclaration called");
         ContextInfo framenow = frameNow();
         Name enumName = new Name(ctx.id.getText());
-        framenow.enums.add(""+enumName);
+        if (framenow instanceof ContextInfoRoot)
+            ((ContextInfoRoot)framenow).commonConstructs.enums.add(""+enumName);
+        else if (framenow instanceof ContextInfoComp)
+            ((ContextInfoComp)framenow).
+                compConstructs.enums.add(""+enumName);
+        else if (framenow instanceof ContextInfoConnRole)
+            ((ContextInfoConnRole)framenow).
+                compConstructs.enums.add(""+enumName);
+        else
+            myassert(false
+                     , "Event inside unsupported construct " + framenow.type);
         Sig values = new Sig();
 
         var constants = ctx.constants;
@@ -442,7 +452,17 @@ class EnvironmentCreationVisitor
         // mywarning("visitTypeDefDeclaration called");
         ContextInfo framenow = frameNow();
         String newtype = ctx.newtype.getText();
-        framenow.typedefs.add(newtype);
+        if (framenow==rootContext)
+            ((ContextInfoRoot)framenow).commonConstructs.typedefs.add(newtype);
+        else if (framenow.type==XCD_type.componentt)
+            ((ContextInfoComp)framenow).compConstructs.typedefs.add(newtype);
+        else if (framenow.type==XCD_type.connectort)
+            ((ContextInfoConn)framenow).connConstructs.typedefs.add(newtype);
+        else if (framenow.type==XCD_type.rolet)
+            ((ContextInfoConnRole)framenow).compConstructs.typedefs.add(newtype);
+        else
+            myassert(false
+                     , "Typedef inside unknown construct " + framenow.type);
 
         addIdInfo(newtype
                   , XCD_type.typedeft
@@ -504,14 +524,18 @@ class EnvironmentCreationVisitor
         String trans = "";
         if (tp==XCD_type.componentt) {
             var theEnv = (ContextInfoComp)framenow;
-            paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            paramsOrvars = isVar
+                ? theEnv.compConstructs.vars
+                : theEnv.compConstructs.params;
             trans = isVar
                 ? Names.varNameComponent(theEnv.compilationUnitID, varName)
                 : Names.paramNameComponent(theEnv.compilationUnitID, varName);
         } else if (tp==XCD_type.connectort) {
             ((ContextInfoConn)framenow).vars.add(varName);
             var theEnv = (ContextInfoConn)framenow;
-            paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            paramsOrvars = isVar
+                ? theEnv.vars
+                : theEnv.params;
             myassert(!isVar, "Connectors cannot have variables of their own");
             trans = isVar
                 ? Names.xVarName(theEnv.compilationUnitID
@@ -520,7 +544,9 @@ class EnvironmentCreationVisitor
                 : varName;
         } else if (tp==XCD_type.rolet) {
             var theEnv = (ContextInfoConnRole)framenow;
-            paramsOrvars = isVar ? theEnv.vars : theEnv.params;
+            paramsOrvars = isVar
+                ? theEnv.compConstructs.vars
+                : theEnv.compConstructs.params;
             trans = isVar
                 ? Names.xVarName(theEnv.parent.compilationUnitID
                                  , theEnv.compilationUnitID
@@ -577,7 +603,9 @@ class EnvironmentCreationVisitor
             String connector_def
                 = (ctx.userdefined!=null)
                 ? ctx.userdefined.getText()
-                : ctx.basicConn.getText();
+                : (ctx.basicConnProc!=null
+                   ? Names.connProcedural()
+                   : Names.connAsynchronous());
             // String params = visit(ctx.conn_params).get(0);
             addIdInfo(instance_name
                       , XCD_type.connectort
@@ -645,6 +673,17 @@ class EnvironmentCreationVisitor
                              , "Assertion failed"
                              + " - check previous warning for details");
                 }
+                // if (newctx.subcomponents.size()!=1) {
+                //     mywarning("Configuration should have exactly one"
+                //               + " component instance, but instead, it has "
+                //               + (newctx.subcomponents.size()));
+                //     for (var key : newctx.map.keySet()) {
+                //         var val=newctx.map.get(key);
+                //         System.err.println("Instance \"" + key
+                //                            + "\" of component type \""
+                //                            + val.variableTypeName + "\"\n");
+                //     }
+                // }
                 myassert(newctx.subcomponents.size()==1
                          , "Configuration should have exactly one"
                          + " component, but instead it has "
@@ -702,6 +741,23 @@ class EnvironmentCreationVisitor
      * we're creating/populating environments. We'll be using their
      * default behaviour instead (i.e., just visit children).
      */
+
+    @Override
+    public T visitAssertDeclaration(XCDParser.AssertDeclarationContext ctx) {
+        updateln(ctx);
+        var tr = new TranslatorAssertDeclarationContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitDataType(XCDParser.DataTypeContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorDataTypeContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override
     public T visitConditionalStatement(XCDParser.ConditionalStatementContext ctx) {
@@ -818,6 +874,51 @@ class EnvironmentCreationVisitor
         res = tr.translate(this, ctx);
         return res;
     }
+
+    /**
+     * Nothing to be done for these; default behaviour suffices - here
+     * for completion.
+     */
+
+    @Override
+    public T visitParamArgument(XCDParser.ParamArgumentContext ctx) { mywarning("Is it complete?"); return visitChildren(ctx); }
+
+    @Override
+    public T visitCombinationKeyword(XCDParser.CombinationKeywordContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitArraySize(XCDParser.ArraySizeContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorIndex(XCDParser.ConnectorIndexContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
+
     /**
      * Miscellaneous helper functions
      */
