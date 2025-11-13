@@ -23,7 +23,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
  */
  abstract class BaseVisitor<T>
  /* Use the following to ensure that you haven't forgotten any methods */
- //    extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
+ //     extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
      extends XCDBaseVisitor<T>
 {
 
@@ -62,7 +62,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         getEnv().remove(sz-1);
     }
 
-    final static protected ContextInfo rootContext = new ContextInfo();
+    final static public ContextInfoRoot rootContext = new ContextInfoRoot();
 
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, String varTypeName
@@ -131,13 +131,13 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     boolean isComposite(ContextInfoComp info)
     { return info.subcomponents.size()!=0; }
     boolean hasProvidedPorts(ContextInfoComp info)
-    { return info.providedprts.size()!=0; }
+    { return info.compConstructs.providedprts.size()!=0; }
     boolean hasRequiredPorts(ContextInfoComp info)
-    { return info.requiredprts.size()!=0; }
+    { return info.compConstructs.requiredprts.size()!=0; }
     boolean hasEmitterPorts(ContextInfoComp info)
-    { return info.emitterprts.size()!=0; }
+    { return info.compConstructs.emitterprts.size()!=0; }
     boolean hasConsumerPorts(ContextInfoComp info)
-    { return info.consumerprts.size()!=0; }
+    { return info.compConstructs.consumerprts.size()!=0; }
     boolean hasPorts(ContextInfoComp info)
     { return hasProvidedPorts(info) || hasRequiredPorts(info)
             || hasEmitterPorts(info) || hasConsumerPorts(info); }
@@ -211,4 +211,5 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return s;
     }
 
+    public int getTokenType( Token tk ) {return tk.getType();}
 }
