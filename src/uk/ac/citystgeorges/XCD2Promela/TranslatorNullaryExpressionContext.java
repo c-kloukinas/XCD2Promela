@@ -48,12 +48,7 @@ class TranslatorNullaryExpressionContext implements TranslatorI
             s += "@UNKNOWNAT";
         } else if (ctx.varid != null) {
             String varid = ctx.varid.getText();
-            bv.myassert(varid!=null && !varid.equals("")
-                     , "empty name for a variable");
-            IdInfo idinfo = bv.getIdInfo(varid);
-            bv.myassert(idinfo.translation!=null && idinfo.translation.size()>0,
-                     "Missing translation for " + varid);
-            String trans = idinfo.translation.get(0);
+            String trans = translate_ID(bv, varid);
             if (bv.is_enumConstant(varid)) {
                 // s = varid;
                 s = trans;
@@ -99,5 +94,14 @@ class TranslatorNullaryExpressionContext implements TranslatorI
         // System.out.println("Translation is: " + s);
         res.add(s);
         return res;
+    }
+
+    String translate_ID(BaseVisitor<T> bv, String id) {
+        bv.myassert(id!=null && !id.equals("")
+                    , "empty name for a variable");
+        IdInfo idinfo = bv.getIdInfo(id);
+        bv.myassert(idinfo.translation!=null && idinfo.translation.size()>0,
+                    "Missing translation for " + id);
+        return idinfo.translation.get(0);
     }
 }
