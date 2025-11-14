@@ -182,8 +182,8 @@ class TranslatorComponentDeclarationContext implements TranslatorI
                 + Names.typeOfVarDefName(compName, var)
                 + " "
                 + info.variableTypeName + "\n";
-            ArraySizeContext arrSz = null; // when there's no array, just a single instance
-            if (info.arraySz!=null) {
+            ArraySizeContext arrSz = info.arraySz;
+            if (arrSz!=null) {
                 /* See getDataSize in XcdGenerator - seems to assume
                  * it'll be either a number or a component
                  * parameter */
@@ -191,7 +191,7 @@ class TranslatorComponentDeclarationContext implements TranslatorI
                 //        + compName
                 //        + ",CompInstanceID,Instance,"
                 //        + var + ")");
-                arrSz = info.arraySz;
+                ;
             }
 
             String type = bv.component_typeof_id(big);
@@ -224,5 +224,6 @@ class TranslatorComponentDeclarationContext implements TranslatorI
         res.add(header);
 
         return res;
-   }
+    }
+
 }
