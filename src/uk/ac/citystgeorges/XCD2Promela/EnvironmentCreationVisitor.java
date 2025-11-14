@@ -884,6 +884,153 @@ class EnvironmentCreationVisitor
     public T visitParamArgument(XCDParser.ParamArgumentContext ctx) { mywarning("Is it complete?"); return visitChildren(ctx); }
 
     @Override
+    public T visitConnectorBody(XCDParser.ConnectorBodyContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConnectorBody_Element(XCDParser.ConnectorBody_ElementContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRoleBody(XCDParser.RoleBodyContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRoleBody_Element(XCDParser.RoleBody_ElementContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPortvar(XCDParser.EmitterPortvarContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPortvar(XCDParser.ConsumerPortvarContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPortvar(XCDParser.RequiredPortvarContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPortvar(XCDParser.ProvidedPortvarContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPortvar_event(XCDParser.ConsumerPortvar_eventContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPortvar_complexmethod(XCDParser.ProvidedPortvar_complexmethodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPv_InteractionContract(XCDParser.EmitterPv_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPv_InteractionConstraint(XCDParser.EmitterPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPv_InteractionContract(XCDParser.ConsumerPv_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPv_InteractionConstraint(XCDParser.ConsumerPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPv_InteractionContract(XCDParser.RequiredPv_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPv_InteractionConstraint(XCDParser.RequiredPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPvcomplex_InteractionContract(XCDParser.ProvidedPvcomplex_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPv_InteractionContract(XCDParser.ProvidedPv_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPv_InteractionConstraint(XCDParser.ProvidedPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComponentBody(XCDParser.ComponentBodyContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComponentBody_Element(XCDParser.ComponentBody_ElementContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPort(XCDParser.EmitterPortContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPort(XCDParser.ConsumerPortContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPort(XCDParser.RequiredPortContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPort(XCDParser.ProvidedPortContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComplex_providedPort_method(XCDParser.Complex_providedPort_methodContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComplex_providedPort_functionalContract_Res(XCDParser.Complex_providedPort_functionalContract_ResContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComplex_provided_InteractionContract_Res(XCDParser.Complex_provided_InteractionContract_ResContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComplex_providedPort_functionalContract_Req(XCDParser.Complex_providedPort_functionalContract_ReqContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitComplex_provided_InteractionContract_Req(XCDParser.Complex_provided_InteractionContract_ReqContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterRequired_InteractionContract(XCDParser.EmitterRequired_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerProvided_InteractionContract(XCDParser.ConsumerProvided_InteractionContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterRequired_InteractionConstraint(XCDParser.EmitterRequired_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerProvided_InteractionConstraint(XCDParser.ConsumerProvided_InteractionConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPort_functionalContract(XCDParser.EmitterPort_functionalContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPort_functionalContract(XCDParser.RequiredPort_functionalContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPort_functionalContract(XCDParser.ConsumerPort_functionalContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPort_functionalContract(XCDParser.ProvidedPort_functionalContractContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitEmitterPort_functionalConstraint(XCDParser.EmitterPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitRequiredPort_functionalConstraint(XCDParser.RequiredPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitConsumerPort_functionalConstraint(XCDParser.ConsumerPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
+    public T visitProvidedPort_functionalConstraint(XCDParser.ProvidedPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
+
+    @Override
     public T visitCombinationKeyword(XCDParser.CombinationKeywordContext ctx) { return visitChildren(ctx); }
 
     @Override
