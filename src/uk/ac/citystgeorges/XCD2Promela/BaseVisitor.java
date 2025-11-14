@@ -147,9 +147,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     }
     String component_variable_id(String var, String index)
     { return var + "[" + index + "]"; }
-
-    String component_variable_id(String var, ArraySizeContext index)
-    { return var + "[" + index + "]"; }
+    abstract String component_variable_id(String var, ArraySizeContext index);
 
     boolean is_enumConstant(String id) {
         var idInfo = getIdInfo(id);
