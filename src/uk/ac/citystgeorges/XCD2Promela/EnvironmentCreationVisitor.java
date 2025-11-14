@@ -481,7 +481,11 @@ class EnvironmentCreationVisitor
         updateln(ctx);
         String varName = ctx.id.getText();
         DataTypeContext dtype = ctx.type; // int, byte, bool, void, ID(long name)
-        ArraySizeContext array_sz = ctx.size;
+        // always non-null for user-defined variables/parameters
+        ArraySizeContext array_sz
+            = (ctx.size!=null)
+            ? ctx.size
+            : singleElementArraySize;
         Variable_initialValueContext initVal = ctx.initval;
         T res = visitPrimitiveVariableOrParamDeclaration(dtype
                                                             , varName
@@ -495,7 +499,11 @@ class EnvironmentCreationVisitor
         String varName = ctx.id.getText();
         // dtype: int, byte, bool, void, ID(long name)
         DataTypeContext dtype = ctx.type;
-        ArraySizeContext array_sz = ctx.size;
+        // always non-null for user-defined variables/parameters
+        ArraySizeContext array_sz
+            = (ctx.size!=null)
+            ? ctx.size
+            : singleElementArraySize;
         Variable_initialValueContext initVal = ctx.initval;
         T res = visitPrimitiveVariableOrParamDeclaration(dtype
                                                             , varName
@@ -504,18 +512,30 @@ class EnvironmentCreationVisitor
                                                             , false);
         return res;
     }
-    private T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
-                                                       , String varName
-                                                       , ArraySizeContext array_sz
-                                                       , Variable_initialValueContext initVal
-                                                       , boolean isVar) {
+    public T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
+                                                      , String varName
+                                                      , ArraySizeContext array_sz
+                                                      , Variable_initialValueContext initVal
+                                                      , boolean isVar) {
+        return visitPrimitiveVariableOrParamDeclaration(dtype.getText()
+                                                        , varName
+                                                        , array_sz
+                                                        , initVal
+                                                        , isVar);
+    }
+
+    public T visitPrimitiveVariableOrParamDeclaration(String dtype
+                                                      , String varName
+                                                      , ArraySizeContext array_sz
+                                                      , Variable_initialValueContext initVal
+                                                      , boolean isVar) {
         var framenow = (ContextInfo) frameNow();
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
 
         IdInfo idinfo = addIdInfo(varName
                                   , (isVar) ? XCD_type.vart : XCD_type.paramt
-                                  , dtype.getText()
+                                  , dtype
                                   , !isVar
                                   , array_sz
                                   , initVal
@@ -1086,4 +1106,26 @@ class EnvironmentCreationVisitor
                : visit(index).get(0))
             + "]"; }
 
+    static private ArraySizeContext makeSingleElementArray() {
+        if (singleElementArraySize!=null)
+            return singleElementArraySize;
+
+        org.antlr.v4.runtime.CharStream input
+            = org.antlr.v4.runtime.CharStreams.fromString("byte foo [1];");
+        // create a lexer that feeds off of input CharStream
+        XCDLexer lexer
+            = new XCDLexer(input);
+        // create a buffer of tokens pulled from the lexer
+        org.antlr.v4.runtime.CommonTokenStream tokens
+            = new org.antlr.v4.runtime.CommonTokenStream(lexer);
+        // create a parser that feeds off the tokens buffer
+        XCDParser parser
+            = new XCDParser(tokens);
+        // begin parsing at "formalParameter" parse rule
+        FormalParameterContext tree
+            = (FormalParameterContext) parser.formalParameter();
+
+        return tree.size;
+    }
+    final static ArraySizeContext singleElementArraySize = makeSingleElementArray();
 }

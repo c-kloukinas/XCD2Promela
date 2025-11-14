@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class TranslatorComponentDeclarationContext implements TranslatorI
 {
@@ -175,6 +177,83 @@ class TranslatorComponentDeclarationContext implements TranslatorI
         bv.mywarning("TODO: Action/port parameters missing)");
         instance += "// missing action/port parameters\n";
 
+        /*
+         * Add structural variables:
+         *
+         * bool VALUEEXIST=false
+         *
+         * byte COMPONENT_<compName>_VAR_PORT_<portName>_INDEX=0
+         < Component_i_Port_Num(CompositeName,CompositeID,<compName>,CompInstanceID,Instance,<portName>)
+         *
+         * byte COMPONENT_<compName>_VAR_PORT_<portName>_CONNECTIONINDEX=0
+         < Component_i_port_NUMOFCONNECTIONS(CompositeName,CompositeID,<compName>,CompInstanceID,Instance,<portName>)
+         *
+         * byte COMPONENT_<compName>_VAR_PORT_<portName>_CALLER[1] = ???
+         * Looks like the first component of messages exchanged on channels.
+         *
+         * byte COMPONENT_<compName>_VAR_PORT_<portName>_ACTION_<eventOrMethodName>_RESULT = 0;
+         */
+        LstStr translationVarsBool = new LstStr();
+        translationVarsBool.add("VALUEEXIST");
+        LstStr translationVarsByte = new LstStr();
+        for (var port : USet.setUnion(thisEnv.compConstructs.providedprts
+                                      , thisEnv.compConstructs.requiredprts
+                                      , thisEnv.compConstructs.consumerprts
+                                      , thisEnv.compConstructs.emitterprts)) {
+            translationVarsByte.add("PORT_" + port + "_INDEX");
+            translationVarsByte.add("PORT_" + port + "_CONNECTIONINDEX");
+            translationVarsByte.add("PORT_" + port + "_CALLER");
+            List<ContextInfo> ports
+                = thisEnv.children.stream()
+                .filter((ContextInfo x) ->
+                        {return x.compilationUnitID.equals(port);})
+                .toList();
+            long matches = ports.size();
+            bv.myassert(matches==1
+                        , "A single port should match \"" + port
+                        + "\" inside component \"" + thisEnv.compilationUnitID
+                        + "\" - instead we have " + matches);
+            ContextInfoCompPort thePort = (ContextInfoCompPort) ports.get(0);
+            for (var mtd : thePort.portConstructs.basicMethodNames) {
+                Map<String, MethodStructure> sigFull = thePort.portConstructs.methodOverloads.get(mtd);
+                List<Type> retTypes
+                    = sigFull.values()
+                    .stream()
+                    .map( (MethodStructure ms) ->
+                          {return ms.resultType;} )
+                    .distinct()
+                    .toList();
+                Type ret = retTypes.get(0);
+
+                if (ret.equals("void")
+                    || ret.equals("bool")
+                    || ret.equals("bit"))
+                    translationVarsBool.add("PORT_" + port
+                                            + "_ACTION_" + mtd
+                                            + "_RESULT");
+                else
+                    translationVarsByte.add("PORT_" + port
+                                            + "_ACTION_" + mtd
+                                            + "_RESULT");
+            }
+        }
+
+        for (var trVar : translationVarsBool)
+            ((EnvironmentCreationVisitor)bv)
+                .visitPrimitiveVariableOrParamDeclaration
+                ("bit"
+                 , trVar
+                 , (ArraySizeContext)null
+                 , (Variable_initialValueContext)null
+                 , true);
+        for (var trVar : translationVarsByte)
+            ((EnvironmentCreationVisitor)bv)
+                .visitPrimitiveVariableOrParamDeclaration
+                ("byte"
+                 , trVar
+                 , (ArraySizeContext)null
+                 , (Variable_initialValueContext)null
+                 , true);
         for (String var : thisEnv.compConstructs.vars) {
             IdInfo info = bv.getIdInfo(thisEnv, var);
             String big = Names.varNameComponent(compName, var);
@@ -209,7 +288,8 @@ class TranslatorComponentDeclarationContext implements TranslatorI
             } else init = "=000"; // default value
             String pre_nm = Names.varPreName(nm);
             instance += type + " " + nm + init +";\n";
-            instance += type + " " + pre_nm + init +";\n";
+            if (arrSz!=null)    // XXX HACK - user-defined variable
+                instance += type + " " + pre_nm + init +";\n";
         }
 
         instance += "}\n";
