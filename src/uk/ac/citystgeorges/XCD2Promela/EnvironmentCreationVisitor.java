@@ -875,6 +875,16 @@ class EnvironmentCreationVisitor
         return res;
     }
 
+    @Override
+    public T visitArraySize(XCDParser.ArraySizeContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorArraySizeContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+
     /**
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
@@ -1037,9 +1047,6 @@ class EnvironmentCreationVisitor
     public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) { return visitChildren(ctx); }
 
     @Override
-    public T visitArraySize(XCDParser.ArraySizeContext ctx) { return visitChildren(ctx); }
-
-    @Override
     public T visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
 
     @Override
@@ -1069,5 +1076,14 @@ class EnvironmentCreationVisitor
     /**
      * Miscellaneous helper functions
      */
+
+    @Override
+    String component_variable_id(String var, ArraySizeContext index)
+    { return var
+            + "["
+            + ((index==null)
+               ? "1"
+               : visit(index).get(0))
+            + "]"; }
 
 }
