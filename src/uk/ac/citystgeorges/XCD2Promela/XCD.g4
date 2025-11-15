@@ -97,24 +97,24 @@ providedPortvar:
 
 emitterPortvar_event:
         (icontract= emitterPv_InteractionContract)?
-        event_sig=eventSignature
+        event_sig=eventSignatureSemicolon
 ;
 consumerPortvar_event:
         (icontract= consumerPv_InteractionContract)?
-        event_sig=eventSignature
+        event_sig=eventSignatureSemicolon
 ;
 requiredPortvar_method:
         (icontract= requiredPv_InteractionContract)?
-        method_sig=methodSignature
+        method_sig=methodSignatureSemicolon
 ;
 providedPortvar_method:
         (icontract= providedPv_InteractionContract)?
-         method_sig=methodSignature
+         method_sig=methodSignatureSemicolon
 ;
 
 providedPortvar_complexmethod:
         (icontract= providedPvcomplex_InteractionContract)
-         method_sig=methodSignature
+         method_sig=methodSignatureSemicolon
 ;
 
 emitterPv_InteractionContract:
@@ -258,22 +258,22 @@ providedPort:
 emitterPort_event:
         (icontract= emitterRequired_InteractionContract)?
         (fcontract=emitterPort_functionalContract)?
-        port_event=eventSignature
+        port_event=eventSignatureSemicolon
 ;
 consumerPort_event:
         (icontract= consumerProvided_InteractionContract)?
         (fcontract=consumerPort_functionalContract)?
-        port_event=eventSignature
+        port_event=eventSignatureSemicolon
 ;
 requiredPort_method:
         (icontract= emitterRequired_InteractionContract)?
         (fcontract=requiredPort_functionalContract)?
-        port_method=methodSignature
+        port_method=methodSignatureSemicolon
 ;
 providedPort_method:
         (icontract= consumerProvided_InteractionContract)?
     (fcontract=providedPort_functionalContract)?
-        port_method=methodSignature
+        port_method=methodSignatureSemicolon
 ;
 
 complex_providedPort_method:
@@ -281,7 +281,7 @@ complex_providedPort_method:
     (fcontract_req= complex_providedPort_functionalContract_Req)?
         (icontract_res= complex_provided_InteractionContract_Res)?
     (fcontract_res= complex_providedPort_functionalContract_Res) ?
-        port_method=methodSignature
+        port_method=methodSignatureSemicolon
 ;
 
 complex_providedPort_functionalContract_Res:
@@ -415,19 +415,26 @@ providedPort_functionalConstraint:
 
 combinationKeyword: otherwise=TK_OTHERWISE | also=TK_ALSO;
 
-methodSignature:
-        rettype=dataType id=ID
-        params=formalParameters
-        (TK_THROWS (exceptions+=ID)+)?
+methodSignatureSemicolon:
+        methodSig=methodSignature
         TK_SEMICOLON
     ;
+
+eventSignatureSemicolon:
+    eventSig=eventSignature
+     TK_SEMICOLON
+        ;
+
+methodSignature:
+        rettype=dataType es=eventSignature
+        (TK_THROWS (exceptions+=ID)+)?
+            ;
 
 eventSignature:
     id=ID
     params=formalParameters
 /* An event cannot return a value, so it cannot throw an exception either */
 //    (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
-     TK_SEMICOLON
         ;
 
 enumDeclaration:
