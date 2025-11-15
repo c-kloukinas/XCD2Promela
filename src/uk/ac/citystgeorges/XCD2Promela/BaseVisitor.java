@@ -52,14 +52,43 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                  , "frameNow called with empty env stack - env.size()=" + sz);
         return env.get(env.size()-1);
     }
-    protected void popLastContext(ContextInfo framenow) {
+    protected void pushContext(ContextInfo framenow) {
+        getEnv().add(framenow);
+    }
+    private void envNotEmpty() {
         int sz = getEnv().size();
         myassert(sz > 0
                  , "Popped too many contexts - env.size()=" + sz);
+    }
+    private void popLastContextReal() {
+        int sz = getEnv().size();
+        var fr = frameNow();
+        // mywarning("Popping context " + fr.compilationUnitID
+        //           + " of type " + fr.type
+        //           + " who's parent is " + fr.parent.compilationUnitID
+        //           + " of type " + fr.parent.type);
+        getEnv().remove(sz-1);
+    }
+    protected void popLastContext(ContextInfo framenow) {
+        int sz = getEnv().size();
+        envNotEmpty();
         ContextInfo lastctx = getEnv().get(sz-1);
         myassert(framenow == lastctx
-                 , "Current context is not the last element!");
-        getEnv().remove(sz-1);
+                 , "Current context is not the last element!"
+                 + ("\n Name: "
+                    + framenow.compilationUnitID
+                    + " vs "
+                    + lastctx.compilationUnitID)
+                 + ("\n Type: "
+                    + framenow.type
+                    + " vs "
+                    + lastctx.type)
+                 );
+        popLastContextReal();
+    }
+    protected void popLastContext() {
+        envNotEmpty();
+        popLastContextReal();
     }
 
     final static public ContextInfoRoot rootContext = new ContextInfoRoot();
@@ -99,12 +128,12 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                 && (info.parent.equals(newInfo.parent));
             if (!matches) {
                 mywarning("Symbol \"" +symbol+"\" already in the map"
-                          + "\n" + info.type + " vs " + newInfo.type
+                          + " (was/is)\ntype: " + info.type + " vs " + newInfo.type
                           // + "\n" + info.sType + " vs " + newInfo.sType
-                          + "\n" + info.is_param + " vs " + newInfo.is_param
-                          + "\n" + info.arraySz + " vs " + newInfo.arraySz
-                          + "\n" + info.initVal + " vs " + newInfo.initVal
-                          + "\n" + info.parent + " vs " + newInfo.parent);
+                          + "\nis_param: " + info.is_param + " vs " + newInfo.is_param
+                          + "\narraySz: " + info.arraySz + " vs " + newInfo.arraySz
+                          + "\ninitVal: " + info.initVal + " vs " + newInfo.initVal
+                          + "\nparent: " + info.parent + " vs " + newInfo.parent);
                 myassert(false, "Symbol \""+symbol+"\" already in the map");
             } else
                 mywarning("Symbol \"" +symbol+"\" aldeary in the map - input visited twice!");
