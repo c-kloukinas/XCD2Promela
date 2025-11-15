@@ -101,7 +101,12 @@ class TranslatorNullaryExpressionContext implements TranslatorI
                     , "empty name for a variable");
         IdInfo idinfo = bv.getIdInfo(id);
         bv.myassert(idinfo.translation!=null && idinfo.translation.size()>0,
-                    "Missing translation for " + id);
+                    "Missing translation for \""
+                    + id
+                    + "\" inside environment \""
+                    + bv.frameNow().compilationUnitID
+                    + "\" of type: "
+                    + bv.frameNow().type);
         return idinfo.translation.get(0);
     }
 }
