@@ -216,25 +216,29 @@ class TranslatorComponentDeclarationContext implements TranslatorI
             ContextInfoCompPort thePort = (ContextInfoCompPort) ports.get(0);
             for (var mtd : thePort.portConstructs.basicMethodNames) {
                 Map<String, MethodStructure> sigFull = thePort.portConstructs.methodOverloads.get(mtd);
-                List<Type> retTypes
-                    = sigFull.values()
-                    .stream()
-                    .map( (MethodStructure ms) ->
-                          {return ms.resultType;} )
-                    .distinct()
-                    .toList();
-                Type ret = retTypes.get(0);
+                if (sigFull!=null) {
+                    List<Type> retTypes
+                        = sigFull.values()
+                        .stream()
+                        .map( (MethodStructure ms) ->
+                              {return ms.resultType;} )
+                        .distinct()
+                        .toList();
+                    Type ret = retTypes.get(0);
 
-                if (ret.equals("void")
-                    || ret.equals("bool")
-                    || ret.equals("bit"))
-                    translationVarsBool.add("PORT_" + port
-                                            + "_ACTION_" + mtd
-                                            + "_RESULT");
-                else
-                    translationVarsByte.add("PORT_" + port
-                                            + "_ACTION_" + mtd
-                                            + "_RESULT");
+                    if (ret.equals("void")
+                        || ret.equals("bool")
+                        || ret.equals("bit"))
+                        translationVarsBool.add("PORT_" + port
+                                                + "_ACTION_" + mtd
+                                                + "_RESULT");
+                    else
+                        translationVarsByte.add("PORT_" + port
+                                                + "_ACTION_" + mtd
+                                                + "_RESULT");
+                } else {
+                    bv.mywarning("sigFull is null for mtd " + mtd + " :-(");
+                }
             }
         }
 
