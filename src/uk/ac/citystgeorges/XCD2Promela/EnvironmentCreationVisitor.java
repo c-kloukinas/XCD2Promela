@@ -89,10 +89,14 @@ class EnvironmentCreationVisitor
                   , null, framenow.compilationUnitID);
 
         // push new environment context
-        getEnv().add(newctx);
+        pushContext(newctx);
 
         // Add new names in the new context
-        T res = visitChildren(ctx); // These results are ignored
+        T res = defaultResult();
+        /* Methods/events treat their children out-of-order. */
+        if (newctx.type!=XCD_type.methodt
+            && newctx.type!=XCD_type.eventt)
+            res = visitChildren(ctx); // These results are ignored
 
         // mywarning("***Currently env has size: "
         //           + getEnv().size()
@@ -326,28 +330,83 @@ class EnvironmentCreationVisitor
         return registerNewEnvironment(portName, ctx, tp, array_sz, newctx);
     }
 
-    @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
+    private T visitSignatureForEventOrMethod(boolean imaMethod
+                                             , XCDParser.EventSignatureContext ctx
+                                             , XCDParser.MethodSignatureContext ctxM) {
         ContextInfo framenow = frameNow();
-        ContextInfoMethod newctx
-            = framenow.makeContextInfoMethod(ctx.id.getText(), ctx);
-        return registerNewEnvironment(ctx.id.getText(), ctx
-                                      , XCD_type.methodt
-                                      , null // there's no size part
-                                      , newctx);
+        String eventName = ctx.id.getText();
+        if (framenow instanceof ContextInfoCompPort) {
+            if (imaMethod)
+                ((ContextInfoCompPort)framenow).portConstructs.basicMethodNames.add(eventName);
+            else
+                ((ContextInfoCompPort)framenow).portConstructs.basicEventNames.add(eventName);
+        } else if (framenow instanceof ContextInfoConnRolePort) {
+            if (imaMethod)
+                ((ContextInfoConnRolePort)framenow).roleConstructs.basicMethodNames.add(eventName);
+            else
+                ((ContextInfoConnRolePort)framenow).roleConstructs.basicEventNames.add(eventName);
+        } else // if (!imaMethod)
+            {
+            mywarning("Current frame (" + framenow.compilationUnitID
+                      + ") is of type " + framenow.type
+                      + " and its parent is of type " + framenow.parent.type
+                      + " and imaMethod is " + imaMethod);
+            myassert(false, "BAD CAST");
+        }
+        ContextInfo newctx
+            = imaMethod
+            ? framenow.makeContextInfoMethod(eventName, ctxM)
+            : framenow.makeContextInfoEvent(eventName, ctx);
+        T res = registerNewEnvironment(eventName
+                                       , (imaMethod
+                                          ? ctxM
+                                          : ctx)
+                                       , (imaMethod
+                                          ? XCD_type.methodt
+                                          : XCD_type.eventt)
+                                       , null // there's no size part
+                                       , newctx);
+        /* push the method environment again, so that constraints are
+         * treated inside it.
+         */
+        if (!imaMethod)
+            pushContext(newctx);
+
+        return res;
+}
+    @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
+        var myparent = frameNow().parent;
+        myassert(myparent.type != XCD_type.methodt
+                 , "Method's parent is a method?");
+        T res = visitSignatureForEventOrMethod(true, ctx.es, ctx);
+        // fix your environment's parent
+        frameNow().parent = myparent;
+
+        T ret = visit(ctx.rettype);
+
+        T excs = defaultResult();
+        for (var ex : ctx.exceptions)
+            excs.add(ex.getText());
+
+        for (var respart : res)
+            System.err.println(respart);
+
+        /* push the method environment again, so that constraints are
+         * treated inside it.
+         */
+        pushContext(frameNow());
+
+        return res;
     }
 
     @Override public T visitEventSignature(XCDParser.EventSignatureContext ctx) {
-        ContextInfo framenow = frameNow();
-        ContextInfoEvent newctx
-            = framenow.makeContextInfoEvent(ctx.id.getText(), ctx);
-        return registerNewEnvironment(ctx.id.getText(), ctx
-                                      , XCD_type.eventt
-                                      , null // there's no size part
-                                      , newctx);
+        return visitSignatureForEventOrMethod(false, ctx, null);
     }
 
     @Override public T visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
         ContextInfo framenow = frameNow();
+        String functionName = ctx.id.getText();
+        ((ContextInfoComp)framenow).compConstructs.inlineFunctionDecls.add(functionName);
         ContextInfoFunction newctx
             = framenow.makeContextInfoFunction(ctx.id.getText(), ctx);
         return registerNewEnvironment(ctx.id.getText(), ctx
@@ -534,53 +593,69 @@ class EnvironmentCreationVisitor
         XCD_type tp = framenow.type;
 
         IdInfo idinfo = addIdInfo(varName
-                                  , (isVar) ? XCD_type.vart : XCD_type.paramt
+                                  , (isVar
+                                     ? XCD_type.vart
+                                     : XCD_type.paramt)
                                   , dtype
                                   , !isVar
                                   , array_sz
                                   , initVal
                                   , compUnitId);
-        LstStr paramsOrvars = null;
-        String trans = "";
-        if (tp==XCD_type.componentt) {
-            var theEnv = (ContextInfoComp)framenow;
-            paramsOrvars = isVar
-                ? theEnv.compConstructs.vars
-                : theEnv.compConstructs.params;
-            trans = isVar
-                ? Names.varNameComponent(theEnv.compilationUnitID, varName)
-                : Names.paramNameComponent(theEnv.compilationUnitID, varName);
-        } else if (tp==XCD_type.connectort) {
-            ((ContextInfoConn)framenow).vars.add(varName);
-            var theEnv = (ContextInfoConn)framenow;
-            paramsOrvars = isVar
-                ? theEnv.vars
-                : theEnv.params;
-            myassert(!isVar, "Connectors cannot have variables of their own");
-            trans = isVar
-                ? Names.xVarName(theEnv.compilationUnitID
-                                 , "UNKNOWNROLE"
-                                 , varName)
-                : varName;
-        } else if (tp==XCD_type.rolet) {
-            var theEnv = (ContextInfoConnRole)framenow;
-            paramsOrvars = isVar
-                ? theEnv.compConstructs.vars
-                : theEnv.compConstructs.params;
-            trans = isVar
-                ? Names.xVarName(theEnv.parent.compilationUnitID
-                                 , theEnv.compilationUnitID
-                                 , varName)
-                : varName;
+        if (tp==XCD_type.methodt || tp==XCD_type.eventt) {
+            T res = new T();
+            res.add(dtype); res.add(varName);
+            mywarning("visitPrimitiveVariableOrParamDeclaration: Have added "
+                      + varName
+                      + " into the current environment, with type "
+                      + dtype);
+            idinfo.translation.add(varName);
+            return res;
         } else {
-            myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
-                     , (isVar?"Variable ":"Parameter ")
-                     + varName
-                     + " declaration appears in an unexpected context "
-                     + tp);
+            LstStr paramsOrvars = null;
+            String trans = "";
+            if (tp==XCD_type.componentt) {
+                var theEnv = (ContextInfoComp)framenow;
+                paramsOrvars = isVar
+                    ? theEnv.compConstructs.vars
+                    : theEnv.compConstructs.params;
+                trans = isVar
+                    ? Names.varNameComponent(theEnv.compilationUnitID
+                                             , varName)
+                    : Names.paramNameComponent(theEnv.compilationUnitID
+                                               , varName);
+            } else if (tp==XCD_type.connectort) {
+                ((ContextInfoConn)framenow).vars.add(varName);
+                var theEnv = (ContextInfoConn)framenow;
+                paramsOrvars = isVar
+                    ? theEnv.vars
+                    : theEnv.params;
+                myassert(!isVar
+                         , "Connectors cannot have variables of their own");
+                trans = isVar
+                    ? Names.xVarName(theEnv.compilationUnitID
+                                     , "UNKNOWNROLE"
+                                     , varName)
+                    : varName;
+            } else if (tp==XCD_type.rolet) {
+                var theEnv = (ContextInfoConnRole)framenow;
+                paramsOrvars = isVar
+                    ? theEnv.compConstructs.vars
+                    : theEnv.compConstructs.params;
+                trans = isVar
+                    ? Names.xVarName(theEnv.parent.compilationUnitID
+                                     , theEnv.compilationUnitID
+                                     , varName)
+                    : varName;
+            } else {
+                myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
+                         , (isVar?"Variable ":"Parameter ")
+                         + varName
+                         + " declaration appears in an unexpected context "
+                         + tp);
+            }
+            paramsOrvars.add(varName);
+            idinfo.translation.add(trans);
         }
-        paramsOrvars.add(varName);
-        idinfo.translation.add(trans);
         return defaultResult();
     }
 
@@ -904,6 +979,98 @@ class EnvironmentCreationVisitor
         return res;
     }
 
+    /**
+     * In these cases order of visiting children matters - have to
+     * visit the method/event definition *before* its
+     * interaction/functional constraints, so that the method/event
+     * parameter names are known symbols.
+     */
+
+    private T visitEventOrMethodOutOfOrder(ParserRuleContext eventOrMethod
+                              , ParserRuleContext ic1
+                              , ParserRuleContext fc1
+                              , ParserRuleContext ic2
+                              , ParserRuleContext fc2) {
+        T res = visit(eventOrMethod);
+        if (ic1!=null)
+            res = aggregateResult(res, visit(ic1));
+        if (fc1!=null)
+            res = aggregateResult(res, visit(fc1));
+        if (ic2!=null)
+            res = aggregateResult(res, visit(ic2));
+        if (fc2!=null)
+            res = aggregateResult(res, visit(fc2));
+
+        /* Event environment had been pushed twice, to ensure that
+         * interaction/functional constraints are treated inside it */
+        popLastContext();
+        return res;
+    }
+
+    @Override
+    public T visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.event_sig
+                                            , ctx.icontract, null, null, null);
+    }
+
+    @Override
+    public T visitConsumerPortvar_event(XCDParser.ConsumerPortvar_eventContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.event_sig
+                                            , ctx.icontract, null, null, null);
+    }
+
+    @Override
+    public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.method_sig
+                                            , ctx.icontract, null, null, null);
+    }
+
+    @Override
+    public T visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.method_sig
+                                            , ctx.icontract, null, null, null);
+    }
+
+    @Override
+    public T visitProvidedPortvar_complexmethod(XCDParser.ProvidedPortvar_complexmethodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.method_sig
+                                            , ctx.icontract, null, null, null);
+    }
+
+    @Override
+    public T visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.port_event
+                                            , ctx.icontract, ctx.fcontract
+                                            , null, null);
+    }
+
+    @Override
+    public T visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.port_event
+                                            , ctx.icontract, ctx.fcontract
+                                            , null, null);
+    }
+
+    @Override
+    public T visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.port_method
+                                            , ctx.icontract, ctx.fcontract
+                                            , null, null);
+    }
+
+    @Override
+    public T visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.port_method
+                                            , ctx.icontract, ctx.fcontract
+                                            , null, null);
+    }
+
+    @Override
+    public T visitComplex_providedPort_method(XCDParser.Complex_providedPort_methodContext ctx) {
+        return visitEventOrMethodOutOfOrder(ctx.port_method
+                                            , ctx.icontract_req, ctx.fcontract_req
+                                            , ctx.icontract_res, ctx.fcontract_res);
+    }
 
     /**
      * Nothing to be done for these; default behaviour suffices - here
@@ -936,21 +1103,6 @@ class EnvironmentCreationVisitor
 
     @Override
     public T visitProvidedPortvar(XCDParser.ProvidedPortvarContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPortvar_event(XCDParser.ConsumerPortvar_eventContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPortvar_complexmethod(XCDParser.ProvidedPortvar_complexmethodContext ctx) { return visitChildren(ctx); }
 
     @Override
     public T visitEmitterPv_InteractionContract(XCDParser.EmitterPv_InteractionContractContext ctx) { return visitChildren(ctx); }
@@ -996,21 +1148,6 @@ class EnvironmentCreationVisitor
 
     @Override
     public T visitProvidedPort(XCDParser.ProvidedPortContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComplex_providedPort_method(XCDParser.Complex_providedPort_methodContext ctx) { return visitChildren(ctx); }
 
     @Override
     public T visitComplex_providedPort_functionalContract_Res(XCDParser.Complex_providedPort_functionalContract_ResContext ctx) { return visitChildren(ctx); }
