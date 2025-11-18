@@ -83,6 +83,9 @@ class Names {
     static String enumRoleValueName( String conn, String role, String nm ) {
         return enumGlobalValueName( roleName(conn, role) + "_" + nm ); }
 
+    static String exceptionName( String nm ) {
+        return "EXCEPTION_" + nm; }
+
     static String Void = "XCDVOID";
     static String Bit = "bit";
     static String Byte = "byte";
