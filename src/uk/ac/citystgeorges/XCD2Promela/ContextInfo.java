@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.TreeSet;
 
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -14,10 +16,11 @@ abstract class ContextInfo {
                               // environment
     XCD_type type; // which is of type (root,comp,conn,conf,tdef,enum)
     Map<String,IdInfo> map;
+    Set<String> allExceptions = new TreeSet<String>();
     ContextInfo parent = null;
     List<ContextInfo> children;
     ContextInfo() {
-        this("@root", null, XCD_type.unknownt, false, null); // call next one
+        this("@root", null, XCD_type.roott, false, null); // call next one
     }
     protected ContextInfo(String compUnitID, ParserRuleContext me, XCD_type tp, boolean is_paramp, ContextInfo myparent) {
                 compilationUnitID = compUnitID;
@@ -113,7 +116,7 @@ abstract class ContextInfo {
                                           , ParserRuleContext me)
     {   ContextInfoEvent res = new ContextInfoEvent(compUnitID
                                                     , me
-                                                    , XCD_type.methodt
+                                                    , XCD_type.eventt
                                                     , this);
         children.add(res);
         return res; }
@@ -121,7 +124,7 @@ abstract class ContextInfo {
                                                 , ParserRuleContext me)
     {   ContextInfoFunction res = new ContextInfoFunction(compUnitID
                                                           , me
-                                                          , XCD_type.methodt
+                                                          , XCD_type.functiont
                                                           , this);
         children.add(res);
         return res; }
@@ -184,27 +187,46 @@ class ContextInfoComp extends ContextInfo {
 class Name {public String name; Name(String n) {name=n;}@Override public String toString(){return name;}}
 class Type {public String type; Type(String t) {type=t;}@Override public String toString(){return type;}}
 class Sig extends ArrayList<Type> { Sig(){super();} }
-class NameTypePair {
-    NameTypePair(Name n, Type t) {name=n; type=t;}
-    public Name name;
+class TypeNamePair {
+    TypeNamePair(Type t, Name n) {name=n; type=t;}
     public Type type;
-    @Override public String toString(){return name.toString() + "," + type.toString();}
+    public Name name;
+    @Override public String toString(){return type.toString() + "," + name.toString();}
 }
-class SeqOfNameTypePairs extends ArrayList<NameTypePair> {
-    SeqOfNameTypePairs() {super();}
-    SeqOfNameTypePairs(int sz) {super(sz);}
+class SeqOfTypeNamePairs extends ArrayList<TypeNamePair> {
+    SeqOfTypeNamePairs() {super();}
+    SeqOfTypeNamePairs(int sz) {super(sz);}
+    void addPair(Type t, Name n) {add(new TypeNamePair(t, n));}
 }
 class EventStructure {
-    public Name name;
-    public Sig param_types;
+    public Name name = null;
+    public Sig param_types = null;
     // sig is <name, param_types>
-    public SeqOfNameTypePairs full_sig;
-    public LstStr interaction_constraints;
-    public LstStr functional_constraints;
+    public SeqOfTypeNamePairs full_sig = null;
+    public LstStr interaction_constraintsReq = null;
+    public LstStr interaction_constraintsRes = null;
+    public LstStr functional_constraintsReq = null;
+    public LstStr functional_constraintsRes = null;
+    public LstStr exceptions = new LstStr();
+    EventStructure(Name n, Sig s, SeqOfTypeNamePairs fs, LstStr icQ, LstStr icS, LstStr fcQ, LstStr fcS, LstStr excs) {
+        name = n; param_types = s; full_sig = fs;
+        interaction_constraintsReq = icQ;
+        interaction_constraintsRes = icS;
+        functional_constraintsReq = fcQ;
+        functional_constraintsRes = fcS;
+        exceptions = excs;
+    }
 }
 class MethodStructure extends EventStructure {
-    public Type resultType;
-    LstStr exceptionTypes;
+    public Type resultType = null;
+    MethodStructure(Name n, Sig s, SeqOfTypeNamePairs fs
+                    , Type res
+                    , LstStr icQ, LstStr icS
+                    , LstStr fcQ, LstStr fcS
+                    , LstStr excs) {
+        super(n, s, fs, icQ, icS, fcQ, fcS, excs);
+        resultType = res;
+    }
 }
 class PortConstructs extends CommonConstructs {
     /*
