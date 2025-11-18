@@ -1,0 +1,30 @@
+#! /bin/sh -
+
+TSTDIR=`dirname $1`
+TST=`basename $1 .xcd`
+
+CURRDIR=`pwd`
+TESTDIROUT="${CURRDIR}/build/test"
+TESTDIRIN="${TSTDIR}"
+
+if [ z${TST}z = zz -o ! -f "${TESTDIRIN}/${TST}.xcd" ]; then
+  echo Usage: $0 file.xcd >&2
+  exit 1
+fi
+
+# rm -f build/test/${TST}.passed > /dev/null 2>&1
+
+mkdir -p "${TESTDIROUT}/${TST}" 
+
+( cd "${TESTDIROUT}/${TST}" \
+; java -jar ${HOME}/XCD2Promela/XCD2Promela.jar < ${TESTDIRIN}/${TST}.xcd ) \
+> "${TESTDIROUT}/${TST}.passed" 2>&1
+
+if [ $? = 0 ]; then
+  echo '        OK'
+  exit 0
+else
+  mv "${TESTDIROUT}/${TST}.passed" "${TESTDIROUT}/${TST}.failed"
+  echo '  KO'
+  exit 1
+fi

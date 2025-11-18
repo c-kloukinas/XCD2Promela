@@ -33,6 +33,9 @@ ONEJAR?=$(wildcard $(TOPDIR)/$(EXTERNAL_LIBS)/one-jar-boot-*.jar)
 CLASSPATH=.:$(BLDCLS):$(ANTLR_JAR_RUNTIME):$${CLASSPATH}
 ANTLR=java -jar $(ANTLR_JAR_COMPLETE)
 
+ALL_TESTS=$(wildcard $(TESTCASESDIR)/*.xcd)
+ALL_TESTS_PASSED=$(patsubst $(TESTCASESDIR)/%.xcd,$(TESTDIR)/%.passed,$(ALL_TESTS))
+
 # files produced by antlr from a grammar file:
 PJS=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Parser.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Lexer.java,$(GRAMMAR))
@@ -50,13 +53,22 @@ JAVA_CLASSES=$(PJC) $(NJC)
 
 .PRECIOUS: $(JAVA_SRC)
 
+.PHONY: all compile jar tests test1 test clean backup-incremental backup-full backupi backupf
+
 $(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR) $(SRCDIR)/$(PKGDIR)/$*.java
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
 
+$(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR)
+	$(TOPDIR)/1-scripts/test-xcd $(TESTCASESDIR)/$*.xcd
+
 all:	compile
+
+check:
+	echo ALL_TESTS=$(ALL_TESTS) 
+	echo ALL_TESTS_PASSED=$(ALL_TESTS_PASSED) 
 
 compile: $(JAVA_CLASSES) makefile
 
@@ -95,11 +107,13 @@ $(TARGETJAR): $(THINJAR)
 $(TESTDIR):
 	mkdir -p $(TESTDIR)
 
-test1:  jar $(TESTDIR)
-	(cd $(TESTDIR); java -jar $(TARGETJAR) < $(TESTCASESDIR)/aegis_deadlocking.xcd)
+test1:  $(TESTDIR)/aegis_deadlocking.passed
 
-test:  jar $(TESTDIR)
-	(cd $(TESTDIR); for f in $(TESTCASESDIR)/*.xcd ; do echo $$f ; d=`basename $$f .xcd` ; mkdir $$d ; (cd $$d ; java -jar $(TARGETJAR) <$$f) ; done)
+tests:	$(ALL_TESTS)
+	-rm -f $(TESTDIR)/*.failed
+	make -k $(ALL_TESTS_PASSED)
+
+test:  tests
 
 clean:
 	-rm -rf $(TARGETJAR) $(JBLDDIRFULL) $(BLDDIRFULL)
