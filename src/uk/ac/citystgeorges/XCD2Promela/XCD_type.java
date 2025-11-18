@@ -1,7 +1,8 @@
 package uk.ac.citystgeorges.XCD2Promela;
 
 enum XCD_type {
-    unknownt, voidt, boolt, bytet, intt
+    unknownt, roott
+    , voidt, boolt, bytet, intt
     , paramt, vart
     , resultt, exceptiont
     , emittert, consumert, requiredt, providedt
