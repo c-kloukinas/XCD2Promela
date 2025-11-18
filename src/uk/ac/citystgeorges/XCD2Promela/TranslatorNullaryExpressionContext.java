@@ -80,11 +80,14 @@ class TranslatorNullaryExpressionContext implements TranslatorI
             // if (ctx.varindex != null)
             //  s += visit(ctx.varindex).get(0);
 
-        } else if (ctx.inline_id != null)
+        } else if (ctx.inline_id != null) {
+            var args = bv.visit(ctx.inline_args);
             s = "UNKNOWN"
                 + ctx.inline_id.getText()
-                + bv.visit(ctx.inline_args).get(0);
-        else if (ctx.result != null)
+                + ((args.size()!=0)
+                   ? args.get(0)
+                   : "");
+        } else if (ctx.result != null)
             s += bv.component_variable_result("ACTIONNOTKNOWN");
         else if (ctx.xcd_exception != null)
             s = bv.component_variable_exception("ACTIONNOTKNOWN");
