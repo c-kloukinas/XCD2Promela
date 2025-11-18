@@ -19,7 +19,7 @@ component Customer(){
     ensures:  requestMade := true;
               chosenAmount := amount;   
     }
-    pay(Amount amount, int dummyVar1);   
+    payF(Amount amount, int dummyVar1);   
   }      
      
   required port gas{                  
@@ -62,7 +62,7 @@ component Cashier(ID N := 2){
        
     ensures: payment_amount[@] := amount_arg;      
     }  
-    pay(Amount amount_arg);               
+    payF(Amount amount_arg);               
   }    
 
   emitter port toPump{ 
@@ -135,7 +135,7 @@ connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
       waits: dummyVariable3;
       ensures: dummyVariable3 := true;
       }	  
-      pay();    
+      payF();    
     }                                         
   }                                      
                                            
@@ -149,11 +149,11 @@ connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
       waits: dummyVariable4;
       ensures: dummyVariable4 := true;
       }                 
-      pay();        
+      payF();        
     }                 
   }             
       
- connector proc cust2cash_pay(Customer{pay}, Cashier{customer});       
+ connector proc cust2cash_payF(Customer{pay}, Cashier{customer});       
                       
 }                               
           

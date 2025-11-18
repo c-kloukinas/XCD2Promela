@@ -19,19 +19,19 @@ component dataStore(){
 			requires: true;
 		  ensures: \result := fuel;
 		}		
-		byte fuel();	
+		byte fuelF();	
 
 		@functional{
 			requires: true;
 		  ensures: \result := velocity; 
 		}	
-		byte velocity();
+		byte velocityF();
 
 		@functional{
 			requires: true;
 		  ensures:\result := height;
 		}	
-		byte height();
+		byte heightF();
 			
 	} 
 
@@ -47,19 +47,19 @@ component dataStore(){
 			requires: true;
 		  ensures: \result := fuel;
 		}		
-		byte fuel();	
+		byte fuelF();	
 
 		@functional{
 			requires: true;
 		  ensures:\result := velocity;
 		}	
-		byte velocity();
+		byte velocityF();
 		
 		@functional{
 			requires: true;
 		  ensures:\result := height;
 		}	
-		byte height();			  
+		byte heightF();			  
 	}  
 	
 	required port  newData{
@@ -129,7 +129,7 @@ component calculation(){
 		           burnRateReceived := true
 		           ;    
 		}
-		byte burnRate();	  
+		byte burnRateF();	  
 	}   
     
 	required port  data{   
@@ -142,7 +142,7 @@ component calculation(){
 			requires: true;
 		  ensures: fuel := \result;
 		}		
-		byte fuel();  
+		byte fuelF();  
 		
 		@interaction{
 		  waits:burnRateReceived ;
@@ -162,7 +162,7 @@ component calculation(){
 			requires: true;
 		  ensures:velocity := \result;
 		} 
-		byte velocity();
+		byte velocityF();
        
 		@interaction{
 		  waits:burnRateReceived ;
@@ -172,7 +172,7 @@ component calculation(){
 			requires: true;
 		  ensures:height := \result;
 		}
-		byte height(); 
+		byte heightF(); 
 	}   
 	  
 	provided port newData{  
@@ -238,7 +238,7 @@ component userInterface(int BurnRate){
 			requires: true;
 		  ensures: \result := burnRate;
 		}
-		byte burnRate();
+		byte burnRateF();
 		
 	}
 	
@@ -258,21 +258,21 @@ component userInterface(int BurnRate){
 			requires: true;			
 			ensures: fuel := \result;
 		}		
-		byte fuel();
+		byte fuelF();
 		
 		@functional{
 			promises: \nothing;
 			requires: true;			
 			ensures: velocity := \result;
 		}
-		byte velocity();
+		byte velocityF();
 		 
 		@functional{
 			promises: \nothing;
 			requires: true;			
 			ensures: height := \result;
 		}		
-		byte height();		
+		byte heightF();		
 	}	
 }
 
@@ -281,9 +281,9 @@ connector data2calculation(calculation{data,newData}, dataStore{newData,data_cal
 	role calculation{
 		required port_variable data{
 			byte simulationTime();	
-			byte fuel();
-			byte velocity();
-			byte height();		
+			byte fuelF();
+			byte velocityF();
+			byte heightF();		
 		}
 		provided port_variable newData{
 			byte newSimulationTime();
@@ -297,9 +297,9 @@ connector data2calculation(calculation{data,newData}, dataStore{newData,data_cal
 		provided port_variable data_calc{
 			
 			byte simulationTime();				
-			byte fuel();
-			byte velocity();
-			byte height();
+			byte fuelF();
+			byte velocityF();
+			byte heightF();
 				 
 		}
 		
@@ -331,17 +331,17 @@ connector  complex_data2calculation(calculation{data,newData}, dataStore{newData
 				waits: !dataOpInProcess;
 				ensures:dataOpInProcess := true;
 			}	  
-			byte fuel();
+			byte fuelF();
 			@interaction{ 
 				waits: !dataOpInProcess;
 				ensures: dataOpInProcess := true;
 			}				
-			byte velocity();
+			byte velocityF();
 			@interaction{
 				waits: !dataOpInProcess;
 				ensures: dataOpInProcess := true;
 			}				 
-			byte height();		
+			byte heightF();		
 		}
 		provided port_variable newData{
 			@interaction{
@@ -384,17 +384,17 @@ connector  complex_data2calculation(calculation{data,newData}, dataStore{newData
 		   waits: fuelObtainable ;
        ensures: fuelObtainable:= false ;
  		  }
-			byte fuel();
+			byte fuelF();
   		@interaction{
 		   waits: velocityObtainable ;
        ensures: velocityObtainable:= false ;
  		  }
-			byte velocity();
+			byte velocityF();
   		@interaction{
 		   waits: heightObtainable ;
        ensures: heightObtainable:= false ;
  		  }
-			byte height();
+			byte heightF();
 				  
 		}
 		
@@ -430,7 +430,7 @@ connector  calculation2userInterface(calculation{data_burnRate,simState}, userIn
 
 	role calculation{
 		required port_variable data_burnRate{ 
-			byte burnRate(); 
+			byte burnRateF(); 
 		}   
 		emitter port_variable simState{    
 			notify(SimulatorState state);
@@ -440,7 +440,7 @@ connector  calculation2userInterface(calculation{data_burnRate,simState}, userIn
 	role userInterface{  
    bool burnRateSent := false;
 		provided port_variable data_burnRate{
-			byte burnRate();   
+			byte burnRateF();   
 		}	
 		consumer port_variable simState{
 			notify(SimulatorState state);
@@ -455,7 +455,7 @@ connector  complex_calculation2userInterface(calculation{data_burnRate,simState}
 
 	role calculation{
 		required port_variable data_burnRate{ 
-			byte burnRate(); 
+			byte burnRateF(); 
 		}   
 		emitter port_variable simState{    
 			notify(SimulatorState state);
@@ -469,7 +469,7 @@ connector  complex_calculation2userInterface(calculation{data_burnRate,simState}
 	      waits: !burnRateSent;
         ensures: burnRateSent := true;
 		   }
-			byte burnRate();   
+			byte burnRateF();   
 		}	
 		consumer port_variable simState{
 			notify(SimulatorState state);
@@ -485,9 +485,9 @@ connector  userInterface2Data( userInterface{data}, dataStore{data_ui}){
 	role userInterface{    
 		required port_variable data{ 
 			byte simulationTime();   				
-			byte fuel();			
-			byte velocity();			
-			byte height();	 
+			byte fuelF();			
+			byte velocityF();			
+			byte heightF();	 
 		}  
 	}  
 	    
@@ -499,9 +499,9 @@ connector  userInterface2Data( userInterface{data}, dataStore{data_ui}){
 
 		provided port_variable data_ui{
 			byte simulationTime();				
-			byte fuel();			
-			byte velocity();			
-			byte height();	  
+			byte fuelF();			
+			byte velocityF();			
+			byte heightF();	  
 		}	  
 	}
 	connector proc link1( userInterface{data}, dataStore{data_ui});
@@ -512,9 +512,9 @@ connector complex_userInterface2Data( userInterface{data}, dataStore{data_ui}){
 	role userInterface{    
 		required port_variable data{ 
 			byte simulationTime();   				
-			byte fuel();			
-			byte velocity();			
-			byte height();	 
+			byte fuelF();			
+			byte velocityF();			
+			byte heightF();	 
 		}  
 	}  
 	    
@@ -534,17 +534,17 @@ connector complex_userInterface2Data( userInterface{data}, dataStore{data_ui}){
 	      waits: fuelObtainableUI;
         ensures: fuelObtainableUI:= false;
 		   }
-			byte fuel();			
+			byte fuelF();			
 	    @interaction{
 	      waits: velocityObtainableUI;
         ensures:velocityObtainableUI := false;
 		   }
-			byte velocity();			
+			byte velocityF();			
 	    @interaction{
 	      waits: heightObtainableUI;
         ensures: heightObtainableUI := false;
 		   }
-			byte height();	  
+			byte heightF();	  
 		}	  
 	}
 	connector proc link1( userInterface{data}, dataStore{data_ui});

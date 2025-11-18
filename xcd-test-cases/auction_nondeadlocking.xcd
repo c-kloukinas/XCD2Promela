@@ -42,7 +42,7 @@ component initiator(int numOfParticipants, byte goodPrice){
 			requires: true;
 			ensures:  proposedAmount[@] := propAmount;
 		} 
-	 	propose(byte propAmount);
+	 	proposeAmount(byte propAmount);
 	}
    
 }	  
@@ -63,7 +63,7 @@ component participant(byte amountToPropose){
 			promises: propAmount := amountToPropose;
 			ensures: \nothing;
 		}
-	 	propose(byte propAmount);				
+	 	proposeAmount(byte propAmount);				
 	}
 }
 
@@ -109,7 +109,7 @@ connector basic_init2par(initiator{auction,propose}, participant{auction,propose
 				ensures: cfpSent := false;
 						 sendDecision:=true;						 
 			}			
-			propose(byte propAmount); 
+			proposeAmount(byte propAmount); 
 		}
 	}
 	role participant{
@@ -121,7 +121,7 @@ connector basic_init2par(initiator{auction,propose}, participant{auction,propose
 			accept_proposal();			
 		} 
 		 emitter port_variable propose{	 	 		
-			propose(byte propAmount); 
+			proposeAmount(byte propAmount); 
 		} 
 	} 
 	connector async link1(participant{auction},initiator{auction});
@@ -142,7 +142,7 @@ connector composite_init2par(initiator{auction,propose}, participant{auction,pro
 			accept_proposal();
 		}
  		consumer port_variable propose{
-			propose(byte propAmount); 
+			proposeAmount(byte propAmount); 
 		}
 	} 
 	role participant{
@@ -165,7 +165,7 @@ connector composite_init2par(initiator{auction,propose}, participant{auction,pro
 				waits: cfpReceived;
 				ensures: cfpReceived:=false;
 			}		 		
-			propose(byte propAmount); 
+			proposeAmount(byte propAmount); 
 		} 
 	} 
 	connector async link1(participant{auction},initiator{auction});

@@ -14,30 +14,30 @@ connector centralised(roleP1{toUR,   toNA},
     required port_variable toUR{
       @interaction{ waits: !urFirst;
             ensures: urFirst := true; }
-      void incUR(); }
+      void incURF(); }
     required port_variable toNA{
       @interaction{ waits: urFirst;
             ensures: urFirst := false; }
-      void incNA(); }
+      void incNAF(); }
   }
   role roleUR{
-    provided port_variable inc{ void incUR(); }
-    provided port_variable double{ void doubleUR(); }
+    provided port_variable inc{ void incURF(); }
+    provided port_variable double{ void doubleURF(); }
   }
   role roleNA{
-    provided port_variable inc{ void incNA(); }
-    provided port_variable double{ void doubleNA(); }
+    provided port_variable inc{ void incNAF(); }
+    provided port_variable double{ void doubleNAF(); }
   }
   role roleP2{
     bool urFirst:=false;
     required port_variable toNA{
       @interaction{ waits: urFirst;
             ensures: urFirst := false; }
-      void doubleNA(); }
+      void doubleNAF(); }
     required port_variable toUR{
       @interaction{ waits: !urFirst;
             ensures: urFirst := true; }
-      void doubleUR(); }
+      void doubleURF(); }
   }
 
   role roleController{
@@ -63,24 +63,24 @@ connector centralised(roleP1{toUR,   toNA},
       ensures: p1_incURRcvd :=true;
         corder := pre(corder) == none
 	  ? incFirst : pre(corder); }
-      void incUR(); }
+      void incURF(); }
     provided port_variable P1toNA{
       @interaction{
       waits:  !p1_incNARcvd;
       ensures: p1_incNARcvd :=true; }
-      void incNA(); }
+      void incNAF(); }
     provided port_variable P2toUR{
       @interaction{
       waits:   !p2_dblURRcvd;
       ensures: p2_dblURRcvd :=true;
         corder := pre(corder) == none
 	  ? dblFirst : pre(corder); }
-      void doubleUR(); }
+      void doubleURF(); }
     provided port_variable P2toNA{
       @interaction{
       waits:   !p2_dblNARcvd;
       ensures: p2_dblNARcvd :=true; }
-      void doubleNA(); }
+      void doubleNAF(); }
 
     required port_variable CtoURinc{
       @interaction{
@@ -88,14 +88,14 @@ connector centralised(roleP1{toUR,   toNA},
           && ( (corder==incFirst)
             || (corder==dblFirst && dbl_emitted()) );
       ensures: ur_incUREmtd := true; }
-      void incUR(); }
+      void incURF(); }
     required port_variable CtoURdouble{
       @interaction{
       waits: all_received() && !ur_dblUREmtd
           && ( (corder==dblFirst)
             || (corder==incFirst && inc_emitted()) );
       ensures: ur_dblUREmtd := true; }
-      void doubleUR(); }
+      void doubleURF(); }
     required port_variable CtoNAinc{
       @interaction{
       waits: ur_incUREmtd && !na_incNAEmtd;
@@ -112,7 +112,7 @@ connector centralised(roleP1{toUR,   toNA},
           ? false : pre(na_dblNAEmtd);
         corder := pre(corder) == dblFirst
 	  ? none : pre(corder); }
-      void incNA(); }
+      void incNAF(); }
     required port_variable CtoNAdouble{
       @interaction{
       waits: ur_dblUREmtd && !na_dblNAEmtd;
@@ -129,7 +129,7 @@ connector centralised(roleP1{toUR,   toNA},
           ? false : pre(na_incNAEmtd);
         corder := pre(corder) == incFirst
 	  ? none : pre(corder); }
-      void doubleNA(); }
+      void doubleNAF(); }
   }
   // Controller appears to P1 & P2 as UR & NA
   connector async link1(roleP1{toUR},
@@ -152,30 +152,30 @@ connector centralised(roleP1{toUR,   toNA},
 }
 
 component P1(){
-  required port incUR{ void incUR(); }
-  required port incNA{ void incNA(); }
+  required port incUR{ void incURF(); }
+  required port incNA{ void incNAF(); }
 }
 component P2(){
-  required port doubleUR{ void doubleUR(); }
-  required port doubleNA{ void doubleNA(); }
+  required port doubleUR{ void doubleURF(); }
+  required port doubleNA{ void doubleNAF(); }
 }
 component NA(){
-  provided port incNA{ void incNA(); }
-  provided port doubleNA{ void doubleNA(); }
+  provided port incNA{ void incNAF(); }
+  provided port doubleNA{ void doubleNAF(); }
 }
 component UR(){
-  provided port incUR{ void incUR(); }
-  provided port doubleUR{ void doubleUR(); }
+  provided port incUR{ void incURF(); }
+  provided port doubleUR{ void doubleURF(); }
 }
 component controller{
-  provided port P1_incUR{ void incUR(); }
-  provided port P1_incNA{ void incNA(); }
-  provided port P2_doubleUR{ void doubleUR(); }
-  provided port P2_doubleNA{ void doubleNA(); }
-  required port NA_incNA{ void incNA(); }
-  required port NA_doubleNA{ void doubleNA(); }
-  required port UR_incUR{ void incUR(); }
-  required port UR_doubleUR{ void doubleUR(); }
+  provided port P1_incUR{ void incURF(); }
+  provided port P1_incNA{ void incNAF(); }
+  provided port P2_doubleUR{ void doubleURF(); }
+  provided port P2_doubleNA{ void doubleNAF(); }
+  required port NA_incNA{ void incNAF(); }
+  required port NA_doubleNA{ void doubleNAF(); }
+  required port UR_incUR{ void incURF(); }
+  required port UR_doubleUR{ void doubleURF(); }
 }
 
 

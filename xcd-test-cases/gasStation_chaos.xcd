@@ -18,7 +18,7 @@ component Customer(){
     ensures:  requestMade := true;
               chosenAmount := amount;   
     }
-    pay(Amount amount);   
+    payF(Amount amount);   
   }      
      
   required port gas{                  
@@ -59,7 +59,7 @@ component Cashier(ID N := 2){
        
     ensures: payment_amount[@] := amount_arg;      
     }  
-    pay(Amount amount_arg);               
+    payF(Amount amount_arg);               
   }       
   emitter port toPump{ 
 
@@ -115,17 +115,17 @@ connector Customer_Cashier(Customer{pay}, Cashier{customer}) {
 
   role Customer{ 
     emitter port_variable pay{   	  
-      pay();    
+      payF();    
     }                                         
   }                                      
                                            
   role Cashier{
     consumer port_variable customer{                    
-      pay();        
+      payF();        
     }                 
   }             
       
- connector proc cust2cash_pay(Customer{pay}, Cashier{customer});       
+ connector proc cust2cash_payF(Customer{pay}, Cashier{customer});       
                       
 }                               
           
