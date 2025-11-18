@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorDataTypeContext implements TranslatorI
+class TranslatorDataTypeContext
+    extends TranslatorNullaryExpressionContext // hack to reuse ID's translation
+    implements TranslatorI
 {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
@@ -38,7 +40,7 @@ class TranslatorDataTypeContext implements TranslatorI
                 break;
             }
         } else {
-            s = bv.visitChildren(ctx).get(0);
+            s = translate_ID(bv, ctx.id.getText());
         }
         res.add(s);
         return res;
