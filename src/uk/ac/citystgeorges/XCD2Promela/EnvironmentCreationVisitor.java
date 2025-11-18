@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.Token;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -333,31 +334,49 @@ class EnvironmentCreationVisitor
     private T visitSignatureForEventOrMethod(boolean imaMethod
                                              , XCDParser.EventSignatureContext ctx
                                              , XCDParser.MethodSignatureContext ctxM) {
-        ContextInfo framenow = frameNow();
-        String eventName = ctx.id.getText();
-        if (framenow instanceof ContextInfoCompPort) {
+        updateln(imaMethod?ctxM:ctx);
+        var myParentFrame = frameNow();
+        var myGrandparentFrame = myParentFrame.parent;
+        String eventNameStr = ctx.id.getText();
+        Name eventName = new Name(eventNameStr);
+        ContextInfoCompPort myCompParent = null;
+        ContextInfoConnRolePort myConnParent = null;
+        LstStr methodOrEventNames = null;
+        if (myParentFrame instanceof ContextInfoCompPort) {
+            myCompParent = (ContextInfoCompPort)myParentFrame;
             if (imaMethod)
-                ((ContextInfoCompPort)framenow).portConstructs.basicMethodNames.add(eventName);
+                methodOrEventNames
+                    = myCompParent.portConstructs
+                    .basicMethodNames;
             else
-                ((ContextInfoCompPort)framenow).portConstructs.basicEventNames.add(eventName);
-        } else if (framenow instanceof ContextInfoConnRolePort) {
+                methodOrEventNames
+                    = myCompParent.portConstructs
+                    .basicEventNames;
+        } else if (myParentFrame instanceof ContextInfoConnRolePort) {
+            myConnParent = (ContextInfoConnRolePort)myParentFrame;
             if (imaMethod)
-                ((ContextInfoConnRolePort)framenow).roleConstructs.basicMethodNames.add(eventName);
+                methodOrEventNames
+                    = myConnParent.roleConstructs
+                    .basicMethodNames;
             else
-                ((ContextInfoConnRolePort)framenow).roleConstructs.basicEventNames.add(eventName);
-        } else // if (!imaMethod)
-            {
-            mywarning("Current frame (" + framenow.compilationUnitID
-                      + ") is of type " + framenow.type
-                      + " and its parent is of type " + framenow.parent.type
+                methodOrEventNames
+                    = myConnParent.roleConstructs
+                    .basicEventNames;
+
+            methodOrEventNames.add(eventNameStr);
+        } else {
+            mywarning("Currently, "
+                      + printFrameAndItsParent(myParentFrame
+                                               , myGrandparentFrame)
                       + " and imaMethod is " + imaMethod);
             myassert(false, "BAD CAST");
         }
+        // Construct and register new environment for event/method
         ContextInfo newctx
             = imaMethod
-            ? framenow.makeContextInfoMethod(eventName, ctxM)
-            : framenow.makeContextInfoEvent(eventName, ctx);
-        T res = registerNewEnvironment(eventName
+            ? myParentFrame.makeContextInfoMethod(eventNameStr, ctxM)
+            : myParentFrame.makeContextInfoEvent (eventNameStr, ctx );
+        T res = registerNewEnvironment(eventNameStr
                                        , (imaMethod
                                           ? ctxM
                                           : ctx)
@@ -366,47 +385,138 @@ class EnvironmentCreationVisitor
                                           : XCD_type.eventt)
                                        , null // there's no size part
                                        , newctx);
-        /* push the method environment again, so that constraints are
-         * treated inside it.
-         */
-        if (!imaMethod)
-            pushContext(newctx);
+        /* registerNewEnvironment pops the context - re-push it so
+         * that interaction/functional constraints will be processed
+         * inside it */
+        pushContext(newctx);
+        res = visit(ctx.params);
+
+        // visit exceptions
+        if (ctx.exceptions!=null) {
+            /* register exceptions in the method/event and the global
+             * namespace */
+            LstStr exceptions = (imaMethod)
+                ? ((ContextInfoMethod)newctx).methodConstructs.exceptions
+                : ((ContextInfoEvent) newctx).eventConstructs .exceptions;
+            for (var excT : ctx.exceptions) {
+                String exc = excT.getText();
+                rootContext.allExceptions.add(exc);
+                /* add exceptions in the environment of this
+                 * method/event */
+                IdInfo idinfo = addIdInfo(exc
+                                          , XCD_type.exceptiont
+                                          , false
+                                          , (ArraySizeContext)null
+                                          , (Variable_initialValueContext)null
+                                          , newctx.compilationUnitID);
+                idinfo.translation.add(Names.exceptionName(exc));
+            }
+        }
+
+        var thisEventFrame = (ContextInfoEvent) frameNow();
+        // mywarning("XXX: " +
+        //           printFrameItsParentAndItsGrandparent(thisEventFrame
+        //                                             , myParentFrame
+        //                                             , myGrandparentFrame));
+
+        Sig theSig = new Sig();
+        SeqOfTypeNamePairs theSigWithNames = new SeqOfTypeNamePairs();
+        int sz = res.size();
+        for (int i=0; i<sz-1; ++i) {
+            Type theType = new Type(res.get(i));
+            Name theName = new Name(res.get(++i));
+            theSig.add(theType);
+            theSigWithNames.addPair(theType, theName);
+        }
+
+        MethodStructure theEventM = null;
+        EventStructure  theEventE = null;
+        T ret = defaultResult();
+        LstStr exceptions = null;
+        if (imaMethod) {
+            ret = visit(ctxM.rettype);
+            exceptions
+                = ((ContextInfoMethod)thisEventFrame)
+                .methodConstructs.exceptions;
+            theEventM
+                = new MethodStructure(eventName, theSig
+                                      , theSigWithNames
+                                      , new Type(ret.get(0))
+                                      , null, null
+                                      , null, null
+                                      , exceptions);
+        } else {
+            exceptions
+                = thisEventFrame
+                .eventConstructs.exceptions;
+            theEventE
+                = new EventStructure (eventName
+                                      , theSig, theSigWithNames
+                                      , null, null
+                                      , null, null
+                                      , exceptions);
+        }
+        // Map<Name, Map<String, EventStructure>> eventOverloads
+        var theMapE
+            = (myCompParent!=null
+               ? myCompParent.portConstructs.eventOverloads
+               : myConnParent.roleConstructs.eventOverloads);
+        var theMapM
+            = (myCompParent!=null
+               ? myCompParent.portConstructs.methodOverloads
+               : myConnParent.roleConstructs.methodOverloads);
+        var framenow = frameNow();
+        String msg = printFrameItsParentAndItsGrandparent(framenow
+                                                          , framenow.parent
+                                                          , myParentFrame);
+        myassert
+            ((imaMethod && theMapM!=null)
+             || (!imaMethod && theMapE!=null)
+             , (imaMethod ? "Method" : "Event")
+             + ": Expected to be called as a grandchild "
+             + "of a component/connector\nInstead, " + msg);
+
+        if (imaMethod) {
+            if (!theMapM.containsKey(eventName))
+                theMapM.put(eventName
+                            , new HashMap<String, MethodStructure>());
+            // The slot has a map, so add the actual event structure inside it
+            theMapM.get(eventName).put(eventNameStr, theEventM);
+        } else {
+            if (!theMapE.containsKey(eventName))
+                theMapE.put(eventName
+                            , new HashMap<String, EventStructure >());
+            // The slot has a map, so add the actual event structure inside it
+            theMapE.get(eventName).put(eventNameStr, theEventE);
+        }
 
         return res;
 }
     @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
-        var myparent = frameNow().parent;
-        myassert(myparent.type != XCD_type.methodt
-                 , "Method's parent is a method?");
         T res = visitSignatureForEventOrMethod(true, ctx.es, ctx);
-        // fix your environment's parent
-        frameNow().parent = myparent;
-
-        T ret = visit(ctx.rettype);
-
-        T excs = defaultResult();
-        for (var ex : ctx.exceptions)
-            excs.add(ex.getText());
-
-        for (var respart : res)
-            System.err.println(respart);
-
-        /* push the method environment again, so that constraints are
-         * treated inside it.
-         */
-        pushContext(frameNow());
-
         return res;
     }
 
     @Override public T visitEventSignature(XCDParser.EventSignatureContext ctx) {
-        return visitSignatureForEventOrMethod(false, ctx, null);
+        T res = visitSignatureForEventOrMethod(false, ctx, null);
+        return res;
     }
 
     @Override public T visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
         ContextInfo framenow = frameNow();
         String functionName = ctx.id.getText();
-        ((ContextInfoComp)framenow).compConstructs.inlineFunctionDecls.add(functionName);
+        LstStr inlineFunctionDecls
+            = ((framenow.type==XCD_type.componentt)
+               ? ((ContextInfoComp)framenow).compConstructs.inlineFunctionDecls
+               : ((framenow.type==XCD_type.rolet)
+                  ?((ContextInfoConnRole)framenow).compConstructs.inlineFunctionDecls
+                  : null));
+        myassert(inlineFunctionDecls!=null
+                 , "visitInlineFunctionDeclaration: framenow ("
+                 +  framenow.compilationUnitID
+                 + ") is of unsupported type "
+                 + framenow.type);
+        inlineFunctionDecls.add(functionName);
         ContextInfoFunction newctx
             = framenow.makeContextInfoFunction(ctx.id.getText(), ctx);
         return registerNewEnvironment(ctx.id.getText(), ctx
@@ -455,7 +565,9 @@ class EnvironmentCreationVisitor
         String myComp = "";
         String myConn = "";
         String myRole = "";
-        if (framenow.type==XCD_type.componentt && framenow!=rootContext) {
+        if (framenow.type==XCD_type.roott && framenow==rootContext) {
+            globOrCompOrRole = 0;
+        } else if (framenow.type==XCD_type.componentt && framenow!=rootContext) {
             globOrCompOrRole = 1; // Inside a component
             myComp = framenow.compilationUnitID;
         } else if (framenow.type==XCD_type.rolet) {
@@ -601,7 +713,9 @@ class EnvironmentCreationVisitor
                                   , array_sz
                                   , initVal
                                   , compUnitId);
-        if (tp==XCD_type.methodt || tp==XCD_type.eventt) {
+        if (tp==XCD_type.methodt
+            || tp==XCD_type.eventt
+            || tp==XCD_type.functiont) {
             T res = new T();
             res.add(dtype); res.add(varName);
             mywarning("visitPrimitiveVariableOrParamDeclaration: Have added "
@@ -991,15 +1105,31 @@ class EnvironmentCreationVisitor
                               , ParserRuleContext fc1
                               , ParserRuleContext ic2
                               , ParserRuleContext fc2) {
+        updateln(eventOrMethod);
+        var framebefore = frameNow();
+        String msgbef = "visitEventOrMethodOutOfOrder: starting with "
+            + printFrameAndItsParent(framebefore, framebefore.parent);
+        myassert(framebefore.type==XCD_type.emittert
+                 || framebefore.type==XCD_type.consumert
+                 || framebefore.type==XCD_type.requiredt
+                 || framebefore.type==XCD_type.providedt
+                 || framebefore.type==XCD_type.emittervart
+                 || framebefore.type==XCD_type.consumervart
+                 || framebefore.type==XCD_type.requiredvart
+                 || framebefore.type==XCD_type.providedvart
+                 , msgbef);
         T res = visit(eventOrMethod);
-        if (ic1!=null)
-            res = aggregateResult(res, visit(ic1));
-        if (fc1!=null)
-            res = aggregateResult(res, visit(fc1));
-        if (ic2!=null)
-            res = aggregateResult(res, visit(ic2));
-        if (fc2!=null)
-            res = aggregateResult(res, visit(fc2));
+        var framenow = frameNow();
+        String msg = "visitEventOrMethodOutOfOrder: current "
+            + printFrameAndItsParent(framenow, framenow.parent);
+        myassert(framenow.type==XCD_type.methodt
+                 || framenow.type==XCD_type.eventt
+                 , msg);
+
+        if (ic1!=null) res = aggregateResult(res, visit(ic1));
+        if (fc1!=null) res = aggregateResult(res, visit(fc1));
+        if (ic2!=null) res = aggregateResult(res, visit(ic2));
+        if (fc2!=null) res = aggregateResult(res, visit(fc2));
 
         /* Event environment had been pushed twice, to ensure that
          * interaction/functional constraints are treated inside it */
@@ -1233,6 +1363,16 @@ class EnvironmentCreationVisitor
     /**
      * Miscellaneous helper functions
      */
+    private String printFrameAndItsParent(ContextInfo fr, ContextInfo frP) {
+        return "frame " + fr.compilationUnitID + " of type " + fr.type
+            + ", parent " + frP.compilationUnitID + " of type " + frP.type;
+    }
+    private String printFrameItsParentAndItsGrandparent(ContextInfo fr
+                                                        , ContextInfo frP
+                                                        , ContextInfo frG) {
+        return printFrameAndItsParent(fr, frP)
+            + ", grandparent " + frG.compilationUnitID + " of type " + frG.type;
+    }
 
     @Override
     String component_variable_id(String var, ArraySizeContext index)
