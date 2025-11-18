@@ -427,14 +427,22 @@ eventSignatureSemicolon:
 
 methodSignature:
         rettype=dataType es=eventSignature
-        (TK_THROWS (exceptions+=ID)+)?
             ;
 
 eventSignature:
     id=ID
     params=formalParameters
-/* An event cannot return a value, so it cannot throw an exception either */
-//    (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
+        (TK_THROWS (exceptions+=ID)+)?
+        /* WRONG: (An event cannot return a value, so it cannot throw
+         * an exception either)
+         *
+         * Actually, a method call is two events - one EMITTing the
+         * information for the call, and one CONSUMing the response.
+         *
+         * So, the CONSUMing event is the one giving us the result
+         * and/or exception.
+         */
+        //    (TK_THROWS exc_pre=ID (TK_COMMA excs+=ID)* )?
         ;
 
 enumDeclaration:
@@ -671,7 +679,7 @@ dataType:
     |basic=TK_BYTE
     |basic=TK_BOOL
     |basic=TK_VOID
-    |ID
+    |id=ID
     ;
 
  // basicConnectorType:
