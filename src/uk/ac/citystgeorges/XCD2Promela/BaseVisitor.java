@@ -52,6 +52,12 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                  , "frameNow called with empty env stack - env.size()=" + sz);
         return env.get(env.size()-1);
     }
+    public ContextInfo frameBefore() {
+        int sz = env.size();
+        myassert(sz > 1
+                 , "frameNow called with empty env stack - env.size()=" + sz);
+        return env.get(env.size()-2);
+    }
     protected void pushContext(ContextInfo framenow) {
         getEnv().add(framenow);
     }
