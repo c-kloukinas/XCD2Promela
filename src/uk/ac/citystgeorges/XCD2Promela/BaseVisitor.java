@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.tree.Tree;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.Vocabulary;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -26,10 +27,22 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
  //     extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
      extends XCDBaseVisitor<T>
 {
+    static String getTokenString(int token) {
+        Vocabulary voc = XCDParser.VOCABULARY;
 
-    static public String keywordResult = "\\result";
-    static public String keywordException = "\\exception";
-    static public String keywordNothing = "\\nothing";
+        String literalName = voc.getLiteralName(token);
+        myAssert(literalName!=null, "Token " + token + " has no literal name");
+        literalName = literalName.replaceAll("[']", "");
+        // myWarning("Token " + token + " is " + literalName);
+        return literalName;     // remove all 's
+    }
+
+    static public String keywordResult
+        = getTokenString(XCDParser.TK_RESULT);
+    static public String keywordException
+        = getTokenString(XCDParser.TK_EXCEPTION);
+    static public String keywordIn
+        = getTokenString(XCDParser.TK_IN);
 
     /**
      * Miscellaneous helper functions
