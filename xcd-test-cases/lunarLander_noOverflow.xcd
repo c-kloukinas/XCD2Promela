@@ -65,28 +65,24 @@ component dataStore(){
 	required port  newData{
 		 
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:simTime := \result; 
 		}			
 		byte newSimulationTime();
 			
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:fuel := \result;
 		}			
 		byte newFuel();
 			
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:velocity := \result;
 		}			
 		byte newVelocity();
 	
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: height:=\result; 
 		}			
@@ -109,9 +105,7 @@ component calculation(){
 	required port simState{	
 		@functional{
 		  promises: state \in [Landed,Crashed];
-		  requires: true;
-		  ensures: \nothing
-		           ;
+		  ensures: skip ;
 		}
 		void notify(SimulatorState state);	
 	}
@@ -122,7 +116,6 @@ component calculation(){
 		  waits: !burnRateReceived;
 		}
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: burnRate := \result ;
 		           burnRateReceived := true
@@ -137,7 +130,6 @@ component calculation(){
 		  waits: burnRateReceived;
 		}
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: fuel := \result;
 		}		
@@ -147,7 +139,6 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: simTime := \result ;
 		}
@@ -157,7 +148,6 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:velocity := \result;
 		} 
@@ -167,7 +157,6 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}  
 		@functional{ 
-			promises: \nothing;
 			requires: true;
 		  ensures:height := \result;
 		}
@@ -245,29 +234,25 @@ component userInterface(int BurnRate){
 		
 
 		@functional{
-			promises: \nothing;
-			requires: true;
+			requires: true;			
 			ensures: simTime := \result;
 		}
 		byte simulationTime();
 		
 
 		@functional{
-			promises: \nothing;
 			requires: true;			
 			ensures: fuel := \result;
 		}		
 		byte fuelF();
 		
 		@functional{
-			promises: \nothing;
 			requires: true;			
 			ensures: velocity := \result;
 		}
 		byte velocityF();
 		 
 		@functional{
-			promises: \nothing;
 			requires: true;			
 			ensures: height := \result;
 		}		

@@ -65,28 +65,24 @@ component dataStore(){
 	required port  newData{
 		 
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:simTime := \result; 
 		}			
 		byte newSimulationTime();
 			
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:fuel := \result;
 		}			
 		byte newFuel();
 			
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures:velocity := \result;
 		}			
 		byte newVelocity();
 	
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: height:=\result; 
 		}			
@@ -111,8 +107,7 @@ component calculation(){
 
 		@functional{
 		  promises: state \in [Landed,Crashed];
-		  ensures: \nothing
-		           ;
+		  ensures: skip;
 		}
 		notify(SimulatorState state);	
 	}
@@ -123,11 +118,9 @@ component calculation(){
 		  waits: !burnRateReceived;
 		}
 		@functional{
-			promises: \nothing;
 			requires: true;
 		  ensures: burnRate := \result ;
-		           burnRateReceived := true
-		           ;    
+		           burnRateReceived := true ;    
 		}
 		byte burnRateF();	  
 	}   
@@ -138,7 +131,7 @@ component calculation(){
 		  waits: burnRateReceived;
 		}
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;
 		  ensures: fuel := \result;
 		}		
@@ -148,7 +141,7 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;
 		  ensures: simTime := \result ;
 		}
@@ -158,7 +151,7 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;
 		  ensures:velocity := \result;
 		} 
@@ -168,7 +161,7 @@ component calculation(){
 		  waits:burnRateReceived ;
 		}  
 		@functional{ 
-			promises: \nothing;
+			promises: skip;
 			requires: true;
 		  ensures:height := \result;
 		}
@@ -246,7 +239,7 @@ component userInterface(int BurnRate){
 		
 
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;
 			ensures: simTime := \result;
 		}
@@ -254,21 +247,21 @@ component userInterface(int BurnRate){
 		
 
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;			
 			ensures: fuel := \result;
 		}		
 		byte fuelF();
 		
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;			
 			ensures: velocity := \result;
 		}
 		byte velocityF();
 		 
 		@functional{
-			promises: \nothing;
+			promises: skip;
 			requires: true;			
 			ensures: height := \result;
 		}		

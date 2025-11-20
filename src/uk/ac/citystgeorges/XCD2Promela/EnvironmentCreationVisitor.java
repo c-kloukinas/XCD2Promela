@@ -46,8 +46,8 @@ class EnvironmentCreationVisitor
         LstStr kwords = new LstStr();
         // kwords.add(keywordResult);
         // kwords.add(keywordException);
-        // kwords.add(keywordNothing);
-        // kwords.add("\\in");
+        // kwords.add(keywordSkip);
+        // kwords.add(keywordIn);
         for (String kword : kwords )
             { addIdInfo(kword
                         , XCD_type.resultt
@@ -1144,12 +1144,6 @@ class EnvironmentCreationVisitor
     }
 
     @Override
-    public T visitConsumerPortvar_event(XCDParser.ConsumerPortvar_eventContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.event_sig
-                                            , ctx.icontract, null, null, null);
-    }
-
-    @Override
     public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) {
         return visitEventOrMethodOutOfOrder(ctx.method_sig
                                             , ctx.icontract, null, null, null);
@@ -1157,12 +1151,6 @@ class EnvironmentCreationVisitor
 
     @Override
     public T visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.method_sig
-                                            , ctx.icontract, null, null, null);
-    }
-
-    @Override
-    public T visitProvidedPortvar_complexmethod(XCDParser.ProvidedPortvar_complexmethodContext ctx) {
         return visitEventOrMethodOutOfOrder(ctx.method_sig
                                             , ctx.icontract, null, null, null);
     }
@@ -1193,13 +1181,6 @@ class EnvironmentCreationVisitor
         return visitEventOrMethodOutOfOrder(ctx.port_method
                                             , ctx.icontract, ctx.fcontract
                                             , null, null);
-    }
-
-    @Override
-    public T visitComplex_providedPort_method(XCDParser.Complex_providedPort_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.port_method
-                                            , ctx.icontract_req, ctx.fcontract_req
-                                            , ctx.icontract_res, ctx.fcontract_res);
     }
 
     /**
@@ -1239,21 +1220,6 @@ class EnvironmentCreationVisitor
 
     @Override
     public T visitEmitterPv_InteractionConstraint(XCDParser.EmitterPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPv_InteractionContract(XCDParser.ConsumerPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPv_InteractionConstraint(XCDParser.ConsumerPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPv_InteractionContract(XCDParser.RequiredPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPv_InteractionConstraint(XCDParser.RequiredPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPvcomplex_InteractionContract(XCDParser.ProvidedPvcomplex_InteractionContractContext ctx) { return visitChildren(ctx); }
 
     @Override
     public T visitProvidedPv_InteractionContract(XCDParser.ProvidedPv_InteractionContractContext ctx) { return visitChildren(ctx); }
@@ -1307,9 +1273,6 @@ class EnvironmentCreationVisitor
     public T visitEmitterPort_functionalContract(XCDParser.EmitterPort_functionalContractContext ctx) { return visitChildren(ctx); }
 
     @Override
-    public T visitRequiredPort_functionalContract(XCDParser.RequiredPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
     public T visitConsumerPort_functionalContract(XCDParser.ConsumerPort_functionalContractContext ctx) { return visitChildren(ctx); }
 
     @Override
@@ -1319,16 +1282,10 @@ class EnvironmentCreationVisitor
     public T visitEmitterPort_functionalConstraint(XCDParser.EmitterPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
 
     @Override
-    public T visitRequiredPort_functionalConstraint(XCDParser.RequiredPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
     public T visitConsumerPort_functionalConstraint(XCDParser.ConsumerPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
 
     @Override
     public T visitProvidedPort_functionalConstraint(XCDParser.ProvidedPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitCombinationKeyword(XCDParser.CombinationKeywordContext ctx) { return visitChildren(ctx); }
 
     @Override
     public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) { return visitChildren(ctx); }

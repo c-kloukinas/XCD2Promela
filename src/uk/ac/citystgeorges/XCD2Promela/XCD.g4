@@ -76,7 +76,7 @@ consumerPortvar:
     type=TK_CONSUMER
     TK_PORTVAR id=ID (size=arraySize)?
     TK_LBRACE
-        (events+=consumerPortvar_event)+
+        (events+=emitterPortvar_event)+
         TK_RBRACE
 ;
 requiredPortvar:
@@ -90,8 +90,7 @@ providedPortvar:
     type=TK_PROVIDED
     TK_PORTVAR id=ID (size=arraySize)?
     TK_LBRACE
-        ( methods+=providedPortvar_method
-        | cmethods+=providedPortvar_complexmethod )+
+        ( methods+=providedPortvar_method )+
     TK_RBRACE
 ;
 
@@ -99,12 +98,8 @@ emitterPortvar_event:
         (icontract= emitterPv_InteractionContract)?
         event_sig=eventSignatureSemicolon
 ;
-consumerPortvar_event:
-        (icontract= consumerPv_InteractionContract)?
-        event_sig=eventSignatureSemicolon
-;
 requiredPortvar_method:
-        (icontract= requiredPv_InteractionContract)?
+        (icontract= emitterPv_InteractionContract)?
         method_sig=methodSignatureSemicolon
 ;
 providedPortvar_method:
@@ -112,80 +107,25 @@ providedPortvar_method:
          method_sig=methodSignatureSemicolon
 ;
 
-providedPortvar_complexmethod:
-        (icontract= providedPvcomplex_InteractionContract)
-         method_sig=methodSignatureSemicolon
-;
-
 emitterPv_InteractionContract:
         TK_INTERACTION
         TK_LBRACE
-    constraint_pre=emitterPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints+=emitterPv_InteractionConstraint)*
-        TK_RBRACE
-;
-consumerPv_InteractionContract:
-        TK_INTERACTION
-        TK_LBRACE
-    constraint_pre=consumerPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints+=consumerPv_InteractionConstraint)*
-        TK_RBRACE
-;
-requiredPv_InteractionContract:
-        TK_INTERACTION
-        TK_LBRACE
-    constraint_pre=emitterPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints+=emitterPv_InteractionConstraint)*
+          (constraints+=emitterPv_InteractionConstraint)+
         TK_RBRACE
 ;
 providedPv_InteractionContract:
         TK_INTERACTION
         TK_LBRACE
-    constraint_pre=consumerPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints+=consumerPv_InteractionConstraint)*
-        TK_RBRACE
-;
-providedPvcomplex_InteractionContract:
-        TK_INTERACTION_REQ
-        TK_LBRACE
-    constraint_pre_req=consumerPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints_req+=consumerPv_InteractionConstraint)*
-        TK_RBRACE
-        TK_INTERACTION_RES
-        TK_LBRACE
-    constraint_pre_res=consumerPv_InteractionConstraint
-    (keywords+=combinationKeyword constraints_res+=consumerPv_InteractionConstraint)*
+          (constraints+=emitterPv_InteractionConstraint)+
         TK_RBRACE
 ;
 emitterPv_InteractionConstraint:
         TK_WAITS TK_COLON promise=conditionalStatement
-    TK_ENSURES TK_COLON ensure=postStatement
-;
-consumerPv_InteractionConstraint:
-        TK_WAITS TK_COLON wait_cl=conditionalStatement
-    TK_ENSURES TK_COLON ensure=postStatement
-;
-requiredPv_InteractionConstraint:
-        TK_WAITS TK_COLON promise=conditionalStatement
-    (
-     TK_REQUIRES TK_COLON require_pre=conditionalStatement
-      TK_ENSURES TK_COLON ensure_pre=postStatement
-     (TK_OTHERWISE TK_COLON
-      TK_REQUIRES TK_COLON requires+=conditionalStatement
-      TK_ENSURES TK_COLON ensures+=postStatement )*
-    |
-     TK_ENSURES TK_COLON ensure=postStatement )
+        TK_ENSURES TK_COLON ensure=postStatement
 ;
 providedPv_InteractionConstraint:
-        TK_WAITS TK_COLON promise=conditionalStatement
-    (
-     TK_REQUIRES TK_COLON require_pre=conditionalStatement
-      TK_ENSURES TK_COLON ensure_pre=postStatement
-     (TK_OTHERWISE TK_COLON
-      TK_REQUIRES TK_COLON requires+=conditionalStatement
-      TK_ENSURES TK_COLON ensures+=postStatement )*
-     |
-         TK_ENSURES TK_COLON ensure=postStatement )
+    (TK_WAITS TK_COLON promises+=conditionalStatement
+     TK_ENSURES TK_COLON ensures+=postStatement )+
 ;
 
 componentDeclaration:
@@ -212,7 +152,6 @@ componentPort:
         |consumer=consumerPort
         |required=requiredPort
         |provided=providedPort
-//        |complex_provided=complex_providedPort
 ;
 
 emitterPort:
@@ -241,19 +180,9 @@ providedPort:
     type=TK_PROVIDED
     TK_PORT id=ID (size=arraySize)?
     TK_LBRACE
-        (methods+=providedPort_method |
-        cmethods+=complex_providedPort_method
-        )+
+        ( methods+=providedPort_method )+
         TK_RBRACE
 ;
-
-//complex_providedPort:
-//    type=TK_COMPLEXPROVIDED
-//    TK_PORT id=ID (size=arraySize)?
-//    TK_LBRACE
-//        (methods+=complex_providedPort_method)+
-//        TK_RBRACE
-//;
 
 emitterPort_event:
         (icontract= emitterRequired_InteractionContract)?
@@ -295,9 +224,7 @@ complex_provided_InteractionContract_Res:
         TK_INTERACTION_RES
         TK_LBRACE
         constraint_pre=emitterRequired_InteractionConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=emitterRequired_InteractionConstraint
-        )*
+            (constraints+=emitterRequired_InteractionConstraint)*
         TK_RBRACE
 ;
 
@@ -305,7 +232,7 @@ complex_providedPort_functionalContract_Req:
         TK_FUNCTIONAL_REQ
         TK_LBRACE
         constraint_pre=consumerPort_functionalConstraint
-        (keywords+=combinationKeyword constraints+=consumerPort_functionalConstraint)*
+            (constraints+=consumerPort_functionalConstraint)*
         TK_RBRACE
 ;
 
@@ -313,9 +240,7 @@ complex_provided_InteractionContract_Req:
         TK_INTERACTION_REQ
         TK_LBRACE
         constraint_pre=consumerProvided_InteractionConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=consumerProvided_InteractionConstraint
-        )*
+            (constraints+=consumerProvided_InteractionConstraint)*
         TK_RBRACE
 ;
 
@@ -323,63 +248,52 @@ emitterRequired_InteractionContract:
         TK_INTERACTION
         TK_LBRACE
         constraint_pre=emitterRequired_InteractionConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=emitterRequired_InteractionConstraint
-        )*
+            (constraints+=emitterRequired_InteractionConstraint)*
         TK_RBRACE
 ;
 consumerProvided_InteractionContract:
         TK_INTERACTION
         TK_LBRACE
         constraint_pre=consumerProvided_InteractionConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=consumerProvided_InteractionConstraint
-        )*
+            (constraints+=consumerProvided_InteractionConstraint)*
         TK_RBRACE
 ;
 emitterRequired_InteractionConstraint:
         TK_WAITS TK_COLON promise=conditionalStatement
 ;
 consumerProvided_InteractionConstraint:
-
-          TK_ACCEPTS TK_COLON accept=conditionalStatement
-//          TK_REJECTS TK_COLON reject=conditionalStatement
-
-  |        TK_WAITS TK_COLON wait_cl=conditionalStatement
+        TK_ACCEPTS TK_COLON accept=conditionalStatement
+        | TK_WAITS TK_COLON wait_cl=conditionalStatement
   ;
 
 emitterPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=emitterPort_functionalConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=emitterPort_functionalConstraint
-        )*
-        TK_RBRACE
-            ;
-requiredPort_functionalContract:
-        TK_FUNCTIONAL
-        TK_LBRACE
-        constraint_pre=requiredPort_functionalConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=requiredPort_functionalConstraint
-        )*
+            (constraints+=emitterPort_functionalConstraint)*
         TK_RBRACE
             ;
 consumerPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=consumerPort_functionalConstraint
-        (keywords+=combinationKeyword TK_COLON
-         constraints+=consumerPort_functionalConstraint
-        )*
+            (constraints+=consumerPort_functionalConstraint)*
         TK_RBRACE
             ;
+requiredPort_functionalContract:
+        TK_FUNCTIONAL
+        TK_LBRACE
+            (TK_PROMISES TK_COLON promises+=postStatement)*
+            (constraints+=consumerPort_functionalConstraint)*
+        TK_RBRACE
+            ;
+
+
 providedPort_functionalContract:
         TK_FUNCTIONAL
         TK_LBRACE
         constraint_pre=providedPort_functionalConstraint
-        (keywords+=combinationKeyword constraints+=providedPort_functionalConstraint)*
+            (constraints+=providedPort_functionalConstraint)*
         TK_RBRACE
             ;
 
@@ -388,17 +302,6 @@ providedPort_functionalContract:
 emitterPort_functionalConstraint:
         TK_PROMISES TK_COLON promise=postStatement
         TK_ENSURES TK_COLON ensure=postStatement
-;
-requiredPort_functionalConstraint:
-        TK_PROMISES TK_COLON promise=postStatement
-    (
-      TK_REQUIRES TK_COLON require_pre=conditionalStatement
-      TK_ENSURES TK_COLON ensure_pre=postStatement
-     (TK_OTHERWISE TK_COLON
-      TK_REQUIRES TK_COLON requires+=conditionalStatement
-      TK_ENSURES TK_COLON ensures+=postStatement )*
-     |
-         TK_ENSURES TK_COLON ensure=postStatement )
 ;
 consumerPort_functionalConstraint:
         TK_REQUIRES TK_COLON require=conditionalStatement
@@ -411,9 +314,6 @@ providedPort_functionalConstraint:
     )
 ;
 
-
-
-combinationKeyword: otherwise=TK_OTHERWISE | also=TK_ALSO;
 
 methodSignatureSemicolon:
         methodSig=methodSignature
@@ -517,32 +417,28 @@ inlineFunctionDeclaration:
     ;
 
 elementVariableDeclaration:
-    (elType=TK_COMPONENT
-    userdefined=ID
-//    id=ID (TK_LBRACKET size=NATURAL TK_RBRACKET)? (params=argumentList)?)
-    id=ID (TK_LBRACKET size=arraySize TK_RBRACKET)? (params=argumentList)?)
-    |
-    (elType=TK_CONNECTOR
-    (userdefined=ID|basicConnProc=TK_PROC|basicConnAsync=TK_ASYNC)
-    id=ID (connsize=arraySize)? conn_params=connectorArgumentList        )
+    ( elType=TK_COMPONENT
+       userdefined=ID
+       id=ID (size=arraySize)? (params=argumentList)? )
+    | ( elType=TK_CONNECTOR
+         ( userdefined=ID | basicConnProc=TK_PROC | basicConnAsync=TK_ASYNC )
+         id=ID (connsize=arraySize)? conn_params=connectorArgumentList )
     ;
 
 //assignmentStatement:
 //        id=conditionalExpression (TK_ASSIGN expr=conditionalExpression TK_SEMICOLON)?
 //;
 
-
-
 conditionalStatement:
         condExpr=conditionalExpression
         TK_SEMICOLON
     ;
-
 postStatement:
-        postExpr=setExpression        TK_SEMICOLON
-        (postExprs+=setExpression        TK_SEMICOLON)*
-        | nothing=TK_NOTHING TK_SEMICOLON
+         postExpr=setExpression        TK_SEMICOLON
+         (postExprs+=setExpression        TK_SEMICOLON)*
+        | (skip=TK_SKIP) TK_SEMICOLON
 ;
+
 conditionalExpression:
      condexpr1=relationalExpression
         (
@@ -669,10 +565,6 @@ formalParameters:
         TK_RPARANT
     ;
 
-// formalParameter:
-//           prim_param=primitiveParamDeclaration
-//        ;
-
 dataType:
      basic=TK_INTEGER
     |basic=TK_SHORT
@@ -681,10 +573,6 @@ dataType:
     |basic=TK_VOID
     |id=ID
     ;
-
- // basicConnectorType:
- //         TK_PROC|TK_ASYNC
- // ;
 
 integerLiteral:
   //       (valueZero='0')
@@ -722,9 +610,6 @@ TK_REQUIRES: 'requires';
 TK_PROMISES: 'promises';
 TK_ENSURES: 'ensures';
 TK_ACCEPTS: 'accepts';
-// TK_REJECTS: 'rejects';
-TK_ALSO: 'also';
-TK_OTHERWISE: 'otherwise';
 TK_WHEN: 'when';
 
 TK_THROWS: 'throws';
@@ -744,7 +629,8 @@ TK_FALSE: 'false';
 TK_RETURN: 'return';
 TK_RESULT : '\\result';
 TK_EXCEPTION : '\\exception';
-TK_NOTHING : '\\nothing';
+TK_SKIP: 'skip';         // in Dijkstra's Guarded Commands language it's 'do od'
+TK_ABORT: 'abort';       // not used - in Dijkstra's GCL it's 'if fi'
 
 TK_ASSERT: 'assert';
 
