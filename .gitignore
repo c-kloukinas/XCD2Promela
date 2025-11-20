@@ -35,4 +35,5 @@ build/*
 
 # The final target
 XCD2Promela.jar
+TestGrammar.jar
 
