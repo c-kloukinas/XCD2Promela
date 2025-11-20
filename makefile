@@ -62,7 +62,7 @@ $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
 
 $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR)
-	$(TOPDIR)/1-scripts/test-xcd $(TESTCASESDIR)/$*.xcd
+	$(TOPDIR)/1-scripts/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
 
 all:	compile
 
@@ -111,7 +111,7 @@ test1:  $(TESTDIR)/aegis_deadlocking.passed
 
 tests:	$(ALL_TESTS)
 	-rm -f $(TESTDIR)/*.failed
-	make -k $(ALL_TESTS_PASSED)
+	MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
 
 test:  tests
 

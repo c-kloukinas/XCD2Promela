@@ -1,15 +1,52 @@
 #! /bin/sh -
 
+usage() {
+  echo Usage: $0 exec.jar file.xcd >&2
+  exit 1
+}
+
+if [ $# != 2 ]; then
+  echo Need exactly two arguments 2>&1
+  usage
+fi
+
+TARGETJAR=$1
+shift 1
+
 TSTDIR=`dirname $1`
 TST=`basename $1 .xcd`
 
 CURRDIR=`pwd`
 TESTDIROUT="${CURRDIR}/build/test"
-TESTDIRIN="${TSTDIR}"
+case "z${TSTDIR}" in
+ z/*)
+        TESTDIRIN="${TSTDIR}"
+        ;;
+ *)
+        TESTDIRIN="${CURRDIR}/${TSTDIR}"
+        ;;
+esac
+case "z${TARGETJAR}" in
+ z/*)
+        ;;
+ *)
+        TARGETJAR="${CURRDIR}/${TARGETJAR}"
+        ;;
+esac
+INPUT="${TESTDIRIN}/${TST}.xcd"
+OUTPUTOK="${TESTDIROUT}/${TST}.passed"
+OUTPUTKO="${TESTDIROUT}/${TST}.failed"
 
-if [ z${TST}z = zz -o ! -f "${TESTDIRIN}/${TST}.xcd" ]; then
-  echo Usage: $0 file.xcd >&2
-  exit 1
+if [ "z${TST}z" = zz -o ! -f "${INPUT}" -o ! -f "${TARGETJAR}" ]; then
+  if [ "z${TST}z" = zz -o ! -f "${INPUT}" ]; then
+    echo Cannot find model file "${INPUT}" 2>&1
+  fi
+  if [ ! -f "${TARGETJAR}" ]; then
+    echo Cannot find jar file "${TARGETJAR}" 2>&1
+  fi
+  # echo Usage: $0 exec.jar file.xcd >&2
+  # exit 1
+  usage
 fi
 
 # rm -f build/test/${TST}.passed > /dev/null 2>&1
@@ -17,14 +54,14 @@ fi
 mkdir -p "${TESTDIROUT}/${TST}" 
 
 ( cd "${TESTDIROUT}/${TST}" \
-; java -jar ${HOME}/XCD2Promela/XCD2Promela.jar < ${TESTDIRIN}/${TST}.xcd ) \
-> "${TESTDIROUT}/${TST}.passed" 2>&1
+; java -jar "${TARGETJAR}" < "${INPUT}" ) \
+> "${OUTPUTOK}" 2>&1
 
 if [ $? = 0 ]; then
   echo '        OK'
   exit 0
 else
-  mv "${TESTDIROUT}/${TST}.passed" "${TESTDIROUT}/${TST}.failed"
+  mv "${OUTPUTOK}" "${OUTPUTKO}"
   echo '  KO'
   exit 1
 fi
