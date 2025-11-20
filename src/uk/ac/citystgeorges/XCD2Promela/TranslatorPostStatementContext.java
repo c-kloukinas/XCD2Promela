@@ -19,7 +19,7 @@ class TranslatorPostStatementContext implements TranslatorI
         T res = new T();
         String s = "";
 
-        if (ctx.nothing!=null) {
+        if (ctx.skip!=null) {
             s = "skip;";
             res.add(s);
             return res;
