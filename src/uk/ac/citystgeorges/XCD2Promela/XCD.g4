@@ -207,7 +207,7 @@ dataType:
 statements: (stmts+=statement)+
 ;
 statement:
-  assignment TK_SEMICOLON
+  assgn=assignment TK_SEMICOLON
   | skip=TK_SKIP TK_SEMICOLON
   | assert=assertDeclaration
 ;
@@ -397,13 +397,12 @@ unaryExpression:
 ;
 /*
   <unaryExpressionNotPlusMinus> ::= <primary>
-        | ID
+     //   | ID                  // XXX: can get this from <primary>
         | ~ <unaryExpression>
         | ! <unaryExpression>
 */
 unaryExpressionNotPlusMinus:
  prim=primary
- | name=ID
  | op=( TK_BITNOT | TK_NOT ) unaryExpr=unaryExpression
 ;
 /*
@@ -414,7 +413,7 @@ unaryExpressionNotPlusMinus:
         | <arrayAccess>
 */
 primary:
-  aLiteral
+  lit=aLiteral
   | TK_LPAR parExpr=expression TK_RPAR
   | name=ID
   | at=TK_AT                          // XXX: Extension - another form of ID
