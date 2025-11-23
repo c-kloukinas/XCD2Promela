@@ -28,7 +28,7 @@ connectorDeclaration:
 compositeElement:
   role=componentOrRoleDeclaration // Used in CONNECTORs & COMPOSITEs
   | variable=elementVariableDeclaration
-  | assert=assertDeclaration
+  // | assert=assertDeclaration
   | cenum=enumDeclaration
   | inlineFunction=inlineFunctionDeclaration
 ;
@@ -41,7 +41,7 @@ componentOrRoleDeclaration:
 componentElement:
    port=portDeclaration
   | variable=primitiveVariableDeclaration
-  | assert=assertDeclaration
+  // | assert=assertDeclaration
   | cenum=enumDeclaration
   | inlineFunction=inlineFunctionDeclaration
 ;
