@@ -70,8 +70,8 @@ class Utils {
             throw new RuntimeException(e);
         }
     }
-    static public int ln=-1;
-    static public int atchar=-1;
+    static public int ln=0;
+    static public int atchar=0;
     static int gensymcounter=0;
     static public String newgensym(String prefix) {
         return "gensym_"
