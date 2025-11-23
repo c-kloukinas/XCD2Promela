@@ -18,7 +18,7 @@ class TranslatorComponentOrRoleDeclarationContext implements TranslatorI
         // bv.mywarning
         //     ("\n***Called TranslatorComponentOrRoleDeclarationContext translate!***");
         String compName = ctx.id.getText();
-        ContextInfoComp thisEnv = (ContextInfoComp) (bv.frameNow());
+        SymbolTableComponent thisEnv = (SymbolTableComponent) (bv.symbolTableNow());
 
         // For components we create two files - an instance and a header.
         T res = new T(2);
@@ -203,9 +203,9 @@ class TranslatorComponentOrRoleDeclarationContext implements TranslatorI
         //     translationVarsByte.add("PORT_" + port + "_INDEX");
         //     translationVarsByte.add("PORT_" + port + "_CONNECTIONINDEX");
         //     translationVarsByte.add("PORT_" + port + "_CALLER");
-        //     List<ContextInfo> ports
+        //     List<SymbolTable> ports
         //         = thisEnv.children.stream()
-        //         .filter((ContextInfo x) ->
+        //         .filter((SymbolTable x) ->
         //                 {return x.compilationUnitID.equals(port);})
         //         .toList();
         //     long matches = ports.size();
@@ -213,7 +213,7 @@ class TranslatorComponentOrRoleDeclarationContext implements TranslatorI
         //                 , "A single port should match \"" + port
         //                 + "\" inside component \"" + thisEnv.compilationUnitID
         //                 + "\" - instead we have " + matches);
-        //     ContextInfoCompPort thePort = (ContextInfoCompPort) ports.get(0);
+        //     SymbolTablePort thePort = (SymbolTablePort) ports.get(0);
         //     for (var mtd : thePort.portConstructs.basicMethodNames) {
         //         Map<String, MethodStructure> sigFull = thePort.portConstructs.methodOverloads.get(mtd);
         //         if (sigFull!=null) {

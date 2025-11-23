@@ -60,60 +60,60 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
 
-    private ArrayList<ContextInfo> env = new ArrayList<ContextInfo>();
-    ArrayList<ContextInfo> getEnv() { return env; }
-    public ContextInfo frameNow() {
-        int sz = env.size();
+    private ArrayList<SymbolTable> stbl = new ArrayList<SymbolTable>();
+    ArrayList<SymbolTable> getSTbl() { return stbl; }
+    public SymbolTable symbolTableNow() {
+        int sz = stbl.size();
         myassert(sz > 0
-                 , "frameNow called with empty env stack - env.size()=" + sz);
-        return env.get(env.size()-1);
+                 , "symbolTableNow called with empty symbol table stack - stbl.size()=" + sz);
+        return stbl.get(stbl.size()-1);
     }
-    public ContextInfo frameBefore() {
-        int sz = env.size();
+    public SymbolTable symbolTableBefore() {
+        int sz = stbl.size();
         myassert(sz > 1
-                 , "frameNow called with empty env stack - env.size()=" + sz);
-        return env.get(env.size()-2);
+                 , "symbolTableBefore called with empty symbol table stack - stbl.size()=" + sz);
+        return stbl.get(stbl.size()-2);
     }
-    protected void pushContext(ContextInfo framenow) {
-        getEnv().add(framenow);
+    protected void pushSymbolTable(SymbolTable aSymTab) {
+        getSTbl().add(aSymTab);
     }
-    private void envNotEmpty() {
-        int sz = getEnv().size();
+    private void stblNotEmpty() {
+        int sz = getSTbl().size();
         myassert(sz > 0
-                 , "Popped too many contexts - env.size()=" + sz);
+                 , "Popped too many symbol tables - stbl.size()=" + sz);
     }
-    private void popLastContextReal() {
-        int sz = getEnv().size();
-        var fr = frameNow();
-        // mywarning("Popping context " + fr.compilationUnitID
+    private void popLastSymbolTableReal() {
+        int sz = getSTbl().size();
+        var fr = symbolTableNow();
+        // mywarning("Popping symbol table " + fr.compilationUnitID
         //           + " of type " + fr.type
         //           + " who's parent is " + fr.parent.compilationUnitID
         //           + " of type " + fr.parent.type);
-        getEnv().remove(sz-1);
+        getSTbl().remove(sz-1);
     }
-    protected void popLastContext(ContextInfo framenow) {
-        int sz = getEnv().size();
-        envNotEmpty();
-        ContextInfo lastctx = getEnv().get(sz-1);
-        myassert(framenow == lastctx
-                 , "Current context is not the last element!"
+    protected void popLastSymbolTable(SymbolTable aSymtab) {
+        int sz = getSTbl().size();
+        stblNotEmpty();
+        SymbolTable laststbl = getSTbl().get(sz-1);
+        myassert(aSymtab == laststbl
+                 , "Current symbol table is not the last element!"
                  + ("\n Name: "
-                    + framenow.compilationUnitID
+                    + aSymtab.compilationUnitID
                     + " vs "
-                    + lastctx.compilationUnitID)
+                    + laststbl.compilationUnitID)
                  + ("\n Type: "
-                    + framenow.type
+                    + aSymtab.type
                     + " vs "
-                    + lastctx.type)
+                    + laststbl.type)
                  );
-        popLastContextReal();
+        popLastSymbolTableReal();
     }
-    protected void popLastContext() {
-        envNotEmpty();
-        popLastContextReal();
+    protected void popLastSymbolTable() {
+        stblNotEmpty();
+        popLastSymbolTableReal();
     }
 
-    final static public ContextInfoRoot rootContext = new ContextInfoRoot();
+    final static public SymbolTableRoot rootContext = new SymbolTableRoot();
 
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, String varTypeName
@@ -135,7 +135,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                                  , arraySize
                                  , initVal
                                  , parentId);
-        var currentMap = env.get(env.size()-1).map;
+        var currentMap = stbl.get(stbl.size()-1).map;
         if (currentMap.containsKey(symbol)) {
             IdInfo info = currentMap.get(symbol);
             boolean matches = (info.type == newInfo.type)
@@ -165,8 +165,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return newInfo;
     }
 
-    public IdInfo getIdInfo(String id) { return getIdInfo(frameNow(), id); }
-    public IdInfo getIdInfo(ContextInfo currEnv, String id) {
+    public IdInfo getIdInfo(String id){return getIdInfo(symbolTableNow(), id);}
+    public IdInfo getIdInfo(SymbolTable currEnv, String id) {
         IdInfo res = null;
         while (res == null && currEnv!=null) {
             Map<String,IdInfo> the_map = currEnv.map;
@@ -179,17 +179,17 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     }
 
 
-    boolean isComposite(ContextInfoComp info)
+    boolean isComposite(SymbolTableComposite info)
     { return info.subcomponents.size()!=0; }
-    boolean hasProvidedPorts(ContextInfoComp info)
+    boolean hasProvidedPorts(SymbolTableComponent info)
     { return info.compConstructs.providedprts.size()!=0; }
-    boolean hasRequiredPorts(ContextInfoComp info)
+    boolean hasRequiredPorts(SymbolTableComponent info)
     { return info.compConstructs.requiredprts.size()!=0; }
-    boolean hasEmitterPorts(ContextInfoComp info)
+    boolean hasEmitterPorts(SymbolTableComponent info)
     { return info.compConstructs.emitterprts.size()!=0; }
-    boolean hasConsumerPorts(ContextInfoComp info)
+    boolean hasConsumerPorts(SymbolTableComponent info)
     { return info.compConstructs.consumerprts.size()!=0; }
-    boolean hasPorts(ContextInfoComp info)
+    boolean hasPorts(SymbolTableComponent info)
     { return hasProvidedPorts(info) || hasRequiredPorts(info)
             || hasEmitterPorts(info) || hasConsumerPorts(info); }
 
@@ -205,13 +205,13 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return (idInfo.type == XCD_type.enumt);
     }
     public String component_variable_result(String actionid){
-        var framenow = frameNow();
+        var framenow = symbolTableNow();
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;
         return Names.portActionNameRes(compTypeid, portid, actionid);
     }
     public String component_variable_exception(String actionid) {
-        var framenow = frameNow();
+        var framenow = symbolTableNow();
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;
         return Names.portActionNameExc(compTypeid, portid, actionid);
@@ -230,7 +230,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return (idInfo.type == XCD_type.connectorpart);
     }
     public String nameOfVarConnectorParam(String id) { // supposedly also considers var_prefix
-        var framenow = frameNow();
+        var framenow = symbolTableNow();
         var idInfo = framenow.map.get(id);
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;

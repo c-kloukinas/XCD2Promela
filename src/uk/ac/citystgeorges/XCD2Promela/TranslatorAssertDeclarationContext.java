@@ -18,21 +18,20 @@ class TranslatorAssertDeclarationContext implements TranslatorI
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
-        s = bv.visit(ctx.cond).get(0); // The assertion
-        // Can appear inside: role, component
-        var framenow = bv.frameNow();
-        bv.myassert(framenow.type == XCD_type.componentt
-                    || framenow.type == XCD_type.rolet
-                    , "Assertion appears inside non-supported construct "
+        s = "assert(" + bv.visit(ctx.cond).get(0) + ");"; // The assertion
+        // Can appear inside: methodt actions
+        var framenow = bv.symbolTableNow();
+        bv.myassert(// framenow.type == XCD_type.compositet
+                    // || framenow.type == XCD_type.connectort
+                    // || framenow.type == XCD_type.componentt
+                    // || framenow.type == XCD_type.rolet
+                    // ||
+                    framenow.type == XCD_type.methodt
+                    || framenow.type == XCD_type.eventt
+                    , "Assertions can appear only inside method/event actions"
+                    + " - current symbol table is of type "
                     + framenow.type);
-        if (framenow.type==XCD_type.componentt)
-            ((ContextInfoComp) framenow)
-                .compConstructs.translatedAssertions.add(s);
-        else if (framenow.type==XCD_type.rolet)
-            ((ContextInfoConnRole) framenow)
-                .compConstructs.translatedAssertions.add(s);
-
+        res.add(s);
         return res;
     }
 

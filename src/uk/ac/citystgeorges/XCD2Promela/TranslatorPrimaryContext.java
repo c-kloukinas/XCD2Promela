@@ -28,7 +28,7 @@ class TranslatorPrimaryContext implements TranslatorI
             String trans = translate_ID(bv, varid);
             s = trans;
         } else if (ctx.at != null) {
-            var framenow = bv.frameNow();
+            var framenow = bv.symbolTableNow();
             var compTypeid = framenow.compilationUnitID;
             s += "@UNKNOWNAT";
         } else if (ctx.theResult != null) {
@@ -55,9 +55,9 @@ class TranslatorPrimaryContext implements TranslatorI
                     "Missing translation for \""
                     + id
                     + "\" inside environment \""
-                    + bv.frameNow().compilationUnitID
+                    + bv.symbolTableNow().compilationUnitID
                     + "\" of type: "
-                    + bv.frameNow().type);
+                    + bv.symbolTableNow().type);
         return idinfo.translation.get(0);
     }
 }
