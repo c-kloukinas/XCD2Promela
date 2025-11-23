@@ -35,7 +35,7 @@ abstract class ContextInfo {
                            // not an array, no array size
                            , (ArraySizeContext)null
                            // no initial value
-                           , (Variable_initialValueContext)null
+                           , (VariableDefaultValueContext)null
                            , ""     // parent (root)
                            ));
     }

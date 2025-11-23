@@ -7,14 +7,14 @@ class IdInfo {
     String  variableTypeName = "";
     boolean is_param;
     ArraySizeContext arraySz;
-    Variable_initialValueContext initVal;
+    VariableDefaultValueContext initVal;
     LstStr translation = new LstStr();
     // String big_name;
     // String var_prefix;
     String parent;
     IdInfo(XCD_type tp, boolean is_paramp
            , ArraySizeContext arraySize
-           , Variable_initialValueContext theInitVal
+           , VariableDefaultValueContext theInitVal
            // , String big, String prefix
            , String prnt){
         type = tp;
