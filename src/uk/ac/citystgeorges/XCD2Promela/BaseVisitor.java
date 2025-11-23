@@ -27,6 +27,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
  //     extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
      extends XCDBaseVisitor<T>
 {
+    static String getTokenString(Token tk)
+    { return getTokenString(tk.getType()); }
     static String getTokenString(int token) {
         Vocabulary voc = XCDParser.VOCABULARY;
 
@@ -50,6 +52,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     static protected void updateln(Tree ctx) {Utils.updateln(ctx); }
     static protected String newgensym() { return Utils.newgensym(null); }
     static protected String newgensym(String pref) {return Utils.newgensym(pref);}
+    static final String loopGenSym = newgensym("ForLooping");
     static protected void myAssert(boolean cond, String msg) {
         Utils.myAssert(cond, msg); }
     protected void myassert(boolean cond, String msg) {
@@ -116,7 +119,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                                , XCD_type tp, String varTypeName
                                , boolean is_paramp
                                , ArraySizeContext arraySize
-                               , Variable_initialValueContext initVal
+                               , VariableDefaultValueContext initVal
                                , String parentId) {
         IdInfo res
             = addIdInfo(symbol, tp, is_paramp, arraySize
@@ -126,7 +129,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, boolean is_paramp
                                , ArraySizeContext arraySize
-                               , Variable_initialValueContext initVal
+                               , VariableDefaultValueContext initVal
                                , String parentId) {
         var newInfo = new IdInfo(tp, is_paramp
                                  , arraySize
