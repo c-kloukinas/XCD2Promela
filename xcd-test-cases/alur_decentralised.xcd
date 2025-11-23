@@ -1,117 +1,109 @@
+// -*- mode: java -*-
 component P1(){
+    required port incrementUR{
+        void incURF();
+    }
+    required port incrementNA{
+        void incNAF();
+    }
+}
 
-	required port incrementUR{
-		void incURF();			
-	}
-	required port incrementNA{  
-		void incNAF();			 
-	}	
-} 
- 
 component P2(){
-	required port doubleUR{
-		void doubleURF();			
-	}
-	required port doubleNA{
-		void doubleNAF();			
-	}		 
-	  
+    required port doubleUR{
+        void doubleURF();
+    }
+    required port doubleNA{
+        void doubleNAF();
+    }
 }
 
 component NA(){
- 	provided port incrementNA{
-
-		void incNAF();
-	}
-	
-	provided port doubleNA{
-
-		void doubleNAF();		
-	} 
+    provided port incrementNA{
+        void incNAF();
+    }
+    provided port doubleNA{
+        void doubleNAF();
+    }
 }
-component UR(){
-		
-	provided port incrementUR{
-		void incURF();
-	}
-	
-	provided port doubleUR{
 
-		void doubleURF();
-	}	
-}  
+component UR(){
+    provided port incrementUR{
+        void incURF();
+    }
+    provided port doubleUR{
+        void doubleURF();
+    }
+}
 
 connector P1P2_to_NAUR(roleP1{incrementNA,incrementUR},
-                     roleP2{doubleNA,doubleUR},
-                      roleUR{incrementUR,doubleUR},roleNA{incrementNA,doubleNA} ){
-	
-	role roleP1{
-		bool urFirst:=false;
-		required port_variable incrementNA{
-			@interaction{ 
-				waits: urFirst;
-				ensures: urFirst := false; 
-			}
-			void incNAF();
-		}		 
-		required port_variable incrementUR{ 
-			@interaction{
-				waits: !urFirst; 
-				ensures: urFirst := true;
-			}
-			void incURF();
-		}	 
-	}
-	role roleP2{
-		bool urFirst:=false;
-		required port_variable doubleNA{
-			@interaction{
-				waits: urFirst;
-				ensures: urFirst := false;
-			}
-			void doubleNAF();
-		}
-		required port_variable doubleUR{
-			@interaction{
-				waits: !urFirst;
-				ensures: urFirst := true;
-		    }
-			void doubleURF();
-		}
-	}
-	role roleNA{
-		provided port_variable incrementNA{		
-			void incNAF();
-		}		
-		provided port_variable doubleNA{	
-			void doubleNAF(); 
-		}	
-	}
-	role roleUR{
-		provided port_variable incrementUR{	
-			void incURF();
-		}	
-		provided port_variable doubleUR{	
-			void doubleURF();
-		}		
-	}
-	connector async link1(roleNA{incrementNA},roleP1{incrementNA} );
-	connector async link2(roleP1{incrementUR}, roleUR{incrementUR});	
-	connector async link3(roleNA{doubleNA},roleP2{doubleNA} );
-	connector async link4(roleP2{doubleUR}, roleUR{doubleUR});	
+                       roleP2{doubleNA,doubleUR},
+                       roleUR{incrementUR,doubleUR},roleNA{incrementNA,doubleNA} ){
+    role roleP1{
+        bool urFirst:=false;
+        required port_variable incrementNA{
+            @interaction{
+                allows: urFirst;
+                ensures: urFirst := false;
+            }
+            void incNAF();
+        }
+        required port_variable incrementUR{
+            @interaction{
+                allows: !urFirst;
+                ensures: urFirst := true;
+            }
+            void incURF();
+        }
+    }
+    role roleP2{
+        bool urFirst:=false;
+        required port_variable doubleNA{
+            @interaction{
+                allows: urFirst;
+                ensures: urFirst := false;
+            }
+            void doubleNAF();
+        }
+        required port_variable doubleUR{
+            @interaction{
+                allows: !urFirst;
+                ensures: urFirst := true;
+            }
+            void doubleURF();
+        }
+    }
+    role roleNA{
+        provided port_variable incrementNA{
+            void incNAF();
+        }
+        provided port_variable doubleNA{
+            void doubleNAF();
+        }
+    }
+    role roleUR{
+        provided port_variable incrementUR{
+            void incURF();
+        }
+        provided port_variable doubleUR{
+            void doubleURF();
+        }
+    }
+    connector async link1(roleNA{incrementNA},roleP1{incrementNA} );
+    connector async link2(roleP1{incrementUR}, roleUR{incrementUR});
+    connector async link3(roleNA{doubleNA},roleP2{doubleNA} );
+    connector async link4(roleP2{doubleUR}, roleUR{doubleUR});
 }
-  
 
+composite AlurPlant(){
+    component P1 p1inst();
+    component P2 p2inst();
+    component NA nainst();
+    component UR urinst();
 
-component AlurPlant(){
-	
-	component P1 p1inst();
-	component P2 p2inst();
-	component NA nainst();
-	component UR urinst();
-	
-	connector P1P2_to_NAUR  connIns(p1inst{incrementNA,incrementUR}, p2inst{doubleNA,doubleUR},
-                                      urinst{incrementUR,doubleUR}, nainst{incrementNA, doubleNA});
+    connector P1P2_to_NAUR  connIns(p1inst{incrementNA,incrementUR}
+                                    , p2inst{doubleNA,doubleUR}
+                                    , urinst{incrementUR,doubleUR}
+                                    , nainst{incrementNA, doubleNA});
 }
- 
+
 component AlurPlant config();

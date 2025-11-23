@@ -1,124 +1,125 @@
+// -*- mode: java -*-
 component initiator(int numOfParticipants, byte goodPrice){
     byte maxAmount := goodPrice;
     byte proposedAmount[numOfParticipants] := 0;
     byte numOfRejections := 0;
 
     emitter port auction[numOfParticipants]{
-      startAuction();
+        startAuction();
 
-      @interaction{
-        waits: numOfRejections == numOfParticipants ;
-      }
-      endAuction();
+        @interaction{
+            waits: numOfRejections == numOfParticipants ;
+        }
+        endAuction();
 
-      @functional{
-        promises: initAmount := maxAmount;
-          ensures:  skip;
-      }
-      cfp(byte initAmount);
+        @functional{
+            when: true;
+            ensures:   initAmount := maxAmount;
+        }
+        cfp(byte initAmount);
 
-      @interaction{
-        waits: proposedAmount[@] <= maxAmount;
-      }
-      @functional{
-        promises: skip;
-          ensures: numOfRejections:=numOfRejections+1;
-      }
-      reject_proposal();
+        @interaction{
+            waits: proposedAmount[@] <= maxAmount;
+        }
+        @functional{
+            when: true;
+            ensures: numOfRejections:=numOfRejections+1;
+        }
+        reject_proposal();
 
-      @interaction{
-        waits:  proposedAmount[@] > maxAmount;
-      }
-      @functional{
-        promises: skip;
-          ensures: maxAmount := proposedAmount[@];
-      }
-      accept_proposal();
+        @interaction{
+            waits:  proposedAmount[@] > maxAmount;
+        }
+        @functional{
+            when: true;
+            ensures: maxAmount := proposedAmount[@];
+        }
+        accept_proposal();
     }
 
     consumer port propose[numOfParticipants]{
-      @functional{
-        requires: true;
-          ensures:  proposedAmount[@] := propAmount;
-      }
-      proposeAmount(byte propAmount);
+        @functional{
+            requires: true;
+            ensures:  proposedAmount[@] := propAmount;
+        }
+        proposeAmount(byte propAmount);
     }
 }
 
 component participant(byte amountToPropose){
     consumer port auction{
-      startAuction();
-      endAuction();
-      cfp(byte initAmount);
-      reject_proposal();
-      accept_proposal();
+        startAuction();
+        endAuction();
+        cfp(byte initAmount);
+        reject_proposal();
+        accept_proposal();
     }
 
     emitter port propose{
-      @functional{
-        promises: propAmount := amountToPropose;
-          ensures: skip;
-      }
-      proposeAmount(byte propAmount);
+        @functional{
+            when: true;
+            ensures: propAmount := amountToPropose;
+        }
+        proposeAmount(byte propAmount);
     }
 }
 
 connector basic_init2par(initiator{auction,propose}, participant{auction,propose}){
     role initiator{
-      bool cfpSent := false;
-      bool sendDecision := false;
-      bool auctionStarted := false;
-      bool auctionEnd := false;
-      bool isRejected := false;
+        bool cfpSent := false;
+        bool sendDecision := false;
+        bool auctionStarted := false;
+        bool auctionEnd := false;
+        bool isRejected := false;
 
-      emitter port_variable auction{
-        @interaction{
-          waits: !auctionEnd && !auctionStarted;
-            ensures: auctionStarted := true;
+        emitter port_variable auction{
+            @interaction{
+                allows: !auctionEnd && !auctionStarted;
+                ensures: auctionStarted := true;
+            }
+            startAuction();
+            @interaction{
+                allows: !auctionEnd && auctionStarted ;
+                ensures: auctionEnd := true;
+            }
+            endAuction();
+            @interaction{
+                allows: !isRejected && !auctionEnd && !cfpSent && !sendDecision;
+                ensures: cfpSent := true;
+            }
+            cfp(byte initAmount);
+            @interaction{
+                allows: !auctionEnd && sendDecision;
+                ensures: sendDecision := false;
+                isRejected := true;
+            }
+            reject_proposal();
+            @interaction{
+                allows: !auctionEnd && sendDecision;
+                ensures: sendDecision := false;
+            }
+            accept_proposal();
         }
-        startAuction();
-        @interaction{
-          waits: !auctionEnd && auctionStarted ;
-            ensures: auctionEnd := true;
+        consumer port_variable propose{
+            @interaction{
+                allows: !auctionEnd && cfpSent;
+                ensures: cfpSent := false;
+                sendDecision:=true;
+            }
+            proposeAmount(byte propAmount);
         }
-        endAuction();
-        @interaction{
-          waits: !isRejected && !auctionEnd && !cfpSent && !sendDecision;
-            ensures: cfpSent := true;
-        }
-        cfp(byte initAmount);
-        @interaction{
-          waits: !auctionEnd && sendDecision;
-            ensures: sendDecision := false;
-                     isRejected := true;
-        }
-        reject_proposal();
-        @interaction{
-          waits: !auctionEnd && sendDecision;
-            ensures: sendDecision := false;
-        }
-        accept_proposal();
-      }
-      consumer port_variable propose{
-        @interaction{
-          waits: !auctionEnd && cfpSent;
-            ensures: cfpSent := false;
-                     sendDecision:=true;
-        }
-        proposeAmount(byte propAmount);
-      }
     }
     role participant{
-      consumer port_variable auction{
-        startAuction();
-        endAuction();
-        cfp(byte initAmount);
-        reject_proposal();
-        accept_proposal();
-      }
-      emitter port_variable propose{
-        proposeAmount(byte propAmount);
-      }
+        consumer port_variable auction{
+            startAuction();
+            endAuction();
+            cfp(byte initAmount);
+            reject_proposal();
+            accept_proposal();
+        }
+        emitter port_variable propose{
+            proposeAmount(byte propAmount);
+        }
     }
     connector async link1(participant{auction},initiator{auction});
     connector async link2(participant{propose}, initiator{propose});
@@ -128,56 +129,59 @@ connector composite_init2par(initiator{auction,propose}, participant{auction,pro
     connector basic_init2par connInstance(initiator{auction,propose}, participant{auction,propose});
 
     role initiator{
-      emitter port_variable auction{
-        startAuction();
-        endAuction();
-        cfp(byte initAmount);
-        reject_proposal();
-        accept_proposal();
-      }
-      consumer port_variable propose{
-        proposeAmount(byte propAmount);
-      }
+        emitter port_variable auction{
+            startAuction();
+            endAuction();
+            cfp(byte initAmount);
+            reject_proposal();
+            accept_proposal();
+        }
+        consumer port_variable propose{
+            proposeAmount(byte propAmount);
+        }
     }
     role participant{
-      bool cfpReceived :=false;
+        bool cfpReceived :=false;
 
-      consumer port_variable auction{
-        startAuction();
-        endAuction();
+        consumer port_variable auction{
+            startAuction();
+            endAuction();
 
-        @interaction{
-          waits: !cfpReceived;
-            ensures: cfpReceived := true;
+            @interaction{
+                allows: !cfpReceived;
+                ensures: cfpReceived := true;
+            }
+            cfp(byte initAmount);
+            reject_proposal();
+            accept_proposal();
         }
-        cfp(byte initAmount);
-        reject_proposal();
-        accept_proposal();
-      }
-      emitter port_variable propose{
-        @interaction{
-          waits: cfpReceived;
-            ensures: cfpReceived:=false;
+        emitter port_variable propose{
+            @interaction{
+                allows: cfpReceived;
+                ensures: cfpReceived:=false;
+            }
+            proposeAmount(byte propAmount);
         }
-        proposeAmount(byte propAmount);
-      }
     }
     connector async link1(participant{auction},initiator{auction});
     connector async link2(participant{propose}, initiator{propose});
 }
 
 
-component auctionProtocol (){
+composite auctionProtocol (){
     component initiator inIns(3, 4);
     component participant partIns1(6);
     component participant partIns2(5);
     component participant partIns3(2);
-//    component participant partIns4(7,9);
+    //    component participant partIns4(7,9);
 
-    connector basic_init2par conn1(inIns{auction[0],propose[0]}, partIns1{auction,propose});
-    connector basic_init2par conn2(inIns{auction[1],propose[1]}, partIns2{auction,propose});
-    connector basic_init2par conn3(inIns{auction[2],propose[2]}, partIns3{auction,propose});
-//   connector basic_init2par conn4(inIns{auction[3],propose[3]}, partIns4{auction,propose});
+    connector basic_init2par conn1(inIns{auction[0],propose[0]}
+                                   , partIns1{auction,propose});
+    connector basic_init2par conn2(inIns{auction[1],propose[1]}
+                                   , partIns2{auction,propose});
+    connector basic_init2par conn3(inIns{auction[2],propose[2]}
+                                   , partIns3{auction,propose});
+    //   connector basic_init2par conn4(inIns{auction[3],propose[3]}, partIns4{auction,propose});
 }
 
 component auctionProtocol configAuction();

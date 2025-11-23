@@ -1,559 +1,536 @@
+// -*- mode: java -*-
 enum SimulatorState := {None, Landed, Crashed};
 
 component dataStore(){
- 
-	byte height := 1;   
-	byte velocity := 1;  
-	byte fuel := 1;
-	byte simTime := 1;    
-	  
-	provided port data_ui{
-	   
-		@functional{  
-		requires: true;
-		  ensures: \result := simTime; 
-		}		
-		byte simulationTime(); 	
+    byte height := 1;
+    byte velocity := 1;
+    byte fuel := 1;
+    byte simTime := 1;
 
-		@functional{
-			requires: true;
-		  ensures: \result := fuel;
-		}		
-		byte fuelF();	
+    provided port data_ui{
+        @functional{
+            requires: true;
+            ensures: \result := simTime;
+        }
+        byte simulationTime();
 
-		@functional{
-			requires: true;
-		  ensures: \result := velocity; 
-		}	
-		byte velocityF();
+        @functional{
+            requires: true;
+            ensures: \result := fuel;
+        }
+        byte fuelF();
 
-		@functional{
-			requires: true;
-		  ensures:\result := height;
-		}	
-		byte heightF();
-			
-	} 
+        @functional{
+            requires: true;
+            ensures: \result := velocity;
+        }
+        byte velocityF();
 
-	provided port data_calc{
-	
-		@functional{
-			requires: true;
-		  ensures: \result := simTime; 
-		}		
-		byte simulationTime();	
+        @functional{
+            requires: true;
+            ensures:\result := height;
+        }
+        byte heightF();
+    }
 
-		@functional{
-			requires: true;
-		  ensures: \result := fuel;
-		}		
-		byte fuelF();	
+    provided port data_calc{
+        @functional{
+            requires: true;
+            ensures: \result := simTime;
+        }
+        byte simulationTime();
 
-		@functional{
-			requires: true;
-		  ensures:\result := velocity;
-		}	
-		byte velocityF();
-		
-		@functional{
-			requires: true;
-		  ensures:\result := height;
-		}	
-		byte heightF();			  
-	}  
-	
-	required port  newData{
-		 
-		@functional{
-			requires: true;
-		  ensures:simTime := \result; 
-		}			
-		byte newSimulationTime();
-			
-		@functional{
-			requires: true;
-		  ensures:fuel := \result;
-		}			
-		byte newFuel();
-			
-		@functional{
-			requires: true;
-		  ensures:velocity := \result;
-		}			
-		byte newVelocity();
-	
-		@functional{
-			requires: true;
-		  ensures: height:=\result; 
-		}			
-		byte newHeight();	
-	}		
-} 
+        @functional{
+            requires: true;
+            ensures: \result := fuel;
+        }
+        byte fuelF();
+
+        @functional{
+            requires: true;
+            ensures:\result := velocity;
+        }
+        byte velocityF();
+
+        @functional{
+            requires: true;
+            ensures:\result := height;
+        }
+        byte heightF();
+    }
+
+    required port  newData{
+        @functional{
+            requires: true;
+            ensures:simTime := \result;
+        }
+        byte newSimulationTime();
+
+        @functional{
+            requires: true;
+            ensures:fuel := \result;
+        }
+        byte newFuel();
+
+        @functional{
+            requires: true;
+            ensures:velocity := \result;
+        }
+        byte newVelocity();
+
+        @functional{
+            requires: true;
+            ensures: height:=\result;
+        }
+        byte newHeight();
+    }
+}
 
 component calculation(){
+    byte burnRate := 5;
+    byte simTime := 5;
+    byte fuel := 5;
+    byte velocity := 5;
+    byte height := 5;
+    bool burnRateReceived := false;
 
-	byte burnRate := 5;
-	byte simTime := 5; 
-	byte fuel := 5;
-	byte velocity := 5;
-	byte height := 5;
-  
-	
-	bool burnRateReceived := false;
+    emitter port simState{
+        @functional{
+            when: true;
+                ensures: state \in [Landed,Crashed];
+        }
+        notify(SimulatorState state);
+    }
 
+    required port data_burnRate{
+        @interaction{
+            waits: !burnRateReceived;
+        }
+        @functional{
+            requires: true;
+            ensures: burnRate := \result ;
+            burnRateReceived := true ;
+        }
+        byte burnRateF();
+    }
 
-	emitter port simState{
-	
+    required port  data{
+        @interaction{
+            waits: burnRateReceived;
+        }
+        @functional{
+            requires: true;
+            ensures: fuel := \result;
+        }
+        byte fuelF();
 
-		@functional{
-		  promises: state \in [Landed,Crashed];
-		  ensures: skip;
-		}
-		notify(SimulatorState state);	
-	}
-	 
-	required port data_burnRate{
-	
-		@interaction{
-		  waits: !burnRateReceived;
-		}
-		@functional{
-			requires: true;
-		  ensures: burnRate := \result ;
-		           burnRateReceived := true ;    
-		}
-		byte burnRateF();	  
-	}   
-    
-	required port  data{   
+        @interaction{
+            waits:burnRateReceived ;
+        }
+        @functional{
+            requires: true;
+            ensures: simTime := \result ;
+        }
+        byte simulationTime();
 
-		@interaction{ 
-		  waits: burnRateReceived;
-		}
-		@functional{
-			promises: skip;
-			requires: true;
-		  ensures: fuel := \result;
-		}		
-		byte fuelF();  
-		
-		@interaction{
-		  waits:burnRateReceived ;
-		}
-		@functional{
-			promises: skip;
-			requires: true;
-		  ensures: simTime := \result ;
-		}
-		byte simulationTime();	
+        @interaction{
+            waits:burnRateReceived ;
+        }
+        @functional{
+            requires: true;
+            ensures:velocity := \result;
+        }
+        byte velocityF();
 
-		@interaction{
-		  waits:burnRateReceived ;
-		}
-		@functional{
-			promises: skip;
-			requires: true;
-		  ensures:velocity := \result;
-		} 
-		byte velocityF();
-       
-		@interaction{
-		  waits:burnRateReceived ;
-		}  
-		@functional{ 
-			promises: skip;
-			requires: true;
-		  ensures:height := \result;
-		}
-		byte heightF(); 
-	}   
-	  
-	provided port newData{  
+        @interaction{
+            waits:burnRateReceived ;
+        }
+        @functional{
+            requires: true;
+            ensures:height := \result;
+        }
+        byte heightF();
+    }
 
-		@functional{
-			requires: true;
-		  ensures: simTime := simTime + 0;
-		          \result := simTime + 0;
-		          burnRateReceived := false;
-		}
-		byte newSimulationTime();
-          
+    provided port newData{
+        @functional{
+            requires: true;
+            ensures: simTime := simTime + 0;
+            \result := simTime + 0;
+            burnRateReceived := false;
+        }
+        byte newSimulationTime();
 
-		@functional{
-		  requires: true;
-		  ensures: fuel := fuel + burnRate;
-		           burnRateReceived := false;
-		           \result := fuel + burnRate;
-		}
-		byte newFuel();
+        @functional{
+            requires: true;
+            ensures: fuel := fuel + burnRate;
+            burnRateReceived := false;
+            \result := fuel + burnRate;
+        }
+        byte newFuel();
 
-		@functional{
-		  requires: true;
-		  ensures: velocity := velocity+burnRate ;
-		        \result := velocity+burnRate;
-		        burnRateReceived := false ;
-		}
-		byte newVelocity();
- 
+        @functional{
+            requires: true;
+            ensures: velocity := velocity+burnRate ;
+            \result := velocity+burnRate;
+            burnRateReceived := false ;
+        }
+        byte newVelocity();
 
-		@functional{  
-		  requires: true;
-		  ensures: height := height+burnRate;  
-		        \result := height+burnRate ;
-		        burnRateReceived := false;
-		}
-		byte newHeight();
-		
-	}
-} 
+        @functional{
+            requires: true;
+            ensures: height := height+burnRate;
+            \result := height+burnRate ;
+            burnRateReceived := false;
+        }
+        byte newHeight();
+    }
+}
 
 component userInterface(int BurnRate){
-	byte burnRate := BurnRate;
-   
-	byte simTime := 0; 
-	byte fuel := 0;
-	byte velocity := 0;
-	byte height := 0;
-     
-    SimulatorState currentSimState:=None; 
-    
+    byte burnRate := BurnRate;
+    byte simTime := 0;
+    byte fuel := 0;
+    byte velocity := 0;
+    byte height := 0;
+    SimulatorState currentSimState:=None;
+
     consumer port simState{
-     	@functional{
-    		requires: true;
-    		ensures: currentSimState := state;
-    	}
-    	notify(SimulatorState state);
+        @functional{
+            requires: true;
+            ensures: currentSimState := state;
+        }
+        notify(SimulatorState state);
     }
-    
-	provided port data_burnRate{ 
-		
-		@functional{
-			requires: true;
-		  ensures: \result := burnRate;
-		}
-		byte burnRateF();
-		
-	}
-	
-	required port data{
-		
 
-		@functional{
-			promises: skip;
-			requires: true;
-			ensures: simTime := \result;
-		}
-		byte simulationTime();
-		
+    provided port data_burnRate{
+        @functional{
+            requires: true;
+            ensures: \result := burnRate;
+        }
+        byte burnRateF();
+    }
 
-		@functional{
-			promises: skip;
-			requires: true;			
-			ensures: fuel := \result;
-		}		
-		byte fuelF();
-		
-		@functional{
-			promises: skip;
-			requires: true;			
-			ensures: velocity := \result;
-		}
-		byte velocityF();
-		 
-		@functional{
-			promises: skip;
-			requires: true;			
-			ensures: height := \result;
-		}		
-		byte heightF();		
-	}	
+    required port data{
+        @functional{
+            requires: true;
+            ensures: simTime := \result;
+        }
+        byte simulationTime();
+
+        @functional{
+            requires: true;
+            ensures: fuel := \result;
+        }
+        byte fuelF();
+
+        @functional{
+            requires: true;
+            ensures: velocity := \result;
+        }
+        byte velocityF();
+
+        @functional{
+            requires: true;
+            ensures: height := \result;
+        }
+        byte heightF();
+    }
 }
 
-connector data2calculation(calculation{data,newData}, dataStore{newData,data_calc}){
+connector data2calculation(calculation{data,newData}
+                           , dataStore{newData,data_calc}) {
 
-	role calculation{
-		required port_variable data{
-			byte simulationTime();	
-			byte fuelF();
-			byte velocityF();
-			byte heightF();		
-		}
-		provided port_variable newData{
-			byte newSimulationTime();
-			byte newFuel();
-			byte newVelocity();
-			byte newHeight();				
-		}
-	}
-	
-	role dataStore{
-		provided port_variable data_calc{
-			
-			byte simulationTime();				
-			byte fuelF();
-			byte velocityF();
-			byte heightF();
-				 
-		}
-		
-		required port_variable newData{
-					
-			byte newSimulationTime();				
-			byte newFuel();			
-			byte newVelocity();			
-			byte newHeight();	
-		}		
-	}
-	
-	connector proc link1(calculation{data}, dataStore{data_calc});
-	connector proc link2(calculation{newData}, dataStore{newData});
-} 
- 
+    role calculation{
+        required port_variable data{
+            byte simulationTime();
+            byte fuelF();
+            byte velocityF();
+            byte heightF();
+        }
+        provided port_variable newData{
+            byte newSimulationTime();
+            byte newFuel();
+            byte newVelocity();
+            byte newHeight();
+        }
+    }
+
+    role dataStore{
+        provided port_variable data_calc{
+            byte simulationTime();
+            byte fuelF();
+            byte velocityF();
+            byte heightF();
+        }
+
+        required port_variable newData{
+            byte newSimulationTime();
+            byte newFuel();
+            byte newVelocity();
+            byte newHeight();
+        }
+    }
+
+    connector proc link1(calculation{data}, dataStore{data_calc});
+    connector proc link2(calculation{newData}, dataStore{newData});
+}
+
 connector  complex_data2calculation(calculation{data,newData}, dataStore{newData,data_calc}){
 
-	role calculation{
-		bool dataOpInProcess := false;	  
-		
-		required port_variable data{   
-			@interaction{
-				waits: !dataOpInProcess;
-				ensures: dataOpInProcess := true;
-			}			 
-			byte simulationTime();	
-			@interaction{
-				waits: !dataOpInProcess;
-				ensures:dataOpInProcess := true;
-			}	  
-			byte fuelF();
-			@interaction{ 
-				waits: !dataOpInProcess;
-				ensures: dataOpInProcess := true;
-			}				
-			byte velocityF();
-			@interaction{
-				waits: !dataOpInProcess;
-				ensures: dataOpInProcess := true;
-			}				 
-			byte heightF();		
-		}
-		provided port_variable newData{
-			@interaction{
-				waits: dataOpInProcess;
-				ensures: dataOpInProcess := false;
-			}				
-			byte newSimulationTime();
-			@interaction{
-				waits: dataOpInProcess; 
-				ensures: dataOpInProcess:= false;
-			}				
-			byte newFuel();
-			@interaction{
-				waits: dataOpInProcess;
-				ensures: dataOpInProcess := false;
-			}							
-			byte newVelocity();
-			@interaction{
-				waits: dataOpInProcess;
-				ensures: dataOpInProcess := false;
-			}							
-			byte newHeight();				
-		}
-	}
-	
-	role dataStore{ 
+    role calculation{
+        bool dataOpInProcess := false;
 
-	bool simTimeObtainable := true;  
-	bool fuelObtainable := true;	 
-	bool velocityObtainable := true;	  
-	bool heightObtainable := true; 
+        required port_variable data{
+            @interaction{
+                allows: !dataOpInProcess;
+                ensures: dataOpInProcess := true;
+            }
+            byte simulationTime();
 
-		provided port_variable data_calc{
-  		@interaction{
-		   waits: simTimeObtainable ;
-       ensures: simTimeObtainable:= false ;
- 		  }
-			byte simulationTime();				
-  		@interaction{
-		   waits: fuelObtainable ;
-       ensures: fuelObtainable:= false ;
- 		  }
-			byte fuelF();
-  		@interaction{
-		   waits: velocityObtainable ;
-       ensures: velocityObtainable:= false ;
- 		  }
-			byte velocityF();
-  		@interaction{
-		   waits: heightObtainable ;
-       ensures: heightObtainable:= false ;
- 		  }
-			byte heightF();
-				  
-		}
-		
-		required port_variable newData{
-  		@interaction{
-		   waits: !simTimeObtainable ;
-       ensures: simTimeObtainable:= true ;
- 		  }					
-			byte newSimulationTime();				
-  		@interaction{
-		   waits: !fuelObtainable ;
-       ensures: fuelObtainable:= true ;
- 		  }					
-			byte newFuel();			
-  		@interaction{
-		   waits: !velocityObtainable ;
-       ensures:velocityObtainable:= true ;
- 		  }					
-			byte newVelocity();			
-  		@interaction{
-		   waits: !heightObtainable ;
-       ensures:heightObtainable := true ;
- 		  }					
-			byte newHeight();	
-		}		
-	}
-	
-	connector proc link1(calculation{data}, dataStore{data_calc});
-	connector proc link2(calculation{newData}, dataStore{newData});
+            @interaction{
+                allows: !dataOpInProcess;
+                ensures:dataOpInProcess := true;
+            }
+            byte fuelF();
+
+            @interaction{
+                allows: !dataOpInProcess;
+                ensures: dataOpInProcess := true;
+            }
+            byte velocityF();
+
+            @interaction{
+                allows: !dataOpInProcess;
+                ensures: dataOpInProcess := true;
+            }
+            byte heightF();
+        }
+        provided port_variable newData{
+            @interaction{
+                allows: dataOpInProcess;
+                ensures: dataOpInProcess := false;
+            }
+            byte newSimulationTime();
+
+            @interaction{
+                allows: dataOpInProcess;
+                ensures: dataOpInProcess:= false;
+            }
+            byte newFuel();
+
+            @interaction{
+                allows: dataOpInProcess;
+                ensures: dataOpInProcess := false;
+            }
+            byte newVelocity();
+
+            @interaction{
+                allows: dataOpInProcess;
+                ensures: dataOpInProcess := false;
+            }
+            byte newHeight();
+        }
+    }
+
+    role dataStore{
+        bool simTimeObtainable := true;
+        bool fuelObtainable := true;
+        bool velocityObtainable := true;
+        bool heightObtainable := true;
+
+        provided port_variable data_calc{
+            @interaction{
+                allows: simTimeObtainable ;
+                ensures: simTimeObtainable:= false ;
+            }
+            byte simulationTime();
+
+            @interaction{
+                allows: fuelObtainable ;
+                ensures: fuelObtainable:= false ;
+            }
+            byte fuelF();
+
+            @interaction{
+                allows: velocityObtainable ;
+                ensures: velocityObtainable:= false ;
+            }
+            byte velocityF();
+
+            @interaction{
+                allows: heightObtainable ;
+                ensures: heightObtainable:= false ;
+            }
+            byte heightF();
+        }
+
+        required port_variable newData{
+            @interaction{
+                allows: !simTimeObtainable ;
+                ensures: simTimeObtainable:= true ;
+            }
+            byte newSimulationTime();
+
+            @interaction{
+                allows: !fuelObtainable ;
+                ensures: fuelObtainable:= true ;
+            }
+            byte newFuel();
+
+            @interaction{
+                allows: !velocityObtainable ;
+                ensures:velocityObtainable:= true ;
+            }
+            byte newVelocity();
+
+            @interaction{
+                allows: !heightObtainable ;
+                ensures:heightObtainable := true ;
+            }
+            byte newHeight();
+        }
+    }
+    connector proc link1(calculation{data}, dataStore{data_calc});
+    connector proc link2(calculation{newData}, dataStore{newData});
 }
 
-connector  calculation2userInterface(calculation{data_burnRate,simState}, userInterface{data_burnRate,simState}){
+connector  calculation2userInterface(calculation{data_burnRate,simState}
+                                     , userInterface{data_burnRate,simState}) {
 
-	role calculation{
-		required port_variable data_burnRate{ 
-			byte burnRateF(); 
-		}   
-		emitter port_variable simState{    
-			notify(SimulatorState state);
-		} 
-	}       
-	      
-	role userInterface{  
-   bool burnRateSent := false;
-		provided port_variable data_burnRate{
-			byte burnRateF();   
-		}	
-		consumer port_variable simState{
-			notify(SimulatorState state);
-		}		
-	}
-	connector proc link1(calculation{data_burnRate}, userInterface{data_burnRate});
-	connector async link2(calculation{simState}, userInterface{simState});
+    role calculation{
+        required port_variable data_burnRate{
+            byte burnRateF();
+        }
+        emitter port_variable simState{
+            notify(SimulatorState state);
+        }
+    }
 
+    role userInterface{
+        bool burnRateSent := false;
+        provided port_variable data_burnRate{
+            byte burnRateF();
+        }
+        consumer port_variable simState{
+            notify(SimulatorState state);
+        }
+    }
+    connector proc link1(calculation{data_burnRate}
+                         , userInterface{data_burnRate});
+    connector async link2(calculation{simState}, userInterface{simState});
 }
 
-connector  complex_calculation2userInterface(calculation{data_burnRate,simState}, userInterface{data_burnRate,simState}){
+connector complex_calculation2userInterface(calculation{data_burnRate,simState}
+                                            , userInterface{data_burnRate,simState}) {
+    role calculation{
+        required port_variable data_burnRate{
+            byte burnRateF();
+        }
+        emitter port_variable simState{
+            notify(SimulatorState state);
+        }
+    }
 
-	role calculation{
-		required port_variable data_burnRate{ 
-			byte burnRateF(); 
-		}   
-		emitter port_variable simState{    
-			notify(SimulatorState state);
-		} 
-	}       
-	      
-	role userInterface{  
-   bool burnRateSent := false;
-		provided port_variable data_burnRate{
-	    @interaction{
-	      waits: !burnRateSent;
-        ensures: burnRateSent := true;
-		   }
-			byte burnRateF();   
-		}	
-		consumer port_variable simState{
-			notify(SimulatorState state);
-		}		
-	}
-	connector proc link1(calculation{data_burnRate}, userInterface{data_burnRate});
-	connector async link2(calculation{simState}, userInterface{simState});
-
+    role userInterface{
+        bool burnRateSent := false;
+        provided port_variable data_burnRate{
+            @interaction{
+                allows: !burnRateSent;
+                ensures: burnRateSent := true;
+            }
+            byte burnRateF();
+        }
+        consumer port_variable simState{
+            notify(SimulatorState state);
+        }
+    }
+    connector proc link1(calculation{data_burnRate}
+                         , userInterface{data_burnRate});
+    connector async link2(calculation{simState}, userInterface{simState});
 }
 
 connector  userInterface2Data( userInterface{data}, dataStore{data_ui}){
- 
-	role userInterface{    
-		required port_variable data{ 
-			byte simulationTime();   				
-			byte fuelF();			
-			byte velocityF();			
-			byte heightF();	 
-		}  
-	}  
-	    
-	role dataStore{
-  	bool simTimeObtainableUI := true;
-	  bool fuelObtainableUI := true;	 
-  	bool velocityObtainableUI := true;	  
-  	bool heightObtainableUI := true;
+    role userInterface{
+        required port_variable data{
+            byte simulationTime();
+            byte fuelF();
+            byte velocityF();
+            byte heightF();
+        }
+    }
 
-		provided port_variable data_ui{
-			byte simulationTime();				
-			byte fuelF();			
-			byte velocityF();			
-			byte heightF();	  
-		}	  
-	}
-	connector proc link1( userInterface{data}, dataStore{data_ui});
+    role dataStore{
+        bool simTimeObtainableUI := true;
+        bool fuelObtainableUI := true;
+        bool velocityObtainableUI := true;
+        bool heightObtainableUI := true;
+        provided port_variable data_ui{
+            byte simulationTime();
+            byte fuelF();
+            byte velocityF();
+            byte heightF();
+        }
+    }
+    connector proc link1( userInterface{data}, dataStore{data_ui});
 }
 
-connector complex_userInterface2Data( userInterface{data}, dataStore{data_ui}){
- 
-	role userInterface{    
-		required port_variable data{ 
-			byte simulationTime();   				
-			byte fuelF();			
-			byte velocityF();			
-			byte heightF();	 
-		}  
-	}  
-	    
-	role dataStore{
-  	bool simTimeObtainableUI := true;
-	  bool fuelObtainableUI := true;	 
-  	bool velocityObtainableUI := true;	  
-  	bool heightObtainableUI := true;
+connector complex_userInterface2Data(userInterface{data}, dataStore{data_ui}) {
+    role userInterface{
+        required port_variable data{
+            byte simulationTime();
+            byte fuelF();
+            byte velocityF();
+            byte heightF();
+        }
+    }
 
-		provided port_variable data_ui{
-	    @interaction{
-	      waits: simTimeObtainableUI;
-        ensures: simTimeObtainableUI := false;
-		   }
-			byte simulationTime();				
-	    @interaction{
-	      waits: fuelObtainableUI;
-        ensures: fuelObtainableUI:= false;
-		   }
-			byte fuelF();			
-	    @interaction{
-	      waits: velocityObtainableUI;
-        ensures:velocityObtainableUI := false;
-		   }
-			byte velocityF();			
-	    @interaction{
-	      waits: heightObtainableUI;
-        ensures: heightObtainableUI := false;
-		   }
-			byte heightF();	  
-		}	  
-	}
-	connector proc link1( userInterface{data}, dataStore{data_ui});
- 
+    role dataStore{
+        bool simTimeObtainableUI := true;
+        bool fuelObtainableUI := true;
+        bool velocityObtainableUI := true;
+        bool heightObtainableUI := true;
+        provided port_variable data_ui{
+            @interaction{
+                allows: simTimeObtainableUI;
+                ensures: simTimeObtainableUI := false;
+            }
+            byte simulationTime();
+
+            @interaction{
+                allows: fuelObtainableUI;
+                ensures: fuelObtainableUI:= false;
+            }
+            byte fuelF();
+
+            @interaction{
+                allows: velocityObtainableUI;
+                ensures:velocityObtainableUI := false;
+            }
+            byte velocityF();
+
+            @interaction{
+                allows: heightObtainableUI;
+                ensures: heightObtainableUI := false;
+            }
+            byte heightF();
+        }
+    }
+    connector proc link1( userInterface{data}, dataStore{data_ui});
 }
 
-component lunarLander(){
-  
-	component calculation calc_ins();  
-	component dataStore data_ins();
-	component userInterface ui_ins(0);
-	
-	connector complex_data2calculation conn1(calc_ins{data,newData}, data_ins{newData,data_calc});
-	connector complex_calculation2userInterface conn2(calc_ins{data_burnRate,simState}, ui_ins{data_burnRate,simState});
-	connector complex_userInterface2Data conn3(ui_ins{data}, data_ins{data_ui});
-  
+composite lunarLander(){
+    component calculation calc_ins();
+    component dataStore data_ins();
+    component userInterface ui_ins(0);
+
+    connector complex_data2calculation conn1(calc_ins{data,newData}
+                                             , data_ins{newData,data_calc});
+    connector complex_calculation2userInterface
+        conn2(calc_ins{data_burnRate,simState}
+              , ui_ins{data_burnRate,simState});
+    connector complex_userInterface2Data conn3(ui_ins{data}
+                                               , data_ins{data_ui});
 }
 
 component lunarLander configLunar();
