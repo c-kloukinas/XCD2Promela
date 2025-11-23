@@ -57,7 +57,10 @@ mkdir -p "${TESTDIROUT}/${TST}"
 ; java -jar "${TARGETJAR}" < "${INPUT}" ) \
 > "${OUTPUTOK}" 2>&1
 
-if [ $? = 0 ]; then
+RES=$?
+ERR=`head -1 "${OUTPUTOK}" | egrep '^line [0-9]'`
+
+if [ ${RES} = 0 -a "z${ERR}z" = zz ]; then
   echo '        OK'
   exit 0
 else
