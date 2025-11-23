@@ -13,24 +13,21 @@ class TranslatorAdditiveExpressionContext implements TranslatorI
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (AdditiveExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, AdditiveExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
-        s = bv.visit(ctx.addexpr_pre).get(0);
-        int children = ctx.getChildCount();
-        for (int cnt = 1; cnt < children; ++cnt) {
-            var op = ((Token)ctx.getChild(cnt).getPayload()).getType();
-            var expr = ctx.getChild(++cnt);
-            String ops = ((op == XCDParser.TK_SUM) ? "+"
-                          : (op == XCDParser.TK_SUBTRACT) ? "-": "UNKNOWNOPERAND");
-            s += " "
+        if (ctx.multExpr!=null) {
+            s = bv.visit(ctx.multExpr).get(0);
+        } else {
+            // operators are the same in XCD & Promela
+            String ops = bv.getTokenString(ctx.op);
+            s = bv.visit(ctx.addExpr1).get(0)
+                + " "
                 + ops
-                + " " + bv.visit(expr).get(0);
+                + " "
+                + bv.visit(ctx.multExpr2).get(0);
         }
-
         res.add(s);
         return res;
     }

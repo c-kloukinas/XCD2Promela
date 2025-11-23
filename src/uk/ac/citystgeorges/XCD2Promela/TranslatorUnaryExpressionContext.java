@@ -12,32 +12,18 @@ class TranslatorUnaryExpressionContext implements TranslatorI
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (UnaryExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, UnaryExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
-        /*
-          Relies on (passes these to nullaryExpression's visit):
-
-          componentDeclaration compType,
-          String var_prefix,
-          String portid
-        */
-        if (ctx.preop!=null)
-            s="!";
-        s += bv.visit(ctx.nullexpr).get(0);
-
-        if (ctx.postop!=null) {
-            if (ctx.postop.getType() == XCDParser.TK_INCREMENT)
-                s += "++";
-            else
-                s += "--";
+        if (ctx.unaryExprNPM!=null) {
+            s=bv.visit(ctx.unaryExprNPM).get(0);
+        } else {
+            // operators are the same in XCD & Promela
+            String ops = bv.getTokenString(ctx.op);
+            s = ops + bv.visit(ctx.unaryExpr).get(0);
         }
-
         res.add(s);
         return res;
     }
-
 }

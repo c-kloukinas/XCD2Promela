@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorEqualityExpressionContext implements TranslatorI
+class TranslatorStatementContext implements TranslatorI
 {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
@@ -19,27 +19,51 @@ class TranslatorEqualityExpressionContext implements TranslatorI
         T res = new T();
         String s = "";
 
-        s = bv.visit(ctx.eqexpr_pre).get(0);
-        if (ctx.eqexpr!=null) { // TK_ASSIGN
-            s += "="
-                + "("
-                + bv.visit(ctx.eqexpr).get(0)
-                + ")";
-        } else if (ctx.set!=null) { // TK_IN
-            var range = bv.visit(ctx.set);
-            s = "("
-                + range.get(0)  // range min
-                + " <= "
-                + s
-                + ") && ("
-                + s
+        if (ctx.relExpr!=null)
+            s = bv.visit(ctx.relExpr).get(0);
+        else if (ctx.op!=null) { // ==, !=
+            // operators are the same in XCD & Promela
+            String ops = bv.getTokenString(ctx.op);
+            s = bv.visit(ctx.eqExpr1).get(0)
+                + " "
+                + ops
+                + " "
+                + bv.visit(ctx.relExpr2).get(0);
+        } else if (ctx.inRange!=null) {
+            var eqExpr1=bv.visit(ctx.eqExpr1).get(0);
+            var theRange=bv.visit(ctx.theRange);
+            s = "( ("
+                + eqExpr1
                 + "<="
-                + range.get(1)  // range max
-                + ")";
+                + theRange.get(0)
+                + ") && ("
+                + eqExpr1
+                + "<="
+                + theRange.get(1)
+                + ") )";
+        } else { // inSet
+            var eqExpr1=bv.visit(ctx.eqExpr1).get(0);
+            var theSet=bv.visit(ctx.theSet);
+            int sz = theSet.size();
+            if (sz==0)
+                s = "false";    // nothing is an element of the empty set
+            else {
+                s = "( ("
+                    + eqExpr1
+                    + "=="
+                    + theSet.get(0)
+                    + ")";
+                for (int i=1; i<sz; ++i) {
+                    s += " || ("
+                        + eqExpr1
+                        + "=="
+                        + theSet.get(i)
+                        + ")";
+                }
+                s += " )";
+            }
         }
-
         res.add(s);
         return res;
     }
-
 }

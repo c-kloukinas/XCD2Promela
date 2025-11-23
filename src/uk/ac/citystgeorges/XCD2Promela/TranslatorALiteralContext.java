@@ -1,25 +1,32 @@
 package uk.ac.citystgeorges.XCD2Promela;
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorRangeContext implements TranslatorI {
+class TranslatorALiteralContext implements TranslatorI
+{
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
-        return translate(bv, (RangeContext)ctx); }
-    public T translate(BaseVisitor<T> bv, RangeContext ctx) {
+        return translate(bv, (ALiteralContext)ctx); }
+
+    public T translate(BaseVisitor<T> bv, ALiteralContext ctx) {
         bv.updateln(ctx);
-        T res = new T();
-        String s = "";
-        s = bv.visit(ctx.minVal).get(0);
-        res.add(s);
-        s = bv.visit(ctx.maxVal).get(0);
-        res.add(s);
+        T res = new T(1);
+        String val = "";
+
+	if (ctx.trueToken!=null)
+          val="true";
+	else if (ctx.falseToken!=null)
+          val="false";
+	else 
+          val=ctx.number.getText();
+
+        res.add(val);
         return res;
     }
+
 }

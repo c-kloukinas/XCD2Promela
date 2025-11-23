@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 class TranslatorArraySizeContext
-    extends TranslatorNullaryExpressionContext // hack to reuse ID's translation
+    extends TranslatorPrimaryContext // hack to reuse ID's translation
     implements TranslatorI
 {
     @Override

@@ -13,38 +13,22 @@ class TranslatorConditionalExpressionContext implements TranslatorI
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (ConditionalExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, ConditionalExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
-        s = bv.visit(ctx.condexpr1).get(0);
-        int children = ctx.getChildCount();
-        for (int cnt = 1; cnt < children; ++cnt) {
-            var op = ((Token)ctx.getChild(cnt).getPayload()).getType();
-            var expr = ctx.getChild(++cnt);
-            String ops = "";
-            switch (op) {
-            case XCDParser.TK_OR:
-                ops = "||";
-                break;
-            case XCDParser.TK_AND:
-                ops = "&&";
-                break;
-            // case XCDParser.TK_SEMICOLON: // ?!?!?!?
-            //     ops = "XXX_UNKNOWN_SEMICOLON_OPERATOR_XXX";
-            //     bv.myassert(op!=XCDParser.TK_SEMICOLON
-            //                 , "Cannot translate a `;' operator");
-            //     break;
-            }
-            s += " "
-                + ops
-                + " " + bv.visit(expr).get(0);
+        if (ctx.orExpr!=null) {
+            s = bv.visit(ctx.orExpr).get(0);
+        } else {
+            s = "( ("
+                + bv.visit(ctx.orExprGuard).get(0)
+                + ") ? ("
+                + bv.visit(ctx.exprThen).get(0)
+                + ") : ("
+                + bv.visit(ctx.condExprElse).get(0)
+                + ") )";
         }
-
         res.add(s);
         return res;
     }
-
 }

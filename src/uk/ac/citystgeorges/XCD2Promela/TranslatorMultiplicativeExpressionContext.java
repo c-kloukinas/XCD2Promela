@@ -13,31 +13,20 @@ class TranslatorMultiplicativeExpressionContext implements TranslatorI
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (MultiplicativeExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, MultiplicativeExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-        /*
-          Relies on (passes these to unaryExpression's visit):
 
-          componentDeclaration compType,
-          String var_prefix,
-          String portid
-        */
-
-        s = bv.visit(ctx.multexpr_pre).get(0);
-        int children = ctx.getChildCount();
-        for (int cnt = 1; cnt < children; ++cnt) {
-            var op = ((Token)ctx.getChild(cnt).getPayload()).getType();
-            var expr = ctx.getChild(++cnt);
-            String ops = ((op == XCDParser.TK_MULTIPLY) ? "*"
-                          : (op == XCDParser.TK_DIVIDE) ? "/": "%");
-            s += " "
-                + ops
-                + " " + bv.visit(expr).get(0);
+        if (ctx.unaryExpr!=null)
+            s = bv.visit(ctx.unaryExpr).get(0);
+        else {
+            // operators are the same in XCD & Promela
+            String ops = bv.getTokenString(ctx.op);
+            s = bv.visit(ctx.multExpr1).get(0)
+                + " " + ops
+                + " " + bv.visit(ctx.unaryExpr2).get(0);
         }
-
         res.add(s);
         return res;
     }

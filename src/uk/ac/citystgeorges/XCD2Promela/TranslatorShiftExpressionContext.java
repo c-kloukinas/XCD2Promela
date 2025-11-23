@@ -8,28 +8,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorRelationalExpressionContext implements TranslatorI
+class TranslatorShiftExpressionContext implements TranslatorI
 {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
-        return translate(bv, (RelationalExpressionContext)ctx); }
-
-    public T translate(BaseVisitor<T> bv, RelationalExpressionContext ctx) {
+        return translate(bv, (ShiftExpressionContext)ctx); }
+    public T translate(BaseVisitor<T> bv, ShiftExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-        if (ctx.shiftExpr!=null)
-            s = bv.visit(ctx.shiftExpr).get(0);
-        else {
+        if (ctx.addExpr!=null) {
+            s = bv.visit(ctx.addExpr).get(0);
+        } else {
             // operators are the same in XCD & Promela
             String ops = bv.getTokenString(ctx.op);
-            s = bv.visit(ctx.relExpr1).get(0)
+            s = bv.visit(ctx.shiftExpr1).get(0)
                 + " "
                 + ops
                 + " "
-                + bv.visit(ctx.shiftExpr2);
+                + bv.visit(ctx.addExpr2).get(0);
         }
         res.add(s);
         return res;
     }
+
 }
