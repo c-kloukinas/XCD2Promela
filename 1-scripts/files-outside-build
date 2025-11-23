@@ -2,12 +2,26 @@
 
 CUR=`pwd`
 DIR=`basename "${CUR}"`
+FILES=`mktemp /tmp/BACKUP.XXXXXXXXXX`
+
+BACKUPDIR=${CUR}/y-ignore-me/z-keep-backups
+
+OUT="${BACKUPDIR}/z-`date -I`"
 
 if [ z"$1" = z"-n" ] ; then
-  FILT="-newer ${DIR}/`ls -t y-ignore-me/z-keep-backups/z*.tgz | grep -v bis.tgz | head -1`"
+  FILT="-newer `ls -t ${BACKUPDIR}/z*.tgz | grep -v bis.tgz | head -1`"
+  OUT=${OUT}-bis.tgz
 else
   FILT=""
+  OUT=${OUT}.tgz
 fi
 
 cd ..
-find "${DIR}" -type f ${FILT} | grep -v '/build/' | grep -v .jar | sort
+find "${DIR}" -type f ${FILT} | grep -v '/build/' | grep -v .jar | sort > ${FILES}
+
+tar cvzf "${OUT}" -T ${FILES}
+
+echo ${FILES} contains:
+wc -l ${FILES}
+echo tar contains:
+tar tzf "${OUT}" | wc -l
