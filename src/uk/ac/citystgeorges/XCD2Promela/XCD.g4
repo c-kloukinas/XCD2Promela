@@ -6,20 +6,13 @@ compilationUnit:
   | globTypedef=typeDefDeclaration
   | globInlineFunction=inlineFunctionDeclaration
   | basicComponent=componentOrRoleDeclaration
-  | composite=compositeDeclaration
+  | composite=compositeOrConnectorDeclaration
   | config=elementVariableDeclaration
 ;
 
-compositeDeclaration:
-  comp=complexComponentDeclaration | conn=connectorDeclaration ;
-complexComponentDeclaration:
-TK_COMPOSITE id=ID (params=formalParameters)?
-  TK_LBRACE
-    ( elements+=compositeElement )+
-  TK_RBRACE
-;
-connectorDeclaration:
-  TK_CONNECTOR id=ID params=connectorParameterList
+compositeOrConnectorDeclaration:
+  tp=( TK_COMPOSITE | TK_CONNECTOR )
+    id=ID ( cparams=formalParameters | xparams=connectorParameterList )?
   TK_LBRACE
     ( elements+=compositeElement )+
   TK_RBRACE
@@ -32,6 +25,7 @@ compositeElement:
   | cenum=enumDeclaration
   | inlineFunction=inlineFunctionDeclaration
 ;
+
 componentOrRoleDeclaration:
   struct=(TK_COMPONENT | TK_ROLE) id=ID (param=formalParameters)?
   TK_LBRACE
@@ -40,11 +34,12 @@ componentOrRoleDeclaration:
 ;
 componentElement:
    port=portDeclaration
-  | variable=primitiveVariableDeclaration
+  | variable=variableDeclaration TK_SEMICOLON
   // | assert=assertDeclaration
   | cenum=enumDeclaration
   | inlineFunction=inlineFunctionDeclaration
 ;
+
 portDeclaration:
   type=(TK_EMITTER | TK_CONSUMER | TK_REQUIRED | TK_PROVIDED)
       valOrVar=( TK_PORT | TK_PORTVAR ) id=ID (size=arraySize)?
@@ -54,6 +49,7 @@ portDeclaration:
     (methods+=methodContract)+
   TK_RBRACE
 ;
+
 methodContract:
   (icontract= generalInteractionContract)?
   (fcontract= generalFunctionalContract)?
@@ -89,7 +85,6 @@ generalFunctionalContract:
         TK_ENSURES TK_COLON rEnsures+=statements )*
   TK_RBRACE
 ;
-
 methodSignature:                // rettype is obligatory for methods
   // rettype=dataType es=eventSignature
   (rettype=dataType)?
@@ -127,11 +122,7 @@ inlineFunctionDeclaration:
   TK_RBRACE
 ;
 
-primitiveVariableDeclaration:
-  type=dataType  id=ID (size=arraySize)?
-  (op=TK_ASSIGN initval=variableDefaultValue)? TK_SEMICOLON
-;
-formalParameter:
+variableDeclaration:
   type=dataType  id=ID (size=arraySize)?
   (op=TK_ASSIGN initval=variableDefaultValue)?
 ;
@@ -171,7 +162,7 @@ connectorParameter:
     TK_LBRACE
       pv_pre= ID ( TK_COMMA pvs+= ID )*
     TK_RBRACE )
-  | prim_param= formalParameter
+  | prim_param= variableDeclaration
 ;
 connectorArgumentList:
   TK_LPAR
@@ -191,7 +182,7 @@ connectorArgument_pv:
 
 formalParameters:
   TK_LPAR
-    ( par_pre= formalParameter ( TK_COMMA pars+= formalParameter )* )?
+    ( par_pre= variableDeclaration ( TK_COMMA pars+= variableDeclaration )* )?
   TK_RPAR
 ;
 
@@ -207,9 +198,9 @@ dataType:
 statements: (stmts+=statement)+
 ;
 statement:
-  assgn=assignment TK_SEMICOLON
+  anAssgn=assignment TK_SEMICOLON
   | skip=TK_SKIP TK_SEMICOLON
-  | assert=assertDeclaration
+  | anAssert=assertDeclaration
 ;
 
 assertDeclaration :
