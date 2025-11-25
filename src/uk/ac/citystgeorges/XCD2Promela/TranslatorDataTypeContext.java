@@ -8,19 +8,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorDataTypeContext
+public class TranslatorDataTypeContext
     extends TranslatorPrimaryContext // hack to reuse ID's translation
-    implements TranslatorI
-{
+    implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (DataTypeContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, DataTypeContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
         if (ctx.basic!=null) {
             switch (ctx.basic.getType()) {
             case XCDParser.TK_INTEGER:
@@ -45,5 +42,4 @@ class TranslatorDataTypeContext
         res.add(s);
         return res;
     }
-
 }

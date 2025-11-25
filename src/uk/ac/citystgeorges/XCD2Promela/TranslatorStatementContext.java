@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorStatementContext implements TranslatorI {
+public class TranslatorStatementContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (StatementContext)ctx); }
@@ -16,12 +16,12 @@ class TranslatorStatementContext implements TranslatorI {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-        if (ctx.assgn!=null) {
-            s = bv.visit(ctx.assgn).get(0);
+        if (ctx.anAssgn!=null) {
+            s = bv.visit(ctx.anAssgn).get(0);
         } else if (ctx.skip!=null) {
             s = "skip;\n";
-        } else if (ctx.assert!=null) {
-            s = bv.visit(ctx.assert).get(0);
+        } else if (ctx.anAssert!=null) {
+            s = bv.visit(ctx.anAssert).get(0);
         }
         res.add(s);
         return res;

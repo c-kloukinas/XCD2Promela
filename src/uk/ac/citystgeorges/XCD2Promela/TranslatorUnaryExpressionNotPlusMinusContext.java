@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorUnaryExpressionNotPlusMinusContext implements TranslatorI
-{
+public class TranslatorUnaryExpressionNotPlusMinusContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (UnaryExpressionNotPlusMinusContext)ctx); }

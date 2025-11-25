@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorShiftExpressionContext implements TranslatorI
-{
+public class TranslatorShiftExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (ShiftExpressionContext)ctx); }
@@ -31,5 +30,4 @@ class TranslatorShiftExpressionContext implements TranslatorI
         res.add(s);
         return res;
     }
-
 }

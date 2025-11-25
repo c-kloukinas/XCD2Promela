@@ -8,10 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorLeftHandSideContext
+public class TranslatorLeftHandSideContext
     extends TranslatorPrimaryContext
-    implements TranslatorI
-{
+    implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (LeftHandSideContext)ctx); }

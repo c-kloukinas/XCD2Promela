@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorMultiplicativeExpressionContext implements TranslatorI
-{
+public class TranslatorMultiplicativeExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (MultiplicativeExpressionContext)ctx); }
@@ -17,7 +16,6 @@ class TranslatorMultiplicativeExpressionContext implements TranslatorI
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
         if (ctx.unaryExpr!=null)
             s = bv.visit(ctx.unaryExpr).get(0);
         else {
@@ -30,5 +28,4 @@ class TranslatorMultiplicativeExpressionContext implements TranslatorI
         res.add(s);
         return res;
     }
-
 }

@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorPrimaryContext implements TranslatorI
-{
+public class TranslatorPrimaryContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (PrimaryContext)ctx); }
@@ -17,7 +16,6 @@ class TranslatorPrimaryContext implements TranslatorI
         T res = new T(1);
         String s = "";
         LstStr argList = new LstStr();
-
         if (ctx.lit != null) { // NUM
             res = bv.visit(ctx.lit);
             return res;
@@ -41,7 +39,6 @@ class TranslatorPrimaryContext implements TranslatorI
             s = bv.visit(ctx.arrayAcc).get(0);
         } else
             bv.myassert(false, "Unknown case of nullaryExpression");
-
         // System.out.println("Translation is: " + s);
         res.add(s);
         return res;

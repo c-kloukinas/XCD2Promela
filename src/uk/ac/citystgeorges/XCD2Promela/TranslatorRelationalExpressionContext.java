@@ -8,12 +8,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorRelationalExpressionContext implements TranslatorI
-{
+public class TranslatorRelationalExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (RelationalExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, RelationalExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();

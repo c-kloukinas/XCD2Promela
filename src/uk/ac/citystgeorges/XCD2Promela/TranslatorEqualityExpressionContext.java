@@ -8,17 +8,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorStatementContext implements TranslatorI
-{
+public class TranslatorEqualityExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (EqualityExpressionContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, EqualityExpressionContext ctx) {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-
         if (ctx.relExpr!=null)
             s = bv.visit(ctx.relExpr).get(0);
         else if (ctx.op!=null) { // ==, !=

@@ -7,26 +7,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorALiteralContext implements TranslatorI
-{
+public class TranslatorALiteralContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (ALiteralContext)ctx); }
-
     public T translate(BaseVisitor<T> bv, ALiteralContext ctx) {
         bv.updateln(ctx);
         T res = new T(1);
         String val = "";
-
 	if (ctx.trueToken!=null)
           val="true";
 	else if (ctx.falseToken!=null)
           val="false";
 	else 
           val=ctx.number.getText();
-
         res.add(val);
         return res;
     }
-
 }

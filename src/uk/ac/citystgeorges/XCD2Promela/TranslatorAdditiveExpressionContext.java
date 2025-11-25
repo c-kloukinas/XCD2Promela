@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorAdditiveExpressionContext implements TranslatorI
-{
+public class TranslatorAdditiveExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (AdditiveExpressionContext)ctx); }
@@ -31,5 +30,4 @@ class TranslatorAdditiveExpressionContext implements TranslatorI
         res.add(s);
         return res;
     }
-
 }

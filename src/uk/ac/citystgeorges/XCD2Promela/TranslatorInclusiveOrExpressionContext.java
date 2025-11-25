@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-class TranslatorInclusiveOrExpressionContext implements TranslatorI
-{
+public class TranslatorInclusiveOrExpressionContext implements TranslatorI {
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (InclusiveOrExpressionContext)ctx); }
@@ -27,5 +26,4 @@ class TranslatorInclusiveOrExpressionContext implements TranslatorI
         res.add(s);
         return res;
     }
-
 }
