@@ -209,6 +209,17 @@ class SymbolTableComponent extends SymbolTable { // COMPONENT or ROLE
     String getParamName(String param) {
         return Names.paramNameComponent(compilationUnitID, param);
     }
+    LstStr getPortList(int tp) {
+        return (tp==XCDParser.TK_EMITTER
+                ? compConstructs.emitterprts
+                : (tp==XCDParser.TK_CONSUMER
+                   ? compConstructs.consumerprts
+                   : (tp==XCDParser.TK_PROVIDED
+                      ? compConstructs.providedprts
+                      : (tp==XCDParser.TK_REQUIRED
+                         ? compConstructs.requiredprts
+                         : null))));
+    }
 }
 
 class Name {public String name; Name(String n) {name=n;}@Override public String toString(){return name;}}
