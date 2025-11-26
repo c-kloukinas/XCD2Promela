@@ -106,6 +106,13 @@ class Utils {
     public void mywarning(String msg) {
         msg = "warning(line " +ln + ", char " + atchar + "): " + msg;
         Utils.myWarning(msg); }
+    public void mySyntaxCheck(boolean cond, String msg) {
+        msg = "Syntax error (line " +ln + ", char " + atchar + "): " + msg;
+        if (!cond) {
+            System.err.println(msg);
+            System.exit(1);
+        }
+    }
 
     public static final Utils util = new Utils();
 }
