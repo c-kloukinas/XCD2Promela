@@ -17,7 +17,8 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
         // bv.mywarning
         //     ("\n***Called TranslatorComponentOrRoleDeclarationContext translate!***");
         String compName = ctx.id.getText();
-        SymbolTableComponent thisEnv = (SymbolTableComponent) (bv.symbolTableNow());
+        SymbolTableComponent thisEnv
+            = (SymbolTableComponent) (bv.symbolTableNow());
 
         // For components we create two files - an instance and a header.
         T res = new T(2);
