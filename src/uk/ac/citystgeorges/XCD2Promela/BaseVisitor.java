@@ -59,6 +59,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         Utils.util.myassert(cond,msg); }
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
+    protected void mySyntaxCheck(boolean cond, String msg)
+    { Utils.util.mySyntaxCheck(cond, msg); }
 
     private ArrayList<SymbolTable> stbl = new ArrayList<SymbolTable>();
     ArrayList<SymbolTable> getSTbl() { return stbl; }
