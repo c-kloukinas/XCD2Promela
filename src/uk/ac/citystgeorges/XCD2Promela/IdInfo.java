@@ -4,7 +4,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
 class IdInfo {
     XCD_type type;
-    String  variableTypeName = "";
+    String  variableTypeName = null;
     boolean is_param;
     ArraySizeContext arraySz;
     VariableDefaultValueContext initVal;
