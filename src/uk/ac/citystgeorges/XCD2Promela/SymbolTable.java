@@ -64,6 +64,7 @@ abstract class SymbolTable {
                                                   , boolean is_paramp)
     { Utils.myAssert(tp == XCD_type.compositet
                        || tp == XCD_type.connectort
+                       || tp == XCD_type.configt
                        , "makeSymbolTableComposite called with type "
                        + tp);
         SymbolTableComposite res = new SymbolTableComposite(compUnitID
