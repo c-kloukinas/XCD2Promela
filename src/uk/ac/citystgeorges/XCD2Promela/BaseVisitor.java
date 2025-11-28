@@ -160,7 +160,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                           + "\nparent: " + info.parent + " vs " + newInfo.parent);
                 myassert(false, "Symbol \""+symbol+"\" already in the map");
             } else
-                mywarning("Symbol \"" +symbol+"\" aldeary in the map - input visited twice!");
+                mywarning("Symbol \"" +symbol+"\" already in the map - input visited twice!");
 
         } else {
             currentMap.put(symbol, newInfo); }
@@ -180,6 +180,25 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return res;
     }
 
+    public DataTypeContext makeDataType(String dt) {
+        org.antlr.v4.runtime.CharStream input
+            = org.antlr.v4.runtime.CharStreams.fromString(dt);
+        // create a lexer that feeds off of input CharStream
+        XCDLexer lexer
+            = new XCDLexer(input);
+        // create a buffer of tokens pulled from the lexer
+        org.antlr.v4.runtime.CommonTokenStream tokens
+            = new org.antlr.v4.runtime.CommonTokenStream(lexer);
+        // create a parser that feeds off the tokens buffer
+        XCDParser parser
+            = new XCDParser(tokens);
+        // begin parsing at "dataType" parse rule
+        DataTypeContext tree
+            = (DataTypeContext) parser.dataType();
+        return tree;
+    }
+
+    //
 
     boolean isComposite(SymbolTableComposite info)
     { return info.subcomponents.size()!=0; }

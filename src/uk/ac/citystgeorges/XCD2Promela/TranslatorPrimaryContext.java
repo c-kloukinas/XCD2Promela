@@ -48,13 +48,28 @@ public class TranslatorPrimaryContext implements TranslatorI {
         bv.myassert(id!=null && !id.equals("")
                     , "empty name for a variable");
         IdInfo idinfo = bv.getIdInfo(id);
-        bv.myassert(idinfo.translation!=null && idinfo.translation.size()>0,
-                    "Missing translation for \""
-                    + id
-                    + "\" inside environment \""
-                    + bv.symbolTableNow().compilationUnitID
-                    + "\" of type: "
-                    + bv.symbolTableNow().type);
-        return idinfo.translation.get(0);
+        if (idinfo.type==XCD_type.typedeft) {
+            String realType = idinfo.variableTypeName;
+            /* res (the real type) may itself be a typedef, so we need
+             * to recurse, until we find its translation */
+            DataTypeContext type4recursion = bv.makeDataType(realType);
+            var trans = bv.visit(type4recursion).get(0);
+            bv.mywarning("TypeDefDeclaration: type "
+                         + id
+                         + " ("
+                         + realType
+                         + ") translated to type " + trans);
+            return trans;
+        } else {
+            bv.myassert((idinfo.translation!=null
+                         && idinfo.translation.size()>0)
+                        , "Missing translation for \""
+                        + id
+                        + "\" inside environment \""
+                        + bv.symbolTableNow().compilationUnitID
+                        + "\" of type: "
+                        + bv.symbolTableNow().type);
+            return idinfo.translation.get(0);
+        }
     }
 }
