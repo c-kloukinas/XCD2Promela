@@ -1,7 +1,8 @@
 // -*- mode: java -*-
 enum Amount := {None, Little, Average, Much};
 
-typedef byte ID;
+typedef byte anID; // just to check recursive typedef definitions.
+typedef anID ID;
 
 component Customer(){
     bool dummyVar9 := true;
@@ -184,7 +185,7 @@ connector Cashier_Pump(Cashier{toPump}, Pump{fromCashier}){
 }
 
 // Add default value - represents Customer_MAX when this is the whole architecture.
-composite GasStation(ID N := 1){
+component GasStation(ID N := 1){
     component Customer cust1[1]();
     component Cashier cash1(1);
     component Pump pump1(1);
@@ -194,4 +195,4 @@ composite GasStation(ID N := 1){
     connector Cashier_Pump conn3(cash1{toPump}, pump1{fromCashier});
 }
 
-component GasStation config();
+composite GasStation config();
