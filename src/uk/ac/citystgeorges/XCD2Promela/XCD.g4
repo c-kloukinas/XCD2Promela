@@ -11,7 +11,7 @@ compilationUnit:
 ;
 
 compositeOrConnectorDeclaration:
-  tp=( TK_COMPOSITE | TK_CONNECTOR )
+  tp=( TK_COMPOSITE | TK_COMPONENT | TK_CONNECTOR )
     id=ID ( cparams=formalParameters | xparams=connectorParameterList )?
   TK_LBRACE
     ( elements+=compositeElement )+
@@ -142,7 +142,7 @@ variableDefaultValue:
 ;
 
 elementVariableDeclaration:
-  ( elType=TK_COMPONENT
+( elType=(TK_COMPONENT | TK_COMPOSITE)
      userdefined=ID
      id=ID (size=arraySize)? TK_LPAR (params=argumentList)? TK_RPAR )
      TK_SEMICOLON
