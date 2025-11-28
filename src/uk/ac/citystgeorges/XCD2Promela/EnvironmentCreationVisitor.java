@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
@@ -34,6 +35,15 @@ class EnvironmentCreationVisitor
         return aggregate;
     }
 
+    @Override
+    String component_variable_id(String var, ArraySizeContext index)
+    { return var
+            + "["
+            + ((index==null)
+               ? "1"
+               : visit(index).get(0))
+            + "]"; }
+
    /**
      * Constructs that create their own environment.
      */
@@ -41,8 +51,8 @@ class EnvironmentCreationVisitor
     @Override public T visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
         String compilationUnitID = "@root"; // root
         // initialise env, so that "result", etc. are known IDs
-        myassert(getEnv().size()==0, "Expected no environments!");
-        getEnv().add(rootContext);
+        myassert(getSTbl().size()==0, "Expected no environments!");
+        getSTbl().add(rootContext);
         LstStr kwords = new LstStr();
         // kwords.add(keywordResult);
         // kwords.add(keywordException);
@@ -54,7 +64,7 @@ class EnvironmentCreationVisitor
                         , kword
                         , false
                         , (ArraySizeContext)null
-                        , (Variable_initialValueContext)null
+                        , (VariableDefaultValueContext)null
                         , compilationUnitID); }
 
         return visitChildren(ctx);
@@ -66,16 +76,26 @@ class EnvironmentCreationVisitor
     private T registerNewEnvironment(String name, ParserRuleContext ctx
                                      , XCD_type tp
                                      , ArraySizeContext arraySize
-                                     , ContextInfo newctx) {
+                                     , SymbolTable newctx) {
         return registerNewEnvironment(name, ctx, tp, arraySize, newctx, null);
     }
     private T registerNewEnvironment(String name, ParserRuleContext ctx
                                      , XCD_type tp
                                      , ArraySizeContext arraySize
-                                     , ContextInfo newctx
+                                     , SymbolTable newctx
                                      , TranslatorI tr) {
+        return registerNewEnvironment(name, ctx, tp, arraySize, newctx, tr
+                                      , (ParserRuleContext context)
+                                      -> {return visitChildren(context);});
+    }
+    private T registerNewEnvironment(String name, ParserRuleContext ctx
+                                     , XCD_type tp
+                                     , ArraySizeContext arraySize
+                                     , SymbolTable newctx
+                                     , TranslatorI tr
+                                     , Function<ParserRuleContext, T> vis) {
         updateln(ctx);
-        ContextInfo framenow = frameNow();
+        SymbolTable framenow = symbolTableNow();
         /*
          * // Add new context to the childer of the current one.
          * // framenow.children.add(newctx);
@@ -90,296 +110,260 @@ class EnvironmentCreationVisitor
                   , null, framenow.compilationUnitID);
 
         // push new environment context
-        pushContext(newctx);
+        pushSymbolTable(newctx);
 
         // Add new names in the new context
         T res = defaultResult();
         /* Methods/events treat their children out-of-order. */
         if (newctx.type!=XCD_type.methodt
-            && newctx.type!=XCD_type.eventt)
-            res = visitChildren(ctx); // These results are ignored
+            && newctx.type!=XCD_type.eventt) {
+            res = vis.apply(ctx); // These results are ignored
+        }
 
         // mywarning("***Currently env has size: "
-        //           + getEnv().size()
+        //           + getSTbl().size()
         //           + " name is: " + name);
         if (tr!=null)
             res = tr.translate(this, ctx);
 
         // pop new environment context
-        popLastContext(newctx);
+        popLastSymbolTable(newctx);
         return res;
     }
-    @Override public T visitConnectorDeclaration(XCDParser.ConnectorDeclarationContext ctx) {
-        ContextInfo framenow = frameNow();
-        ContextInfoConn newctx
-            = framenow.makeContextInfoConn(ctx.id.getText(), ctx, false);
+
+    @Override public T visitCompositeOrConnectorDeclaration(XCDParser.CompositeOrConnectorDeclarationContext ctx) {
+        SymbolTable framenow = symbolTableNow();
+        XCD_type myType
+            = (ctx.tp.getType()==XCDParser.TK_CONNECTOR)
+            ? XCD_type.connectort
+            : XCD_type.compositet; // may have used TK_COMPOSITE or TK_COMPONENT
+        mySyntaxCheck(myType!=XCD_type.connectort
+                      ||
+                      (ctx.cparams==null
+                       && ctx.xparams!=null)
+                      , "A connector expects as arguments a list of its roles"
+                      + " and their port variables");
+        mySyntaxCheck(myType!=XCD_type.compositet
+                      ||
+                      (ctx.cparams!=null
+                       && ctx.xparams==null)
+                      , "A composite does not accept a list of roles"
+                      + " and their port variables as parameters");
+
+        SymbolTableComposite newctx
+            = framenow.makeSymbolTableComposite(ctx.id.getText(), ctx
+                                                , myType, false);
         var res = registerNewEnvironment(ctx.id.getText(), ctx
-                                         , XCD_type.connectort
+                                         , myType
                                          , null // there's no size part
                                          , newctx);
 
-        /* Check that the set of roles and the set of roles listed in
-         * the parameters are the same.
-         */
-        // mywarning("There are " + newctx.roles.size() + " roles defined "
-        //           + "and "
-        //           + newctx.roles2portvarsInParams.keySet().size()
-        //           + " roles used");
-        Set<String> rolesDefined = Set.copyOf(newctx.roles);
-        {
-            Set<String> rolesInParams = newctx.roles2portvarsInParams.keySet();
-            var rolesDefinedMinusRolesInParams
-                = USet.setDifference(rolesDefined, rolesInParams);
-            myassert(rolesDefinedMinusRolesInParams.size()==0
-                     , "Defined roles unused in the parameters list: "
-                     + rolesDefinedMinusRolesInParams);
-            var rolesInParamsMinusRolesDefined
-                = USet.setDifference(rolesInParams, rolesDefined);
-            myassert(rolesInParamsMinusRolesDefined.size()==0
-                     , "Undefined roles in the parameters list: "
-                     + rolesInParamsMinusRolesDefined);
-        }
-        /* For each role, check that the set of its port variables is
-         * the same as the set of its port variables listed in the
-         * parameters.
-         */
-        for (var rl : rolesDefined) {
-            // find role's environment context
-            List<ContextInfo> rolesContext
-                = newctx.children.stream()
-                .filter(cld -> cld.compilationUnitID.equals(rl))
-                .collect(Collectors.toList());
-            // System.err.println("has : " + newctx.children.size());
-            // for (var el : newctx.children) {
-            //     System.err.println("env: " + el);
-            // }
-            // for (var el : rolesContext) {
-            //     System.err.println("Matching env: " + el);
-            // }
-            myassert(rolesContext.size()==1
-                     , "Role " + rl
-                     + " has been defined " + rolesContext.size() + " times");
-            Set<String> portVarsUsed
-                = Set.copyOf(newctx.roles2portvarsInParams.get(rl));
-            ContextInfoConnRole roleEnv
-                = (ContextInfoConnRole) (rolesContext.get(0));
-            Set<? extends String> portVarsDefined
-                = USet.setUnion(roleEnv.compConstructs.providedprts
-                                , roleEnv.compConstructs.consumerprts
-                                , roleEnv.compConstructs.requiredprts
-                                , roleEnv.compConstructs.emitterprts);
+        if (myType==XCD_type.connectort) {
+            /* Check that the set of roles and the set of roles listed in
+             * the parameters are the same.
+             */
+            // mywarning("There are " + newctx.roles.size() + " roles defined "
+            //           + "and "
+            //           + newctx.roles2portvarsInParams.keySet().size()
+            //           + " roles used");
+            Set<String> rolesDefined
+                = Set.copyOf(newctx.subcomponents);
+            // elements.stream()
+            //  .filter(el -> el.role!=null)
+            //  .map(el -> el.role).toList());
             {
-                Set<? extends String> portVarsDefinedMinusPortVarsUsed
-                    = USet.setDifference(portVarsDefined, portVarsUsed);
-                myassert(portVarsDefinedMinusPortVarsUsed.size()==0
-                     , "Defined port variables unused in the parameters list: "
-                     + portVarsDefinedMinusPortVarsUsed);
-                Set<? extends String> portVarsUsedMinusPortVarsDefined
-                    = USet.setDifference(portVarsUsed, portVarsUsed);
-                myassert(portVarsUsedMinusPortVarsDefined.size()==0
-                         , "Undefined port variables in the parameters list: "
-                         + portVarsUsedMinusPortVarsDefined);
+                Set<String> rolesInParams = newctx.roles2portvarsInParams.keySet();
+                var rolesDefinedMinusRolesInParams
+                    = USet.setDifference(rolesDefined, rolesInParams);
+                myassert(rolesDefinedMinusRolesInParams.size()==0
+                         , "Defined roles unused in the parameters list: "
+                         + rolesDefinedMinusRolesInParams);
+                var rolesInParamsMinusRolesDefined
+                    = USet.setDifference(rolesInParams, rolesDefined);
+                myassert(rolesInParamsMinusRolesDefined.size()==0
+                         , "Undefined roles in the parameters list: "
+                         + rolesInParamsMinusRolesDefined);
+            }
+            /* For each role, check that the set of its port variables is
+             * the same as the set of its port variables listed in the
+             * parameters.
+             */
+            for (var rl : rolesDefined) {
+                // find role's environment context
+                List<SymbolTable> rolesContext
+                    = newctx.children.stream()
+                    .filter(cld -> cld.compilationUnitID.equals(rl))
+                    .collect(Collectors.toList());
+                // System.err.println("has : " + newctx.children.size());
+                // for (var el : newctx.children) {
+                //     System.err.println("env: " + el);
+                // }
+                // for (var el : rolesContext) {
+                //     System.err.println("Matching env: " + el);
+                // }
+                myassert(rolesContext.size()==1
+                         , "Role " + rl
+                         + " has been defined " + rolesContext.size() + " times");
+                Set<String> portVarsUsed
+                    = Set.copyOf(newctx.roles2portvarsInParams.get(rl));
+                SymbolTableComponent roleEnv
+                    = (SymbolTableComponent) (rolesContext.get(0));
+                Set<? extends String> portVarsDefined
+                    = USet.setUnion(roleEnv.compConstructs.providedprts
+                                    , roleEnv.compConstructs.consumerprts
+                                    , roleEnv.compConstructs.requiredprts
+                                    , roleEnv.compConstructs.emitterprts);
+                {
+                    Set<? extends String> portVarsDefinedMinusPortVarsUsed
+                        = USet.setDifference(portVarsDefined, portVarsUsed);
+                    myassert(portVarsDefinedMinusPortVarsUsed.size()==0
+                             , "Defined port variables unused in the parameters list: "
+                             + portVarsDefinedMinusPortVarsUsed);
+                    Set<? extends String> portVarsUsedMinusPortVarsDefined
+                        = USet.setDifference(portVarsUsed, portVarsUsed);
+                    myassert(portVarsUsedMinusPortVarsDefined.size()==0
+                             , "Undefined port variables in the parameters list: "
+                             + portVarsUsedMinusPortVarsDefined);
+                }
             }
         }
         return res;
     }
 
-    @Override public T visitRoleDeclaration(XCDParser.RoleDeclarationContext ctx) {
-        ContextInfo framenow = frameNow();
-        ((ContextInfoConn)framenow).roles.add(ctx.id.getText());
-        ContextInfoConnRole newctx
-            = framenow.makeContextInfoConnRole(ctx.id.getText(), ctx, false);
-        return registerNewEnvironment(ctx.id.getText(), ctx
-                                      , XCD_type.rolet
-                                      , ctx.size
-                                      , newctx);
+    @Override public T visitComponentOrRoleDeclaration(XCDParser.ComponentOrRoleDeclarationContext ctx) {
+        updateln(ctx);
+        XCD_type myType
+            = (ctx.struct.getType()==XCDParser.TK_COMPONENT)
+            ? XCD_type.componentt
+            : XCD_type.rolet;
+        String myName = ctx.id.getText();
+        SymbolTable framenow = symbolTableNow();
+        mySyntaxCheck(myType!=XCD_type.componentt
+                      || framenow.type==XCD_type.roott
+                      , "Component "
+                      + myName
+                      + " must be defined at the global context"
+                      + " - parent is "
+                      + printFrame(framenow));
+        mySyntaxCheck(myType!=XCD_type.rolet
+                      || framenow.type==XCD_type.connectort
+                      , "Role must be defined inside connectors"
+                      + " - parent is "
+                      + printFrame(framenow));
+        TranslatorI tr = null;
+        if (myType==XCD_type.rolet)
+            ((SymbolTableComposite)framenow).subcomponents.add(myName);
+        if (myType==XCD_type.componentt)
+            tr = new TranslatorComponentOrRoleDeclarationContext();
+        SymbolTable newctx
+            = framenow.makeSymbolTableComponent(myName, ctx
+                                                , myType , false);
+        return registerNewEnvironment(myName, ctx
+                                      , myType
+                                      , (ArraySizeContext) null
+                                      , newctx, tr);
     }
 
-    @Override public T visitRolePortvar(XCDParser.RolePortvarContext ctx) {
+    @Override public T visitPortDeclaration(XCDParser.PortDeclarationContext ctx) {
         updateln(ctx);
-        var framenow = (ContextInfoConnRole) frameNow();
-        String compUnitId = framenow.compilationUnitID;
-        int flag
-            = ((ctx.provided!=null)?8:0)
-            + ((ctx.required!=null)?4:0)
-            + ((ctx.consumer!=null)?2:0)
-            + ((ctx.emitter !=null)?1:0);
-        XCD_type tp = XCD_type.unknownt;//emittert,consumert,requiredt,providedt
-        LstStr ports = null;
-        String portName = null;
-        XCDParser.ArraySizeContext thesz = null;
-        switch (flag) {
-        case 1:
-            tp = XCD_type.emittervart;
-            portName = ctx.emitter.id.getText();
-            thesz = ctx.emitter.size;
-            ports = framenow.compConstructs.emitterprts;
-            break;
-        case 2:
-            tp = XCD_type.consumervart;
-            portName = ctx.consumer.id.getText();
-            thesz = ctx.consumer.size;
-            ports = framenow.compConstructs.consumerprts;
-            break;
-        case 4:
-            tp = XCD_type.requiredvart;
-            portName = ctx.required.id.getText();
-            thesz = ctx.required.size;
-            ports = framenow.compConstructs.requiredprts;
-            break;
-        case 8:
-            tp = XCD_type.providedvart;
-            portName = ctx.provided.id.getText();
-            thesz = ctx.provided.size;
-            ports = framenow.compConstructs.providedprts;
-            break;
-        }
-        myassert(tp!=XCD_type.unknownt
+        var framenow = symbolTableNow();
+       // TK_EMITTER/CONSUMER/REQUIRED/PROVIDED
+        int myTypeOfPort=ctx.type.getType();
+        boolean imVariable=(ctx.valOrVar.getType()==XCDParser.TK_PORTVAR);
+        mySyntaxCheck(!imVariable
+                      || framenow.type==XCD_type.rolet
+                      , "Only roles can have port variables "
+                      + "(components have ports) "
+                      + printFrame(framenow));
+        mySyntaxCheck(imVariable
+                      || framenow.type==XCD_type.componentt
+                      , "Only components can have ports "
+                      + "(roles have port variables) "
+                      + printFrame(framenow));
+        XCD_type myType
+            = (imVariable)
+            ? portTypeToken2PortVarType.get(myTypeOfPort)
+            : portTypeToken2PortType   .get(myTypeOfPort);
+        String portName = ctx.id.getText();
+        XCDParser.ArraySizeContext thesz = ctx.size;
+        LstStr portList
+            = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
+
+        myassert(myType!=null
                  && portName!=null
-                 // && thesz != null
-                 && ports != null, "Error: unknown kind of port");
-        boolean is_arrayp = thesz!=null;
-        ArraySizeContext array_sz = thesz;
-        // String big_name = Names.portName(compUnitId, portName);
+                 && portList != null, "Error: unknown kind of port");
         // addIdInfo(portName
         //           , tp
         //           // , "portType"
         //           , false
         //           , array_sz
-        //           , (Variable_initialValueContext) null
+        //           , (VariableDefaultValueContext) null
         //           , compUnitId);
-        ports.add(portName);
+        portList.add(portName);
 
-        ContextInfoConnRolePort newctx
-            = framenow.makeContextInfoConnRolePort(portName, ctx, tp, false);
-        return registerNewEnvironment(portName, ctx, tp, array_sz, newctx);
+        SymbolTablePort newctx
+            = framenow.makeSymbolTablePort(portName, ctx, myType, false);
+        return registerNewEnvironment(portName, ctx, myType, thesz, newctx);
     }
 
-    @Override public T visitComponentDeclaration(XCDParser.ComponentDeclarationContext ctx) {
-        ContextInfo framenow = frameNow();
-        String compName = ctx.id.getText();
-        ContextInfoComp newctx
-            = framenow.makeContextInfoComp(compName, ctx, false);
-        var tr = new TranslatorComponentDeclarationContext();
-        // mywarning("***visitComponentDeclaration: Currently env has size: "
-        //           + getEnv().size()
-        //           + " name is: " + compName);
-        return registerNewEnvironment(compName, ctx
-                                      , XCD_type.componentt
-                                      , null // there's no size part
-                                      , newctx
-                                      , tr);
-    }
-
-    @Override public T visitComponentPort(XCDParser.ComponentPortContext ctx) {
+    @Override public T visitMethodContract(XCDParser.MethodContractContext ctx) {
         updateln(ctx);
-        var framenow = (ContextInfoComp) frameNow();
-        String compUnitId = framenow.compilationUnitID;
-        int flag
-            = ((ctx.provided!=null)?8:0)
-            + ((ctx.required!=null)?4:0)
-            + ((ctx.consumer!=null)?2:0)
-            + ((ctx.emitter !=null)?1:0);
-        XCD_type tp = XCD_type.unknownt;//emittert,consumert,requiredt,providedt
-        LstStr ports = null;
-        String portName = null;
-        XCDParser.ArraySizeContext thesz = null;
-        switch (flag) {
-        case 1:
-            tp = XCD_type.emittert;
-            portName = ctx.emitter.id.getText();
-            thesz = ctx.emitter.size;
-            ports = framenow.compConstructs.emitterprts;
-            break;
-        case 2:
-            tp = XCD_type.consumert;
-            portName = ctx.consumer.id.getText();
-            thesz = ctx.consumer.size;
-            ports = framenow.compConstructs.consumerprts;
-            break;
-        case 4:
-            tp = XCD_type.requiredt;
-            portName = ctx.required.id.getText();
-            thesz = ctx.required.size;
-            ports = framenow.compConstructs.requiredprts;
-            break;
-        case 8:
-            tp = XCD_type.providedt;
-            portName = ctx.provided.id.getText();
-            thesz = ctx.provided.size;
-            ports = framenow.compConstructs.providedprts;
-            break;
-        }
-        myassert(tp!=XCD_type.unknownt
-                 && portName!=null
-                 // && thesz != null
-                 && ports != null, "Error: unknown kind of port");
-        boolean is_arrayp = thesz!=null;
-        ArraySizeContext array_sz = thesz;
-        // String big_name = Names.portName(compUnitId, portName);
-        // addIdInfo(portName
-        //           , tp
-        //           // , "portType"
-        //           , false
-        //           , array_sz
-        //           , (Variable_initialValueContext) null
-        //           , compUnitId);
-        ports.add(portName);
-
-        ContextInfoCompPort newctx
-            = framenow.makeContextInfoCompPort(portName, ctx, tp, false);
-        return registerNewEnvironment(portName, ctx, tp, array_sz, newctx);
+        T res = visit(ctx.port_method);
+        if (ctx.icontract!=null)
+            res.addAll(visit(ctx.icontract));
+        if (ctx.fcontract!=null)
+            res.addAll(visit(ctx.fcontract));
+        popLastSymbolTable();   // pop duplicate method frame
+        return res;
     }
 
-    private T visitSignatureForEventOrMethod(boolean imaMethod
-                                             , XCDParser.EventSignatureContext ctx
-                                             , XCDParser.MethodSignatureContext ctxM) {
-        updateln(imaMethod?ctxM:ctx);
-        var myParentFrame = frameNow();
+    @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
+        updateln(ctx);
+        var myParentFrame = symbolTableNow();
+        boolean imaMethod
+            = (myParentFrame.type==XCD_type.providedt)
+            || (myParentFrame.type==XCD_type.requiredt)
+            || (myParentFrame.type==XCD_type.providedvart)
+            || (myParentFrame.type==XCD_type.requiredvart);
+        mySyntaxCheck(imaMethod || (ctx.rettype==null)
+                      , "Events cannot have a return type");
+        mySyntaxCheck(imaMethod || (ctx.exc_pre==null)
+                      , "Events cannot throw exceptions");
         var myGrandparentFrame = myParentFrame.parent;
+        boolean imaInAComponent = myGrandparentFrame.type==XCD_type.componentt;
+        myassert(imaMethod
+                 || (myParentFrame.type==XCD_type.emittert)
+                 || (myParentFrame.type==XCD_type.consumert)
+                 || (myParentFrame.type==XCD_type.emittervart)
+                 || (myParentFrame.type==XCD_type.consumervart)
+                 , "Method: Not defined inside a port?!?!"
+                 + printFrameAndItsParent(myParentFrame, myGrandparentFrame));
+        myassert(imaInAComponent
+                 || myGrandparentFrame.type==XCD_type.rolet
+                 , "Method: Not defined inside a component/role?!?!?"
+                 + printFrameAndItsParent(myParentFrame, myGrandparentFrame));
         String eventNameStr = ctx.id.getText();
         Name eventName = new Name(eventNameStr);
-        ContextInfoCompPort myCompParent = null;
-        ContextInfoConnRolePort myConnParent = null;
+        SymbolTablePort myCompParent = (SymbolTablePort)myParentFrame;
         LstStr methodOrEventNames = null;
-        if (myParentFrame instanceof ContextInfoCompPort) {
-            myCompParent = (ContextInfoCompPort)myParentFrame;
-            if (imaMethod)
-                methodOrEventNames
-                    = myCompParent.portConstructs
-                    .basicMethodNames;
-            else
-                methodOrEventNames
-                    = myCompParent.portConstructs
-                    .basicEventNames;
-        } else if (myParentFrame instanceof ContextInfoConnRolePort) {
-            myConnParent = (ContextInfoConnRolePort)myParentFrame;
-            if (imaMethod)
-                methodOrEventNames
-                    = myConnParent.roleConstructs
-                    .basicMethodNames;
-            else
-                methodOrEventNames
-                    = myConnParent.roleConstructs
-                    .basicEventNames;
-
-            methodOrEventNames.add(eventNameStr);
-        } else {
-            mywarning("Currently, "
-                      + printFrameAndItsParent(myParentFrame
-                                               , myGrandparentFrame)
-                      + " and imaMethod is " + imaMethod);
-            myassert(false, "BAD CAST");
-        }
+        if (imaMethod)
+            methodOrEventNames
+                = myCompParent.portConstructs
+                .basicMethodNames;
+        else
+            methodOrEventNames
+                = myCompParent.portConstructs
+                .basicEventNames;
+        methodOrEventNames.add(eventNameStr);
         // Construct and register new environment for event/method
-        ContextInfo newctx
-            = imaMethod
-            ? myParentFrame.makeContextInfoMethod(eventNameStr, ctxM)
-            : myParentFrame.makeContextInfoEvent (eventNameStr, ctx );
+        SymbolTable newctx
+            = myParentFrame.makeSymbolTableMethod(eventNameStr
+                                                  , (imaMethod
+                                                     ? XCD_type.methodt
+                                                     : XCD_type.eventt)
+                                                  , ctx);
         T res = registerNewEnvironment(eventNameStr
-                                       , (imaMethod
-                                          ? ctxM
-                                          : ctx)
+                                       , ctx
                                        , (imaMethod
                                           ? XCD_type.methodt
                                           : XCD_type.eventt)
@@ -388,17 +372,20 @@ class EnvironmentCreationVisitor
         /* registerNewEnvironment pops the context - re-push it so
          * that interaction/functional constraints will be processed
          * inside it */
-        pushContext(newctx);
+        pushSymbolTable(newctx);
         res = visit(ctx.params);
 
         // visit exceptions
-        if (ctx.exceptions!=null) {
+        if (ctx.exc_pre!=null) {
             /* register exceptions in the method/event and the global
              * namespace */
-            LstStr exceptions = (imaMethod)
-                ? ((ContextInfoMethod)newctx).methodConstructs.exceptions
-                : ((ContextInfoEvent) newctx).eventConstructs .exceptions;
-            for (var excT : ctx.exceptions) {
+            LstStr exceptions
+                = ((SymbolTableMethod)newctx).methodConstructs.exceptions;
+            List<Token> excs = new ArrayList<Token>();
+            // Treat 1st exception
+            excs.add(ctx.exc_pre);
+            excs.addAll(ctx.excs);
+            for (var excT : excs) {
                 String exc = excT.getText();
                 rootContext.allExceptions.add(exc);
                 /* add exceptions in the environment of this
@@ -407,13 +394,13 @@ class EnvironmentCreationVisitor
                                           , XCD_type.exceptiont
                                           , false
                                           , (ArraySizeContext)null
-                                          , (Variable_initialValueContext)null
+                                          , (VariableDefaultValueContext)null
                                           , newctx.compilationUnitID);
                 idinfo.translation.add(Names.exceptionName(exc));
             }
         }
 
-        var thisEventFrame = (ContextInfoEvent) frameNow();
+        var thisEventFrame = (SymbolTableMethod) symbolTableNow();
         // mywarning("XXX: " +
         //           printFrameItsParentAndItsGrandparent(thisEventFrame
         //                                             , myParentFrame
@@ -434,10 +421,7 @@ class EnvironmentCreationVisitor
         T ret = defaultResult();
         LstStr exceptions = null;
         if (imaMethod) {
-            ret = visit(ctxM.rettype);
-            exceptions
-                = ((ContextInfoMethod)thisEventFrame)
-                .methodConstructs.exceptions;
+            ret = visit(ctx.rettype);
             theEventM
                 = new MethodStructure(eventName, theSig
                                       , theSigWithNames
@@ -446,9 +430,6 @@ class EnvironmentCreationVisitor
                                       , null, null
                                       , exceptions);
         } else {
-            exceptions
-                = thisEventFrame
-                .eventConstructs.exceptions;
             theEventE
                 = new EventStructure (eventName
                                       , theSig, theSigWithNames
@@ -458,14 +439,10 @@ class EnvironmentCreationVisitor
         }
         // Map<Name, Map<String, EventStructure>> eventOverloads
         var theMapE
-            = (myCompParent!=null
-               ? myCompParent.portConstructs.eventOverloads
-               : myConnParent.roleConstructs.eventOverloads);
+            = myCompParent.portConstructs.eventOverloads;
         var theMapM
-            = (myCompParent!=null
-               ? myCompParent.portConstructs.methodOverloads
-               : myConnParent.roleConstructs.methodOverloads);
-        var framenow = frameNow();
+            = myCompParent.portConstructs.methodOverloads;
+        var framenow = symbolTableNow();
         String msg = printFrameItsParentAndItsGrandparent(framenow
                                                           , framenow.parent
                                                           , myParentFrame);
@@ -489,61 +466,54 @@ class EnvironmentCreationVisitor
             // The slot has a map, so add the actual event structure inside it
             theMapE.get(eventName).put(eventNameStr, theEventE);
         }
-
-        return res;
-}
-    @Override public T visitMethodSignature(XCDParser.MethodSignatureContext ctx) {
-        T res = visitSignatureForEventOrMethod(true, ctx.es, ctx);
-        return res;
-    }
-
-    @Override public T visitEventSignature(XCDParser.EventSignatureContext ctx) {
-        T res = visitSignatureForEventOrMethod(false, ctx, null);
         return res;
     }
 
     @Override public T visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
-        ContextInfo framenow = frameNow();
+        SymbolTable framenow = symbolTableNow();
         String functionName = ctx.id.getText();
-        LstStr inlineFunctionDecls
-            = ((framenow.type==XCD_type.componentt)
-               ? ((ContextInfoComp)framenow).compConstructs.inlineFunctionDecls
-               : ((framenow.type==XCD_type.rolet)
-                  ?((ContextInfoConnRole)framenow).compConstructs.inlineFunctionDecls
-                  : null));
-        myassert(inlineFunctionDecls!=null
-                 , "visitInlineFunctionDeclaration: framenow ("
-                 +  framenow.compilationUnitID
-                 + ") is of unsupported type "
-                 + framenow.type);
-        inlineFunctionDecls.add(functionName);
-        ContextInfoFunction newctx
-            = framenow.makeContextInfoFunction(ctx.id.getText(), ctx);
-        return registerNewEnvironment(ctx.id.getText(), ctx
-                                      , XCD_type.functiont
-                                      , null // there's no size part
-                                      , newctx);
+        mywarning("TODO: InlineFunctionDeclaration: MUST COMPLETE (root, composite, component can all declare inline functions!");
+        return defaultResult();
+
+        // LstStr inlineFunctionDecls
+        //     = ((framenow.type==XCD_type.componentt)
+        //        ? ((SymbolTableComponent)framenow).compConstructs.inlineFunctionDecls
+        //        : ((framenow.type==XCD_type.rolet)
+        //           ?((SymbolTableComponent)framenow).compConstructs.inlineFunctionDecls
+        //           : null));
+        // myassert(inlineFunctionDecls!=null
+        //          , "visitInlineFunctionDeclaration: framenow ("
+        //          +  framenow.compilationUnitID
+        //          + ") is of unsupported type "
+        //          + framenow.type);
+        // inlineFunctionDecls.add(functionName);
+        // SymbolTableFunction newctx
+        //     = framenow.makeSymbolTableFunction(ctx.id.getText(), ctx);
+        // return registerNewEnvironment(ctx.id.getText(), ctx
+        //                               , XCD_type.functiont
+        //                               , null // there's no size part
+        //                               , newctx);
     }
 
 
-    /**
-     * Constructs that do NOT create their own environment.
-     *
-     * However, they introduce new names into the current environment.
-     */
+//     /**
+//      * Constructs that do NOT create their own environment.
+//      *
+//      * However, they introduce new names into the current environment.
+//      */
 
     @Override public T visitEnumDeclaration(XCDParser.EnumDeclarationContext ctx) {
         updateln(ctx);
         // mywarning("visitEnumDeclaration called");
-        ContextInfo framenow = frameNow();
+        SymbolTable framenow = symbolTableNow();
         Name enumName = new Name(ctx.id.getText());
-        if (framenow instanceof ContextInfoRoot)
-            ((ContextInfoRoot)framenow).commonConstructs.enums.add(""+enumName);
-        else if (framenow instanceof ContextInfoComp)
-            ((ContextInfoComp)framenow).
+        if (framenow instanceof SymbolTableRoot)
+            ((SymbolTableRoot)framenow).commonConstructs.enums.add(""+enumName);
+        else if (framenow instanceof SymbolTableComposite)
+            ((SymbolTableComposite)framenow).
                 compConstructs.enums.add(""+enumName);
-        else if (framenow instanceof ContextInfoConnRole)
-            ((ContextInfoConnRole)framenow).
+        else if (framenow instanceof SymbolTableComponent)
+            ((SymbolTableComponent)framenow).
                 compConstructs.enums.add(""+enumName);
         else
             myassert(false
@@ -621,72 +591,114 @@ class EnvironmentCreationVisitor
     @Override public T visitTypeDefDeclaration(XCDParser.TypeDefDeclarationContext ctx) {
         updateln(ctx);
         // mywarning("visitTypeDefDeclaration called");
-        ContextInfo framenow = frameNow();
+        SymbolTable framenow = symbolTableNow();
         String newtype = ctx.newtype.getText();
+        String definition = ctx.existingtype.getText();
         if (framenow==rootContext)
-            ((ContextInfoRoot)framenow).commonConstructs.typedefs.add(newtype);
-        else if (framenow.type==XCD_type.componentt)
-            ((ContextInfoComp)framenow).compConstructs.typedefs.add(newtype);
-        else if (framenow.type==XCD_type.connectort)
-            ((ContextInfoConn)framenow).connConstructs.typedefs.add(newtype);
-        else if (framenow.type==XCD_type.rolet)
-            ((ContextInfoConnRole)framenow).compConstructs.typedefs.add(newtype);
+            ((SymbolTableRoot)framenow).commonConstructs.typedefs.add(newtype);
+        else if (framenow.type==XCD_type.componentt
+                 || framenow.type==XCD_type.connectort
+                 || framenow.type==XCD_type.rolet)
+            ((SymbolTableComposite)framenow).compConstructs.typedefs.add(newtype);
         else
             myassert(false
                      , "Typedef inside unknown construct " + framenow.type);
 
         addIdInfo(newtype
                   , XCD_type.typedeft
-                  , ""
+                  , definition
                   , false
                   , null
                   , null
                   , framenow.compilationUnitID);
-        // mywarning("Added type \"" + newtype + "\" as a newname for \""
-        //           + definition + "\" and s is\n" + s);
+        mywarning("Added type \"" + newtype + "\" as a newname for \""
+                  + definition + "\"");
         return defaultResult();
     }
 
 
-    @Override public T visitPrimitiveVariableDeclaration(XCDParser.PrimitiveVariableDeclarationContext ctx) {
+    @Override public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) {
         updateln(ctx);
         String varName = ctx.id.getText();
-        DataTypeContext dtype = ctx.type; // int, byte, bool, void, ID(long name)
+        DataTypeContext dtypeCtx = ctx.type; // int, byte, bool, void, ID(long name)
+        String dtype = visit(dtypeCtx).get(0);
         // always non-null for user-defined variables/parameters
         ArraySizeContext array_sz
-            = (ctx.size!=null)
-            ? ctx.size
-            : singleElementArraySize;
-        Variable_initialValueContext initVal = ctx.initval;
-        T res = visitPrimitiveVariableOrParamDeclaration(dtype
-                                                            , varName
-                                                            , array_sz
-                                                            , initVal
-                                                            , true);
-        return res;
+            = // (ctx.size!=null)
+            // ? ctx.size
+            // : singleElementArraySize
+            ctx.size            // parameters: we don't want to add a
+                                // default size
+            ;
+        VariableDefaultValueContext initVal = ctx.initval;
+
+        var framenow = (SymbolTable) symbolTableNow();
+        String compUnitId = framenow.compilationUnitID;
+        XCD_type tp = framenow.type;
+
+        IdInfo idinfo = addIdInfo(varName
+                                  , (readingParams
+                                     ? XCD_type.paramt
+                                     : XCD_type.vart)
+                                  , dtype
+                                  , readingParams
+                                  , array_sz
+                                  , initVal
+                                  , compUnitId);
+        if (tp==XCD_type.methodt
+            || tp==XCD_type.eventt
+            || tp==XCD_type.functiont) {
+            T res = new T();
+            res.add(dtype); res.add(varName);
+            mywarning("visitVariableDeclaration: Have added "
+                      + varName
+                      + " into the current environment, with type "
+                      + dtype
+                      + " as a "
+                      + (readingParams?"parameter":"variable"));
+            idinfo.translation.add(varName);
+            return res;
+        } else {
+            LstStr paramsOrvars = null;
+            String trans = "";
+
+            CompositeConstructs theEnv = null;
+            if (framenow instanceof SymbolTableComposite) {
+                theEnv = ((SymbolTableComposite)framenow).compConstructs;
+            } else if (framenow instanceof SymbolTableComponent) {
+                theEnv = ((SymbolTableComponent)framenow).compConstructs;
+            }
+            paramsOrvars = readingParams
+                ? theEnv.params
+                : theEnv.vars;
+            trans = readingParams
+                ? Names.paramNameComponent(framenow.compilationUnitID
+                                           , varName)
+                : Names.varNameComponent(framenow.compilationUnitID
+                                         , varName);
+            // if (tp==XCD_type.connectort || tp==XCD_type.compositet) {
+            mySyntaxCheck((tp!=XCD_type.connectort
+                           && tp!=XCD_type.compositet)
+                          || readingParams
+                          , "Composites and connectors cannot have variables");
+            // } else {
+            //     myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
+            //              && readingParams
+            //              , (readingParams?"Parameter ":"Variable ")
+            //              + varName
+            //              + " declaration appears in an unexpected context "
+            //              + tp);
+            // }
+            paramsOrvars.add(varName);
+            idinfo.translation.add(trans);
+        }
+        return defaultResult();
     }
-    @Override public T visitFormalParameter(XCDParser.FormalParameterContext ctx) {
-        updateln(ctx);
-        String varName = ctx.id.getText();
-        // dtype: int, byte, bool, void, ID(long name)
-        DataTypeContext dtype = ctx.type;
-        // always non-null for user-defined variables/parameters
-        ArraySizeContext array_sz
-            = (ctx.size!=null)
-            ? ctx.size
-            : singleElementArraySize;
-        Variable_initialValueContext initVal = ctx.initval;
-        T res = visitPrimitiveVariableOrParamDeclaration(dtype
-                                                            , varName
-                                                            , array_sz
-                                                            , initVal
-                                                            , false);
-        return res;
-    }
+
     public T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
                                                       , String varName
                                                       , ArraySizeContext array_sz
-                                                      , Variable_initialValueContext initVal
+                                                      , VariableDefaultValueContext initVal
                                                       , boolean isVar) {
         return visitPrimitiveVariableOrParamDeclaration(dtype.getText()
                                                         , varName
@@ -698,9 +710,9 @@ class EnvironmentCreationVisitor
     public T visitPrimitiveVariableOrParamDeclaration(String dtype
                                                       , String varName
                                                       , ArraySizeContext array_sz
-                                                      , Variable_initialValueContext initVal
+                                                      , VariableDefaultValueContext initVal
                                                       , boolean isVar) {
-        var framenow = (ContextInfo) frameNow();
+        var framenow = (SymbolTable) symbolTableNow();
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
 
@@ -727,41 +739,45 @@ class EnvironmentCreationVisitor
         } else {
             LstStr paramsOrvars = null;
             String trans = "";
-            if (tp==XCD_type.componentt) {
-                var theEnv = (ContextInfoComp)framenow;
+            if (tp==XCD_type.compositet
+                || tp==XCD_type.connectort) {
+                var theEnv = (SymbolTableComposite)framenow;
                 paramsOrvars = isVar
                     ? theEnv.compConstructs.vars
                     : theEnv.compConstructs.params;
-                trans = isVar
-                    ? Names.varNameComponent(theEnv.compilationUnitID
+                mySyntaxCheck(!isVar
+                              , "Composite components and connectors cannot"
+                              + " have primitive variables");
+                trans = ((tp==XCD_type.compositet)
+                         ? (isVar
+                            ? Names.varNameComponent(theEnv.compilationUnitID
+                                                     , varName)
+                            : Names.paramNameComponent(theEnv.compilationUnitID
+                                                       , varName))
+                         : (isVar
+                            ? Names.xVarName(theEnv.compilationUnitID
+                                             , "UNKNOWNROLE"
                                              , varName)
-                    : Names.paramNameComponent(theEnv.compilationUnitID
-                                               , varName);
-            } else if (tp==XCD_type.connectort) {
-                ((ContextInfoConn)framenow).vars.add(varName);
-                var theEnv = (ContextInfoConn)framenow;
-                paramsOrvars = isVar
-                    ? theEnv.vars
-                    : theEnv.params;
-                myassert(!isVar
-                         , "Connectors cannot have variables of their own");
-                trans = isVar
-                    ? Names.xVarName(theEnv.compilationUnitID
-                                     , "UNKNOWNROLE"
-                                     , varName)
-                    : varName;
-            } else if (tp==XCD_type.rolet) {
-                var theEnv = (ContextInfoConnRole)framenow;
+                            : varName));
+            } else if (tp==XCD_type.componentt
+                       || tp==XCD_type.rolet) {
+                var theEnv = (SymbolTableComponent)framenow;
                 paramsOrvars = isVar
                     ? theEnv.compConstructs.vars
                     : theEnv.compConstructs.params;
-                trans = isVar
-                    ? Names.xVarName(theEnv.parent.compilationUnitID
-                                     , theEnv.compilationUnitID
-                                     , varName)
-                    : varName;
+                trans = ((tp==XCD_type.componentt)
+                         ? (isVar
+                            ? Names.varNameComponent(theEnv.compilationUnitID
+                                                     , varName)
+                            : Names.paramNameComponent(theEnv.compilationUnitID
+                                                       , varName))
+                         : (isVar
+                            ? Names.xVarName(theEnv.parent.compilationUnitID
+                                             , theEnv.compilationUnitID
+                                             , varName)
+                            : varName));
             } else {
-                myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
+                myassert(false
                          , (isVar?"Variable ":"Parameter ")
                          + varName
                          + " declaration appears in an unexpected context "
@@ -773,17 +789,27 @@ class EnvironmentCreationVisitor
         return defaultResult();
     }
 
+    @Override
+    public T visitComponentElement(XCDParser.ComponentElementContext ctx) {
+        readingParams=false;
+        T res = visitChildren(ctx);
+        readingParams=true;
+        return res;
+    }
+
     @Override public T visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
         updateln(ctx);
         Token tk = (Token) ctx.elType;
-        var framenow = frameNow().you();
+        var framenow = symbolTableNow().you();
         String compUnitId = framenow.compilationUnitID;
         String instance_name = ctx.id.getText();
-        if (tk.getType() == XCDParser.TK_COMPONENT) { // sub-component instance
+        if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
+            || tk.getType() == XCDParser.TK_COMPOSITE) {
             ArraySizeContext sz = ctx.size;
             String component_def = ctx.userdefined.getText();
 
-            visit(ctx.params);
+            if (ctx.params!=null)
+                visit(ctx.params);
             addIdInfo(instance_name
                       , XCD_type.componentt
                       , component_def
@@ -791,7 +817,7 @@ class EnvironmentCreationVisitor
                       , sz
                       , null // no init value
                       , compUnitId);
-            if (!(framenow instanceof ContextInfoComp)) {
+            if (!(framenow instanceof SymbolTableComposite)) {
                 myassert(false
                          , "COMPONENT:\nCompilationUnitID=\""
                          + framenow.compilationUnitID
@@ -802,7 +828,7 @@ class EnvironmentCreationVisitor
                          + "Configuration is \"" + instance_name
                          + "\" of type \"" + component_def + "\"\n");
             } else {
-                ((ContextInfoComp)framenow).subcomponents.add(instance_name);
+                ((SymbolTableComposite)framenow).subcomponents.add(instance_name);
                 // mywarning(framenow.compilationUnitID
                 //        + "'s subcomponent of type "
                 //           + instance_name);
@@ -824,13 +850,13 @@ class EnvironmentCreationVisitor
                       , null    // no init value
                       , compUnitId);
 
-            if (framenow instanceof ContextInfoComp) {
-                ((ContextInfoComp)framenow).subconnectors.add(instance_name);
+            if (framenow instanceof SymbolTableComposite) {
+                ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
                 // mywarning(framenow.compilationUnitID
                 //        + "'s subcomponent of type "
                 //           + instance_name);
-            } else if (framenow instanceof ContextInfoConn) {
-                ((ContextInfoConn)framenow).subconnectors.add(instance_name);
+            } else if (framenow instanceof SymbolTableComposite) {
+                ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
             } else {
                 myassert(false
                          , "CONNECTOR:\nCompilationUnitID=\"" + framenow.compilationUnitID
@@ -859,10 +885,11 @@ class EnvironmentCreationVisitor
         return res;
     }
     private T visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
-        ContextInfo framenow = frameNow(); // root
-        ContextInfoComp newctx
-            = framenow.makeContextInfoComp("@configuration", ctx, false);
-        getEnv().add(newctx);
+        SymbolTable framenow = symbolTableNow(); // root
+        SymbolTableComposite newctx
+            = framenow.makeSymbolTableComposite("@configuration", ctx
+                                                , XCD_type.configt, false);
+        getSTbl().add(newctx);
         T res=visitChildren(ctx);
         Utils.withInputAndFileToWrite
             ("/resources/configuration.pml.template"
@@ -909,10 +936,10 @@ class EnvironmentCreationVisitor
                     .replace("$<compType>", compType);
                 return out;
             });
-        int last = getEnv().size()-1;
-        ContextInfo lastctx = getEnv().get(last);
+        int last = getSTbl().size()-1;
+        SymbolTable lastctx = getSTbl().get(last);
         myassert(newctx == lastctx, "Context not the last element");
-        getEnv().remove(last);   // should match what was added
+        getSTbl().remove(last);   // should match what was added
         return res;
     }
 
@@ -936,7 +963,7 @@ class EnvironmentCreationVisitor
         //
         // Why are we forcing people to define the role/portVars
         // twice? [cause we're mean!]
-        ContextInfoConn framenow = (ContextInfoConn) frameNow();
+        SymbolTableComposite framenow = (SymbolTableComposite) symbolTableNow();
         framenow.roles2portvarsInParams.put(roleName, portParamNames);
         return defaultResult();
     }
@@ -969,38 +996,11 @@ class EnvironmentCreationVisitor
     }
 
     @Override
-    public T visitConditionalStatement(XCDParser.ConditionalStatementContext ctx) {
-        updateln(ctx);
-        T res = visitChildren(ctx);
-        var tr = new TranslatorConditionalStatementContext();
-        res = tr.translate(this, ctx);
-        return res;
-    }
-
-    @Override
-    public T visitPostStatement(XCDParser.PostStatementContext ctx) {
-        updateln(ctx);
-        T res = visitChildren(ctx);
-        var tr = new TranslatorPostStatementContext();
-        res = tr.translate(this, ctx);
-        return res;
-    }
-
-    @Override
     public T visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) {
         updateln(ctx);
         T res = visitChildren(ctx);
         var tr = new TranslatorConditionalExpressionContext();
         res = tr.translate(this, ctx);
-        return res;
-    }
-
-    @Override
-    public T visitSetExpression(XCDParser.SetExpressionContext ctx) {
-        updateln(ctx);
-        T res = visitChildren(ctx);
-        var tr = new TranslatorEqualityExpressionContext();
-        res = tr.translate(this, ctx.setexpr_var);
         return res;
     }
 
@@ -1018,15 +1018,6 @@ class EnvironmentCreationVisitor
         updateln(ctx);
         T res = visitChildren(ctx);
         var tr = new TranslatorEqualityExpressionContext();
-        res = tr.translate(this, ctx);
-        return res;
-    }
-
-    @Override
-    public T visitTernaryExpression(XCDParser.TernaryExpressionContext ctx) {
-        updateln(ctx);
-        T res = visitChildren(ctx);
-        var tr = new TranslatorTernaryExpressionContext();
         res = tr.translate(this, ctx);
         return res;
     }
@@ -1067,19 +1058,29 @@ class EnvironmentCreationVisitor
         return res;
     }
 
-    @Override public T visitNullaryExpression(XCDParser.NullaryExpressionContext ctx) {
+    @Override
+    public T visitUnaryExpressionNotPlusMinus(XCDParser.UnaryExpressionNotPlusMinusContext ctx) {
         updateln(ctx);
         T res = visitChildren(ctx);
-        var tr = new TranslatorNullaryExpressionContext();
+        var tr = new TranslatorUnaryExpressionNotPlusMinusContext();
         res = tr.translate(this, ctx);
         return res;
     }
 
     @Override
-    public T visitIntegerLiteral(XCDParser.IntegerLiteralContext ctx) {
+    public T visitPrimary(XCDParser.PrimaryContext ctx) {
         updateln(ctx);
         T res = visitChildren(ctx);
-        var tr = new TranslatorIntegerLiteralContext();
+        var tr = new TranslatorPrimaryContext();
+        res = tr.translate(this, ctx);
+        return res;
+    }
+
+    @Override
+    public T visitALiteral(XCDParser.ALiteralContext ctx) {
+        updateln(ctx);
+        T res = visitChildren(ctx);
+        var tr = new TranslatorALiteralContext();
         res = tr.translate(this, ctx);
         return res;
     }
@@ -1106,7 +1107,7 @@ class EnvironmentCreationVisitor
                               , ParserRuleContext ic2
                               , ParserRuleContext fc2) {
         updateln(eventOrMethod);
-        var framebefore = frameNow();
+        var framebefore = symbolTableNow();
         String msgbef = "visitEventOrMethodOutOfOrder: starting with "
             + printFrameAndItsParent(framebefore, framebefore.parent);
         myassert(framebefore.type==XCD_type.emittert
@@ -1119,7 +1120,7 @@ class EnvironmentCreationVisitor
                  || framebefore.type==XCD_type.providedvart
                  , msgbef);
         T res = visit(eventOrMethod);
-        var framenow = frameNow();
+        var framenow = symbolTableNow();
         String msg = "visitEventOrMethodOutOfOrder: current "
             + printFrameAndItsParent(framenow, framenow.parent);
         myassert(framenow.type==XCD_type.methodt
@@ -1133,217 +1134,58 @@ class EnvironmentCreationVisitor
 
         /* Event environment had been pushed twice, to ensure that
          * interaction/functional constraints are treated inside it */
-        popLastContext();
+        popLastSymbolTable();
         return res;
     }
 
-    @Override
-    public T visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.event_sig
-                                            , ctx.icontract, null, null, null);
-    }
+    // @Override
+    // public T visitEmitterPortvar_event(XCDParser.EmitterPortvar_eventContext ctx) {
+    //     return visitEventOrMethodOutOfOrder(ctx.event_sig
+    //                                         , ctx.icontract, null, null, null);
+    // }
 
-    @Override
-    public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.method_sig
-                                            , ctx.icontract, null, null, null);
-    }
+    // @Override
+    // public T visitRequiredPortvar_method(XCDParser.RequiredPortvar_methodContext ctx) {
+    //     return visitEventOrMethodOutOfOrder(ctx.method_sig
+    //                                         , ctx.icontract, null, null, null);
+    // }
 
-    @Override
-    public T visitProvidedPortvar_method(XCDParser.ProvidedPortvar_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.method_sig
-                                            , ctx.icontract, null, null, null);
-    }
-
-    @Override
-    public T visitEmitterPort_event(XCDParser.EmitterPort_eventContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.port_event
-                                            , ctx.icontract, ctx.fcontract
-                                            , null, null);
-    }
-
-    @Override
-    public T visitConsumerPort_event(XCDParser.ConsumerPort_eventContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.port_event
-                                            , ctx.icontract, ctx.fcontract
-                                            , null, null);
-    }
-
-    @Override
-    public T visitRequiredPort_method(XCDParser.RequiredPort_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.port_method
-                                            , ctx.icontract, ctx.fcontract
-                                            , null, null);
-    }
-
-    @Override
-    public T visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) {
-        return visitEventOrMethodOutOfOrder(ctx.port_method
-                                            , ctx.icontract, ctx.fcontract
-                                            , null, null);
-    }
+    // @Override
+    // public T visitProvidedPort_method(XCDParser.ProvidedPort_methodContext ctx) {
+    //     return visitEventOrMethodOutOfOrder(ctx.port_method
+    //                                         , ctx.icontract, ctx.fcontract
+    //                                         , null, null);
+    // }
 
     /**
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
      */
 
-    @Override
-    public T visitParamArgument(XCDParser.ParamArgumentContext ctx) { mywarning("Is it complete?"); return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorBody(XCDParser.ConnectorBodyContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorBody_Element(XCDParser.ConnectorBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRoleBody(XCDParser.RoleBodyContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRoleBody_Element(XCDParser.RoleBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPortvar(XCDParser.EmitterPortvarContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPortvar(XCDParser.ConsumerPortvarContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPortvar(XCDParser.RequiredPortvarContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPortvar(XCDParser.ProvidedPortvarContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPv_InteractionContract(XCDParser.EmitterPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPv_InteractionConstraint(XCDParser.EmitterPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPv_InteractionContract(XCDParser.ProvidedPv_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPv_InteractionConstraint(XCDParser.ProvidedPv_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComponentBody(XCDParser.ComponentBodyContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComponentBody_Element(XCDParser.ComponentBody_ElementContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPort(XCDParser.EmitterPortContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPort(XCDParser.ConsumerPortContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitRequiredPort(XCDParser.RequiredPortContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPort(XCDParser.ProvidedPortContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComplex_providedPort_functionalContract_Res(XCDParser.Complex_providedPort_functionalContract_ResContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComplex_provided_InteractionContract_Res(XCDParser.Complex_provided_InteractionContract_ResContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComplex_providedPort_functionalContract_Req(XCDParser.Complex_providedPort_functionalContract_ReqContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitComplex_provided_InteractionContract_Req(XCDParser.Complex_provided_InteractionContract_ReqContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterRequired_InteractionContract(XCDParser.EmitterRequired_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerProvided_InteractionContract(XCDParser.ConsumerProvided_InteractionContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterRequired_InteractionConstraint(XCDParser.EmitterRequired_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerProvided_InteractionConstraint(XCDParser.ConsumerProvided_InteractionConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPort_functionalContract(XCDParser.EmitterPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPort_functionalContract(XCDParser.ConsumerPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPort_functionalContract(XCDParser.ProvidedPort_functionalContractContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitEmitterPort_functionalConstraint(XCDParser.EmitterPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConsumerPort_functionalConstraint(XCDParser.ConsumerPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitProvidedPort_functionalConstraint(XCDParser.ProvidedPort_functionalConstraintContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitVariable_initialValue(XCDParser.Variable_initialValueContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorIndex(XCDParser.ConnectorIndexContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) { return visitChildren(ctx); }
-
-    @Override
-    public T visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
+    // TBD
 
     /**
      * Miscellaneous helper functions
      */
-    private String printFrameAndItsParent(ContextInfo fr, ContextInfo frP) {
-        return "frame " + fr.compilationUnitID + " of type " + fr.type
-            + ", parent " + frP.compilationUnitID + " of type " + frP.type;
-    }
-    private String printFrameItsParentAndItsGrandparent(ContextInfo fr
-                                                        , ContextInfo frP
-                                                        , ContextInfo frG) {
-        return printFrameAndItsParent(fr, frP)
-            + ", grandparent " + frG.compilationUnitID + " of type " + frG.type;
-    }
+    boolean readingParams = true; // TODO: check it's used correctly!
 
-    @Override
-    String component_variable_id(String var, ArraySizeContext index)
-    { return var
-            + "["
-            + ((index==null)
-               ? "1"
-               : visit(index).get(0))
-            + "]"; }
+    private String printFrame(SymbolTable fr) {
+        return "frame " + fr.compilationUnitID + " of type " + fr.type;
+    }
+    private String printFrameAndItsParent(SymbolTable fr, SymbolTable frP) {
+        return printFrame(fr)
+            + ", parent " + printFrame(frP);
+    }
+    private String printFrameItsParentAndItsGrandparent(SymbolTable fr
+                                                        , SymbolTable frP
+                                                        , SymbolTable frG) {
+        return printFrameAndItsParent(fr, frP)
+            + ", grandparent " + printFrame(frG);
+    }
 
     static private ArraySizeContext makeSingleElementArray() {
         if (singleElementArraySize!=null)
             return singleElementArraySize;
-
         org.antlr.v4.runtime.CharStream input
             = org.antlr.v4.runtime.CharStreams.fromString("byte foo [1];");
         // create a lexer that feeds off of input CharStream
@@ -1355,11 +1197,32 @@ class EnvironmentCreationVisitor
         // create a parser that feeds off the tokens buffer
         XCDParser parser
             = new XCDParser(tokens);
-        // begin parsing at "formalParameter" parse rule
-        FormalParameterContext tree
-            = (FormalParameterContext) parser.formalParameter();
-
+        // begin parsing at "variableDeclaration" parse rule
+        VariableDeclarationContext tree
+            = (VariableDeclarationContext) parser.variableDeclaration();
         return tree.size;
     }
-    final static ArraySizeContext singleElementArraySize = makeSingleElementArray();
+    final static ArraySizeContext singleElementArraySize
+        = makeSingleElementArray();
+
+    final static Map<Integer, XCD_type> portTypeToken2PortType
+        = makePortTypeToken2PortType();
+    final static Map<Integer, XCD_type> portTypeToken2PortVarType
+        = makePortTypeToken2PortVarType();
+    static private Map<Integer, XCD_type> makePortTypeToken2PortType() {
+        Map<Integer, XCD_type> map = new HashMap<Integer, XCD_type>();
+        map.put(XCDParser.TK_EMITTER , XCD_type.emittert);
+        map.put(XCDParser.TK_CONSUMER, XCD_type.consumert);
+        map.put(XCDParser.TK_PROVIDED, XCD_type.providedt);
+        map.put(XCDParser.TK_REQUIRED, XCD_type.requiredt);
+        return map;
+    }
+    static private Map<Integer, XCD_type> makePortTypeToken2PortVarType() {
+        Map<Integer, XCD_type> map = new HashMap<Integer, XCD_type>();
+        map.put(XCDParser.TK_EMITTER , XCD_type.emittervart);
+        map.put(XCDParser.TK_CONSUMER, XCD_type.consumervart);
+        map.put(XCDParser.TK_PROVIDED, XCD_type.providedvart);
+        map.put(XCDParser.TK_REQUIRED, XCD_type.requiredvart);
+        return map;
+    }
 }
