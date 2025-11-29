@@ -46,6 +46,17 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     static public String keywordIn
         = getTokenString(XCDParser.TK_IN);
 
+    static public String keywordVoid
+        = getTokenString(XCDParser.TK_VOID);
+    static public String keywordBool
+        = getTokenString(XCDParser.TK_BOOL);
+    static public String keywordByte
+        = getTokenString(XCDParser.TK_BYTE);
+    static public String keywordShort
+        = getTokenString(XCDParser.TK_SHORT);
+    static public String keywordInteger
+        = getTokenString(XCDParser.TK_INTEGER);
+
     /**
      * Miscellaneous helper functions
      */

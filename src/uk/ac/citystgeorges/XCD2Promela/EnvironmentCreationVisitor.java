@@ -58,9 +58,16 @@ class EnvironmentCreationVisitor
         // kwords.add(keywordException);
         // kwords.add(keywordSkip);
         // kwords.add(keywordIn);
+        /* Add basic types in the list of key words, so that
+         * translate_ID can find them */
+        kwords.add(keywordVoid);
+        kwords.add(keywordBool);
+        kwords.add(keywordByte);
+        kwords.add(keywordShort);
+        kwords.add(keywordInteger);
         for (String kword : kwords )
             { addIdInfo(kword
-                        , XCD_type.resultt
+                        , XCD_type.typet
                         , kword
                         , false
                         , (ArraySizeContext)null
@@ -537,11 +544,13 @@ class EnvironmentCreationVisitor
         String myRole = "";
         if (framenow.type==XCD_type.roott && framenow==rootContext) {
             globOrCompOrRole = 0;
-        } else if (framenow.type==XCD_type.componentt && framenow!=rootContext) {
-            globOrCompOrRole = 1; // Inside a component
+        } else if (framenow.type==XCD_type.compositet
+                   || framenow.type==XCD_type.componentt) {
+            globOrCompOrRole = 1; // Inside a composite/component
             myComp = framenow.compilationUnitID;
-        } else if (framenow.type==XCD_type.rolet) {
-            globOrCompOrRole = 2; // Inside a role
+        } else if (framenow.type==XCD_type.connectort
+                   || framenow.type==XCD_type.rolet) {
+            globOrCompOrRole = 2; // Inside a connector/role
             myRole = framenow.compilationUnitID;
             myConn = framenow.parent.compilationUnitID;
         } else
@@ -596,26 +605,33 @@ class EnvironmentCreationVisitor
         String definition = ctx.existingtype.getText();
         if (framenow==rootContext)
             ((SymbolTableRoot)framenow).commonConstructs.typedefs.add(newtype);
-        else if (framenow.type==XCD_type.componentt
+        else if (framenow.type==XCD_type.compositet
                  || framenow.type==XCD_type.connectort
+                 || framenow.type==XCD_type.componentt
                  || framenow.type==XCD_type.rolet)
             ((SymbolTableComposite)framenow).compConstructs.typedefs.add(newtype);
         else
             myassert(false
                      , "Typedef inside unknown construct " + framenow.type);
 
-        addIdInfo(newtype
-                  , XCD_type.typedeft
-                  , definition
-                  , false
-                  , null
-                  , null
-                  , framenow.compilationUnitID);
+        IdInfo typedefIdInfo
+            = addIdInfo(newtype
+                        , XCD_type.typedeft
+                        , definition
+                        , false
+                        , null
+                        , null
+                        , framenow.compilationUnitID);
         mywarning("Added type \"" + newtype + "\" as a newname for \""
                   + definition + "\"");
+        String basicTranslation
+            = new TranslatorPrimaryContext()
+            .translate_ID(this, definition);
+        typedefIdInfo
+            .translation
+            .add(basicTranslation);
         return defaultResult();
     }
-
 
     @Override public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) {
         updateln(ctx);

@@ -19,11 +19,12 @@ compositeOrConnectorDeclaration:
 ;
 // CONNECTOR or COMPOSITE component (= mini configuration)
 compositeElement:
-  role=componentOrRoleDeclaration // Used in CONNECTORs & COMPOSITEs
+  cenum=enumDeclaration
+  | cTypedef=typeDefDeclaration
+  | inlineFunction=inlineFunctionDeclaration
+  | role=componentOrRoleDeclaration // Used in CONNECTORs & COMPOSITEs
   | variable=elementVariableDeclaration
   // | assert=assertDeclaration
-  | cenum=enumDeclaration
-  | inlineFunction=inlineFunctionDeclaration
 ;
 
 componentOrRoleDeclaration:
@@ -33,11 +34,12 @@ componentOrRoleDeclaration:
   TK_RBRACE
 ;
 componentElement:
-   port=portDeclaration
+  cenum=enumDeclaration
+  | cTypedef=typeDefDeclaration
+  | inlineFunction=inlineFunctionDeclaration
+  | port=portDeclaration
   | variable=variableDeclaration TK_SEMICOLON
   // | assert=assertDeclaration
-  | cenum=enumDeclaration
-  | inlineFunction=inlineFunctionDeclaration
 ;
 
 portDeclaration:

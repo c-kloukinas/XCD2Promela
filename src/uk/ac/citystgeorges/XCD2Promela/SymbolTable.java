@@ -137,6 +137,7 @@ abstract class SymbolTable {
 class CommonConstructs {
     LstStr enums = new LstStr();
     LstStr typedefs = new LstStr();
+    LstStr inlineFunctions = new LstStr();
 }
 
 class SymbolTableRoot extends SymbolTable {

@@ -48,18 +48,25 @@ public class TranslatorPrimaryContext implements TranslatorI {
         bv.myassert(id!=null && !id.equals("")
                     , "empty name for a variable");
         IdInfo idinfo = bv.getIdInfo(id);
-        if (idinfo.type==XCD_type.typedeft) {
-            String realType = idinfo.variableTypeName;
-            /* res (the real type) may itself be a typedef, so we need
-             * to recurse, until we find its translation */
-            DataTypeContext type4recursion = bv.makeDataType(realType);
-            var trans = bv.visit(type4recursion).get(0);
-            bv.mywarning("TypeDefDeclaration: type "
-                         + id
-                         + " ("
-                         + realType
-                         + ") translated to type " + trans);
-            return trans;
+        if (idinfo.type==XCD_type.typet
+            || idinfo.type==XCD_type.typedeft) {
+            if (idinfo.translation.size()!=0)
+                return idinfo.translation.get(0);
+            else {
+                String realType = idinfo.variableTypeName;
+                /* res (the real type) may itself be a typedef, so we need
+                 * to recurse, until we find its translation */
+                DataTypeContext type4recursion = bv.makeDataType(realType);
+                var trans = bv.visit(type4recursion).get(0);
+                // Store it for next time
+                idinfo.translation.add(trans);
+                bv.mywarning("TypeDefDeclaration: type "
+                             + id
+                             + " ("
+                             + realType
+                             + ") translated to type " + trans);
+                return trans;
+            }
         } else {
             bv.myassert((idinfo.translation!=null
                          && idinfo.translation.size()>0)
