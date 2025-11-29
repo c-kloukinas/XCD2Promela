@@ -30,14 +30,24 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             res = new T(2);
             String header = "";
             String instance = "";
-            // Identify parameters
-            T argList =
-                (ctx.param!=null)
-                ? bv.visit(ctx.param)
-                : new T()
-                // new LstStr()        // missing
-                ;
+            // // Identify parameters
+            // T argList =
+            //     (ctx.param!=null)
+            //     ? bv.visit(ctx.param)
+            //     : new T()
+            //     // new LstStr()        // missing
+            //     ;
+            LstStr argList = thisEnv.compConstructs.params;
             bv.mywarning("TODO: missing code for comp parameters");
+            for (String param : argList) {
+                IdInfo paramInfo = bv.getIdInfo(thisEnv, param);
+                bv.mywarning("Param " + param + " has translation:");
+                if (paramInfo.translation.size()!=0)
+                    for (var v : paramInfo.translation)
+                        bv.mywarning("\t" + v);
+                else
+                    bv.mywarning("\tNO TRANSLATION!");
+            }
 
             instance += Names.componentHeaderName(compName) + "(";
             int prmsz = (argList!=null) ? argList.size() : 0;
@@ -89,6 +99,9 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             String all_enums = def.apply("TYPE_"
                                          , thisEnv.compConstructs.enums);
             if (thisEnv.type==XCD_type.compositet) {
+                bv.myassert(thisEnv.type!=XCD_type.compositet
+                         , "TranslatorComponentOrRoleDeclaration: "
+                         + "Shouldn't be called for composite components");
                 SymbolTableComposite thisCompositeEnv
                     = (SymbolTableComposite) framenow;
                 // Collect sub-components
@@ -271,7 +284,8 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                 }
             }
 
-            for (var trVar : translationVarsBool)
+            for (var trVar : translationVarsBool) {
+                bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
                     .visitPrimitiveVariableOrParamDeclaration
                     ("bit"
@@ -279,7 +293,9 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                      , (ArraySizeContext)null
                      , (VariableDefaultValueContext)null
                      , true);
-            for (var trVar : translationVarsByte)
+            }
+            for (var trVar : translationVarsByte) {
+                bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
                     .visitPrimitiveVariableOrParamDeclaration
                     ("byte"
@@ -287,6 +303,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                      , (ArraySizeContext)null
                      , (VariableDefaultValueContext)null
                      , true);
+            }
             for (String var : thisEnv.compConstructs.vars) {
                 IdInfo info = bv.getIdInfo(thisEnv, var);
                 String big = Names.varNameComponent(compName, var);
@@ -307,7 +324,8 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                 }
 
                 String type = bv.component_typeof_id(big);
-                String nm = bv.component_variable_id(big, arrSz);
+                String nm = big// bv.component_variable_id(big, arrSz)
+                    ;
                 String init = "";
                 if (info.initVal!=null) {
                     bv.mywarning("TODO: If value is a component param, the following doesn't work");
@@ -317,15 +335,30 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                     // init = "=InitialValue(COMPONENT_"
                     //     + compName
                     //     + "_VAR_" + var +")";
-                    init = "="+info.initVal; /* wrong (?) on purpose, to
-                                                see what comes out */
-                    init = "="
-                        + Names.varNameComponentInitialValue(compName, var);
+                    // init = "="
+                    //     + Names.varNameComponentInitialValue(compName, var);
+                    init = "=" + info.initVal; /* wrong (?) on purpose, to
+                                                  see what comes out */
                 } else init = "=000"; // default value
+                LstStr translation = info.translation;
+                bv.myassert(translation.size()==3
+                            , "Variable " + nm + " doesn't have translations for itself, its array size, and its initial value");
+                String arrSzTrans = translation.get(1);
+                String initTrans = translation.get(2);
+                if (initTrans==null)
+                    initTrans = "";
+                else
+                    initTrans = "=" + initTrans;
                 String pre_nm = Names.varPreName(nm);
-                instance += type + " " + nm + init +";\n";
-                if (arrSz!=null)    // XXX HACK - user-defined variable
-                    instance += type + " " + pre_nm + init +";\n";
+                instance += type
+                    + " " + nm
+                    + "[" + arrSzTrans + "]"
+                    + initTrans + ";\n";
+                // if (arrSz!=null)    // XXX HACK - user-defined variable
+                instance += type +
+                    " " + pre_nm
+                    + "[" + arrSzTrans + "]"
+                    + initTrans + ";\n";
             }
 
             instance += "}\n";
