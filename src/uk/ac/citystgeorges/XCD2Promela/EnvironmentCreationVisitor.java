@@ -647,68 +647,12 @@ class EnvironmentCreationVisitor
                                 // default size
             ;
         VariableDefaultValueContext initVal = ctx.initval;
-
-        var framenow = (SymbolTable) symbolTableNow();
-        String compUnitId = framenow.compilationUnitID;
-        XCD_type tp = framenow.type;
-
-        IdInfo idinfo = addIdInfo(varName
-                                  , (readingParams
-                                     ? XCD_type.paramt
-                                     : XCD_type.vart)
-                                  , dtype
-                                  , readingParams
-                                  , array_sz
-                                  , initVal
-                                  , compUnitId);
-        if (tp==XCD_type.methodt
-            || tp==XCD_type.eventt
-            || tp==XCD_type.functiont) {
-            T res = new T();
-            res.add(dtype); res.add(varName);
-            mywarning("visitVariableDeclaration: Have added "
-                      + varName
-                      + " into the current environment, with type "
-                      + dtype
-                      + " as a "
-                      + (readingParams?"parameter":"variable"));
-            idinfo.translation.add(varName);
-            return res;
-        } else {
-            LstStr paramsOrvars = null;
-            String trans = "";
-
-            CompositeConstructs theEnv = null;
-            if (framenow instanceof SymbolTableComposite) {
-                theEnv = ((SymbolTableComposite)framenow).compConstructs;
-            } else if (framenow instanceof SymbolTableComponent) {
-                theEnv = ((SymbolTableComponent)framenow).compConstructs;
-            }
-            paramsOrvars = readingParams
-                ? theEnv.params
-                : theEnv.vars;
-            trans = readingParams
-                ? Names.paramNameComponent(framenow.compilationUnitID
-                                           , varName)
-                : Names.varNameComponent(framenow.compilationUnitID
-                                         , varName);
-            // if (tp==XCD_type.connectort || tp==XCD_type.compositet) {
-            mySyntaxCheck((tp!=XCD_type.connectort
-                           && tp!=XCD_type.compositet)
-                          || readingParams
-                          , "Composites and connectors cannot have variables");
-            // } else {
-            //     myassert((tp==XCD_type.componentt) && (tp==XCD_type.rolet)
-            //              && readingParams
-            //              , (readingParams?"Parameter ":"Variable ")
-            //              + varName
-            //              + " declaration appears in an unexpected context "
-            //              + tp);
-            // }
-            paramsOrvars.add(varName);
-            idinfo.translation.add(trans);
-        }
-        return defaultResult();
+        T res = visitPrimitiveVariableOrParamDeclaration(dtypeCtx
+                                                         , varName
+                                                         , array_sz
+                                                         , initVal
+                                                         , !readingParams);
+        return res;
     }
 
     public T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
@@ -749,12 +693,26 @@ class EnvironmentCreationVisitor
             mywarning("visitPrimitiveVariableOrParamDeclaration: Have added "
                       + varName
                       + " into the current environment, with type "
-                      + dtype);
+                      + dtype
+                      + " as a "
+                      + (readingParams?"parameter":"variable"));
             idinfo.translation.add(varName);
             return res;
         } else {
             LstStr paramsOrvars = null;
             String trans = "";
+            CompositeConstructs theEnvCompConstructs = null;
+            if (framenow instanceof SymbolTableComposite) {
+                theEnvCompConstructs
+                    = ((SymbolTableComposite)framenow).compConstructs;
+            } else if (framenow instanceof SymbolTableComponent) {
+                theEnvCompConstructs
+                    = ((SymbolTableComponent)framenow).compConstructs;
+            }
+            paramsOrvars = isVar
+                ? theEnvCompConstructs.vars
+                : theEnvCompConstructs.params;
+
             if (tp==XCD_type.compositet
                 || tp==XCD_type.connectort) {
                 var theEnv = (SymbolTableComposite)framenow;
@@ -765,22 +723,12 @@ class EnvironmentCreationVisitor
                               , "Composite components and connectors cannot"
                               + " have primitive variables");
                 trans = ((tp==XCD_type.compositet)
-                         ? (isVar
-                            ? Names.varNameComponent(theEnv.compilationUnitID
-                                                     , varName)
-                            : Names.paramNameComponent(theEnv.compilationUnitID
-                                                       , varName))
-                         : (isVar
-                            ? Names.xVarName(theEnv.compilationUnitID
-                                             , "UNKNOWNROLE"
-                                             , varName)
-                            : varName));
+                         ? Names.paramNameComponent(theEnv.compilationUnitID
+                                                  , varName)
+                         : varName);
             } else if (tp==XCD_type.componentt
                        || tp==XCD_type.rolet) {
                 var theEnv = (SymbolTableComponent)framenow;
-                paramsOrvars = isVar
-                    ? theEnv.compConstructs.vars
-                    : theEnv.compConstructs.params;
                 trans = ((tp==XCD_type.componentt)
                          ? (isVar
                             ? Names.varNameComponent(theEnv.compilationUnitID
@@ -802,15 +750,40 @@ class EnvironmentCreationVisitor
             paramsOrvars.add(varName);
             idinfo.translation.add(trans);
         }
-        return defaultResult();
-    }
 
-    @Override
-    public T visitComponentElement(XCDParser.ComponentElementContext ctx) {
-        readingParams=false;
-        T res = visitChildren(ctx);
-        readingParams=true;
-        return res;
+        if (array_sz!=null) {
+            T res = visit(array_sz);
+            if (res.size()!=0) {
+                idinfo.translation.add(res.get(0));
+                mywarning("VariableDeclaration: " + varName
+                          + " has arraySz " + res.get(0));
+            } else {
+                idinfo.translation.add("UNKNOWN_ARRAY_SZ_TRANSLATION");
+                mywarning("VariableDeclaration: " + varName
+                          + " has arraySz UNKNOWN_ARRAY_SZ_TRANSLATION");
+            }
+        } else {
+            idinfo.translation.add("1");
+            mywarning("VariableDeclaration: " + varName
+                      + " has arraySz 1");
+        }
+        if (initVal!=null) {
+            T res = visit(initVal);
+            if (res.size()!=0) {
+                idinfo.translation.add(res.get(0));
+                mywarning("VariableDeclaration: " + varName
+                          + " has initVal " + res.get(0));
+            } else {
+                idinfo.translation.add("UNKNOWN_INITVAL_TRANSLATION");
+                mywarning("VariableDeclaration: " + varName
+                          + " has initVal UNKNOWN_INITVAL_TRANSLATION");
+            }
+        } else {
+            idinfo.translation.add(null);
+                mywarning("VariableDeclaration: " + varName
+                          + " has initVal null");
+        }
+        return defaultResult();
     }
 
     @Override public T visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
@@ -1030,6 +1003,17 @@ class EnvironmentCreationVisitor
     }
 
     @Override
+    public T visitSet(XCDParser.SetContext ctx) {
+        updateln(ctx);
+        T res = new T();
+        if (ctx.val1!= null)    // maybe it's the empty set
+            res.add(visit(ctx.val1).get(0));
+        for (var val : ctx.vals)
+            res.add(visit(val).get(0));
+        return res;
+    }
+
+    @Override
     public T visitEqualityExpression(XCDParser.EqualityExpressionContext ctx) {
         updateln(ctx);
         T res = visitChildren(ctx);
@@ -1174,12 +1158,135 @@ class EnvironmentCreationVisitor
     // }
 
     /**
+     * These need a simple translation.
+     */
+
+    @Override public T visitCompositeElement(XCDParser.CompositeElementContext ctx) {
+        readingParams=false;
+        T res = visitChildren(ctx);
+        readingParams=true;
+        return res;
+    }
+
+    @Override
+    public T visitComponentElement(XCDParser.ComponentElementContext ctx) {
+        readingParams=false;
+        T res = visitChildren(ctx);
+        readingParams=true;
+        return res;
+    }
+
+    @Override public T visitArrayAccess(XCDParser.ArrayAccessContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitFunctionInvocation(XCDParser.FunctionInvocationContext ctx) { return visitChildren(ctx); }
+
+
+    @Override public T visitStatement(XCDParser.StatementContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitAssignment(XCDParser.AssignmentContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitAssignmentExpression(XCDParser.AssignmentExpressionContext ctx) {
+        if (ctx.condExpr!=null)
+            return visit(ctx.condExpr);
+
+        mySyntaxCheck(false, "We do not yet support chained assignments");
+        return defaultResult(); }
+
+    @Override public T visitConditionalOrExpression(XCDParser.ConditionalOrExpressionContext ctx) {
+        if (ctx.andExpr!=null)
+            return visit(ctx.andExpr);
+
+        String s = visit(ctx.orExpr1).get(0)
+            + "||"
+            + visit(ctx.andExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+    @Override public T visitConditionalAndExpression(XCDParser.ConditionalAndExpressionContext ctx) {
+        if (ctx.bitorExpr!=null)
+            return visit(ctx.bitorExpr);
+
+        String s = visit(ctx.andExpr1).get(0)
+            + "&&"
+            + visit(ctx.bitorExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+    @Override public T visitInclusiveOrExpression(XCDParser.InclusiveOrExpressionContext ctx) {
+        if (ctx.bitxorExpr!=null)
+            return visit(ctx.bitxorExpr);
+
+        String s = visit(ctx.bitorExpr1).get(0)
+            + "|"
+            + visit(ctx.bitxorExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+    @Override public T visitExclusiveOrExpression(XCDParser.ExclusiveOrExpressionContext ctx) {
+        if (ctx.bitandExpr!=null)
+            return visit(ctx.bitandExpr);
+
+        String s = visit(ctx.bitxorExpr1).get(0)
+            + "^"
+            + visit(ctx.bitandExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+
+    @Override public T visitAndExpression(XCDParser.AndExpressionContext ctx) {
+        if (ctx.eqExpr!=null)
+            return visit(ctx.eqExpr);
+
+        String s = visit(ctx.bitandExpr1).get(0)
+            + "&"
+            + visit(ctx.eqExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+    @Override public T visitShiftExpression(XCDParser.ShiftExpressionContext ctx) {
+        if (ctx.addExpr!=null)
+            return visit(ctx.addExpr);
+
+        String s = visit(ctx.shiftExpr1).get(0)
+            + ctx.op.getText()
+            + visit(ctx.addExpr2).get(0);
+        T res = new T(); res.add(s);
+        return res; }
+
+    @Override public T visitVariableDefaultValue(XCDParser.VariableDefaultValueContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
+    @Override public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
+    @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitGeneralInteractionContract(XCDParser.GeneralInteractionContractContext ctx) { return visitChildren(ctx); }
+    @Override public T visitComponentInteractionConstraint(XCDParser.ComponentInteractionConstraintContext ctx) { return visitChildren(ctx); }
+    @Override public T visitRoleInteractionConstraint(XCDParser.RoleInteractionConstraintContext ctx) { return visitChildren(ctx); }
+    @Override public T visitGeneralFunctionalContract(XCDParser.GeneralFunctionalContractContext ctx) { return visitChildren(ctx); }
+
+    /**
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
      */
 
-    // TBD
+    @Override public T visitLeftHandSide(XCDParser.LeftHandSideContext ctx) { return visitChildren(ctx); }
 
+    @Override public T visitExpression(XCDParser.ExpressionContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitStatements(XCDParser.StatementsContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
+        /**
+         * {@inheritDoc}
+         *
+         * <p>The default implementation returns the result of calling
+         * {@link #visitChildren} on {@code ctx}.</p>
+         */
+    @Override public T visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) { return visitChildren(ctx); }
     /**
      * Miscellaneous helper functions
      */
