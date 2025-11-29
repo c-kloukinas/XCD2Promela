@@ -24,7 +24,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
  */
  abstract class BaseVisitor<T>
  /* Use the following to ensure that you haven't forgotten any methods */
- //     extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
+     // extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
      extends XCDBaseVisitor<T>
 {
     static String getTokenString(Token tk)
@@ -71,7 +71,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
     protected void mySyntaxCheck(boolean cond, String msg)
-    { Utils.util.mySyntaxCheck(cond, msg); }
+    { Utils.util.// mySyntaxCheck
+            myassert(cond, msg); }
 
     private ArrayList<SymbolTable> stbl = new ArrayList<SymbolTable>();
     ArrayList<SymbolTable> getSTbl() { return stbl; }
@@ -171,7 +172,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                           + "\nparent: " + info.parent + " vs " + newInfo.parent);
                 myassert(false, "Symbol \""+symbol+"\" already in the map");
             } else
-                mywarning("Symbol \"" +symbol+"\" already in the map - input visited twice!");
+                myassert(false, "Symbol \"" +symbol+"\" already in the map - input visited twice!");
 
         } else {
             currentMap.put(symbol, newInfo); }
