@@ -217,7 +217,7 @@ range:
 ;
 set:
   TK_LBRACE
-    val1=assignmentExpression ( TK_COMMA vals+=assignmentExpression )*
+    ( val1=assignmentExpression ( TK_COMMA vals+=assignmentExpression )* )?
   TK_RBRACE
 ;
 /*
