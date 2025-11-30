@@ -7,7 +7,7 @@ compilationUnit:
   | globInlineFunction=inlineFunctionDeclaration
   | basicComponent=componentOrRoleDeclaration
   | composite=compositeOrConnectorDeclaration
-  | config=elementVariableDeclaration
+  | config=elementVarDecl
 ;
 
 compositeOrConnectorDeclaration:
@@ -23,7 +23,7 @@ compositeElement:
   | cTypedef=typeDefDeclaration
   | inlineFunction=inlineFunctionDeclaration
   | role=componentOrRoleDeclaration // Used in CONNECTORs & COMPOSITEs
-  | variable=elementVariableDeclaration
+  | variable=elementVarDecl
   // | assert=assertDeclaration
 ;
 
@@ -38,7 +38,7 @@ componentElement:
   | cTypedef=typeDefDeclaration
   | inlineFunction=inlineFunctionDeclaration
   | port=portDeclaration
-  | variable=variableDeclaration TK_SEMICOLON
+  | variable=varDecl TK_SEMICOLON
   // | assert=assertDeclaration
 ;
 
@@ -124,7 +124,7 @@ inlineFunctionDeclaration:
   TK_RBRACE
 ;
 
-variableDeclaration:
+varDecl:
   type=dataType  id=ID (size=arraySize)?
   (op=TK_ASSIGN initval=variableDefaultValue)?
 ;
@@ -135,15 +135,16 @@ arraySize:
     (constant = NATURAL |config_par = ID)
   TK_RBRACKET
 ;
-// The following rule should be replaced by conditionalExpression
+// The following rule should be replaced by assignmentExpression
 variableDefaultValue:
-  icons=ID
-  | inum=NATURAL
-  | itrue=TK_TRUE
-  | ifalse=TK_FALSE
+  assignmentExpression
+  // icons=ID
+  // | inum=NATURAL
+  // | itrue=TK_TRUE
+  // | ifalse=TK_FALSE
 ;
 
-elementVariableDeclaration:
+elementVarDecl:
 ( elType=(TK_COMPONENT | TK_COMPOSITE)
      userdefined=ID
      id=ID (size=arraySize)? TK_LPAR (params=argumentList)? TK_RPAR )
@@ -164,7 +165,7 @@ connectorParameter:
     TK_LBRACE
       pv_pre= ID ( TK_COMMA pvs+= ID )*
     TK_RBRACE )
-  | prim_param= variableDeclaration
+  | prim_param= varDecl
 ;
 connectorArgumentList:
   TK_LPAR
@@ -184,7 +185,7 @@ connectorArgument_pv:
 
 formalParameters:
   TK_LPAR
-    ( par_pre= variableDeclaration ( TK_COMMA pars+= variableDeclaration )* )?
+    ( par_pre= varDecl ( TK_COMMA pars+= varDecl )* )?
   TK_RPAR
 ;
 
