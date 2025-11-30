@@ -16,12 +16,19 @@ public class TranslatorAssignmentContext implements TranslatorI {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-        if (ctx.lhsIs!=null)
-            s = bv.visit(ctx.lhsIs).get(0)
+        T lhs = bv.visit(ctx.lhs);
+        bv.myassert(lhs.size()==1
+                    , "LeftHandSide: didn't return exactly one element"
+                    + lhs.size());
+        if (ctx.is!=null) {
+            T assgnExpr = bv.visit(ctx.assgnExpr);
+            bv.myassert(assgnExpr.size()==1
+                        , "AssignmentExpression: didn't return exactly one element"
+                        + assgnExpr.size());
+            s = lhs.get(0)
                 + "="
-                + bv.visit(ctx.assgnExpr);
-        else if (ctx.lhsIn!=null) { // inRange
-            String lhs = bv.visit(ctx.lhsIn).get(0);
+                + assgnExpr.get(0);
+        } else if (ctx.inRange!=null) { // inRange
             T theRange = bv.visit(ctx.theRange);
             String valMin = theRange.get(0);
             String valMax = theRange.get(1);
@@ -40,19 +47,18 @@ public class TranslatorAssignmentContext implements TranslatorI {
                 /* Final option - must choose it */
                 + "  :: " + theLoopIndex + "==" + valMax + " -> break;"
                 + "  od ; skip ;\n"
-                + "  " + lhs + "=" + theLoopIndex + ";\n"
+                + "  " + lhs.get(0) + "=" + theLoopIndex + ";\n"
                 /* Reset theLoopIndex to save states */
                 + "  " + theLoopIndex + "=0 ;\n"
                 + "}\n";
         } else {                    // inSet
-            String lhs = bv.visit(ctx.lhsIn).get(0);
             T theSet = bv.visit(ctx.theSet);
             bv.myassert(theSet.size()!=0
                         , "Assignment: Cannot choose a value from an empty set");
             s += "atomic {\n  "
                 + "  if\n";
             for (var val : theSet)
-                s += "  :: true -> " + lhs + "=" + val + "; break;\n";
+                s += "  :: true -> " + lhs.get(0) + "=" + val + "; break;\n";
             s += "  fi; skip\n"
                 + "}\n";
         }
