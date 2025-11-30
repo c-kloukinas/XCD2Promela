@@ -27,6 +27,7 @@ class EnvironmentCreationVisitor
     */
     @Override
     protected T defaultResult() {return new T();}
+
     @Override
     protected T aggregateResult​(T aggregate, T nextResult) {
         if (nextResult!=null)
@@ -425,9 +426,9 @@ class EnvironmentCreationVisitor
 
         MethodStructure theEventM = null;
         EventStructure  theEventE = null;
-        T ret = defaultResult();
         LstStr exceptions = null;
         if (imaMethod) {
+            T ret = defaultResult();
             ret = visit(ctx.rettype);
             theEventM
                 = new MethodStructure(eventName, theSig
@@ -633,7 +634,7 @@ class EnvironmentCreationVisitor
         return defaultResult();
     }
 
-    @Override public T visitVariableDeclaration(XCDParser.VariableDeclarationContext ctx) {
+    @Override public T visitVarDecl(XCDParser.VarDeclContext ctx) {
         updateln(ctx);
         String varName = ctx.id.getText();
         DataTypeContext dtypeCtx = ctx.type; // int, byte, bool, void, ID(long name)
@@ -647,31 +648,35 @@ class EnvironmentCreationVisitor
                                 // default size
             ;
         VariableDefaultValueContext initVal = ctx.initval;
-        T res = visitPrimitiveVariableOrParamDeclaration(dtypeCtx
-                                                         , varName
-                                                         , array_sz
-                                                         , initVal
-                                                         , !readingParams);
+        T res = visitVarOrParamDecl(dtypeCtx
+                                    , varName
+                                    , array_sz
+                                    , initVal
+                                    , !readingParams);
+        if (!readingParams) {
+            IdInfo idinfo = getIdInfo(varName);
+            idinfo.has_pre = true;
+        }
         return res;
     }
 
-    public T visitPrimitiveVariableOrParamDeclaration(DataTypeContext dtype
-                                                      , String varName
-                                                      , ArraySizeContext array_sz
-                                                      , VariableDefaultValueContext initVal
-                                                      , boolean isVar) {
-        return visitPrimitiveVariableOrParamDeclaration(dtype.getText()
-                                                        , varName
-                                                        , array_sz
-                                                        , initVal
-                                                        , isVar);
+    public T visitVarOrParamDecl(DataTypeContext dtype
+                                 , String varName
+                                 , ArraySizeContext array_sz
+                                 , VariableDefaultValueContext initVal
+                                 , boolean isVar) {
+        return visitVarOrParamDecl(dtype.getText()
+                                   , varName
+                                   , array_sz
+                                   , initVal
+                                   , isVar);
     }
 
-    public T visitPrimitiveVariableOrParamDeclaration(String dtype
-                                                      , String varName
-                                                      , ArraySizeContext array_sz
-                                                      , VariableDefaultValueContext initVal
-                                                      , boolean isVar) {
+    public T visitVarOrParamDecl(String dtype
+                                 , String varName
+                                 , ArraySizeContext array_sz
+                                 , VariableDefaultValueContext initVal
+                                 , boolean isVar) {
         var framenow = (SymbolTable) symbolTableNow();
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
@@ -690,7 +695,7 @@ class EnvironmentCreationVisitor
             || tp==XCD_type.functiont) {
             T res = new T();
             res.add(dtype); res.add(varName);
-            mywarning("visitPrimitiveVariableOrParamDeclaration: Have added "
+            mywarning("visitVarOrParamDecl: Have added "
                       + varName
                       + " into the current environment, with type "
                       + dtype
@@ -755,38 +760,40 @@ class EnvironmentCreationVisitor
             T res = visit(array_sz);
             if (res.size()!=0) {
                 idinfo.translation.add(res.get(0));
-                mywarning("VariableDeclaration: " + varName
+                mywarning("VarDecl: " + varName
                           + " has arraySz " + res.get(0));
             } else {
                 idinfo.translation.add("UNKNOWN_ARRAY_SZ_TRANSLATION");
-                mywarning("VariableDeclaration: " + varName
-                          + " has arraySz UNKNOWN_ARRAY_SZ_TRANSLATION");
+                myassert(false
+                         , "VarDecl: " + varName
+                         + " has arraySz UNKNOWN_ARRAY_SZ_TRANSLATION");
             }
         } else {
             idinfo.translation.add("1");
-            mywarning("VariableDeclaration: " + varName
+            mywarning("VarDecl: " + varName
                       + " has arraySz 1");
         }
         if (initVal!=null) {
             T res = visit(initVal);
             if (res.size()!=0) {
                 idinfo.translation.add(res.get(0));
-                mywarning("VariableDeclaration: " + varName
+                mywarning("VarDecl: " + varName
                           + " has initVal " + res.get(0));
             } else {
                 idinfo.translation.add("UNKNOWN_INITVAL_TRANSLATION");
-                mywarning("VariableDeclaration: " + varName
-                          + " has initVal UNKNOWN_INITVAL_TRANSLATION");
+                myassert(false
+                         , "VarDecl: " + varName
+                         + " has initVal UNKNOWN_INITVAL_TRANSLATION");
             }
         } else {
             idinfo.translation.add(null);
-                mywarning("VariableDeclaration: " + varName
+                mywarning("VarDecl: " + varName
                           + " has initVal null");
         }
         return defaultResult();
     }
 
-    @Override public T visitElementVariableDeclaration(XCDParser.ElementVariableDeclarationContext ctx) {
+    @Override public T visitElementVarDecl(XCDParser.ElementVarDeclContext ctx) {
         updateln(ctx);
         Token tk = (Token) ctx.elType;
         var framenow = symbolTableNow().you();
@@ -1320,9 +1327,9 @@ class EnvironmentCreationVisitor
         // create a parser that feeds off the tokens buffer
         XCDParser parser
             = new XCDParser(tokens);
-        // begin parsing at "variableDeclaration" parse rule
-        VariableDeclarationContext tree
-            = (VariableDeclarationContext) parser.variableDeclaration();
+        // begin parsing at "varDecl" parse rule
+        VarDeclContext tree
+            = (VarDeclContext) parser.varDecl();
         return tree.size;
     }
     final static ArraySizeContext singleElementArraySize
