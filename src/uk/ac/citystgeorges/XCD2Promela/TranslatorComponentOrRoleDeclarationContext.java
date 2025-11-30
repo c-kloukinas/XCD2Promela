@@ -287,7 +287,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             for (var trVar : translationVarsBool) {
                 bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
-                    .visitPrimitiveVariableOrParamDeclaration
+                    .visitVarOrParamDecl
                     ("bit"
                      , trVar
                      , (ArraySizeContext)null
@@ -297,7 +297,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             for (var trVar : translationVarsByte) {
                 bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
-                    .visitPrimitiveVariableOrParamDeclaration
+                    .visitVarOrParamDecl
                     ("byte"
                      , trVar
                      , (ArraySizeContext)null
@@ -346,19 +346,25 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                 String arrSzTrans = translation.get(1);
                 String initTrans = translation.get(2);
                 if (initTrans==null)
-                    initTrans = "";
-                else
-                    initTrans = "=" + initTrans;
+                    initTrans = "0";
                 String pre_nm = Names.varPreName(nm);
+                // both var & pre(var) have the same initial value.
+                header +=
+                    "#define INITIALVALUE_"
+                    + nm
+                    + " "
+                    + initTrans
+                    + "\n";
+
                 instance += type
                     + " " + nm
-                    + "[" + arrSzTrans + "]"
+                    + "[" + arrSzTrans + "] = "
                     + initTrans + ";\n";
-                // if (arrSz!=null)    // XXX HACK - user-defined variable
-                instance += type +
-                    " " + pre_nm
-                    + "[" + arrSzTrans + "]"
-                    + initTrans + ";\n";
+                if (info.has_pre)
+                    instance += type +
+                        " " + pre_nm
+                        + "[" + arrSzTrans + "] = "
+                        + initTrans + ";\n";
             }
 
             instance += "}\n";
