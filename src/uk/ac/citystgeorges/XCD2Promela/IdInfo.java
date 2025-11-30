@@ -6,6 +6,7 @@ class IdInfo {
     XCD_type type;
     String  variableTypeName = null;
     boolean is_param;
+    boolean has_pre = false;
     ArraySizeContext arraySz;
     VariableDefaultValueContext initVal;
     LstStr translation = new LstStr();
