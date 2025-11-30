@@ -71,7 +71,7 @@ componentInteractionConstraint:
   ( TK_WAITS TK_COLON wait=conditionalExpression TK_SEMICOLON     )?
 ;
 roleInteractionConstraint:
-  ( TK_ALLOWS TK_COLON allows+=conditionalExpression TK_SEMICOLON
+  ( (TK_ALLOWS | TK_WAITS) TK_COLON allows+=conditionalExpression TK_SEMICOLON
       TK_ENSURES TK_COLON alEnsures+=statements         )+
 ;
 generalFunctionalContract:
@@ -237,9 +237,9 @@ set:
         | <leftHandSide> \in <set>      // XXX: Extension
 */
 assignment:
-  lhsIs=leftHandSide is=TK_ASSIGN assgnExpr=assignmentExpression
-  | lhsIn=leftHandSide inRange=TK_IN theRange=range // XXX: Extension
-  | lhsMember=leftHandSide inSet=TK_IN theSet=set   // XXX: Extension
+  lhs=leftHandSide is=TK_ASSIGN assgnExpr=assignmentExpression
+  | lhs=leftHandSide inRange=TK_IN theRange=range // XXX: Extension
+  | lhs=leftHandSide inSet=TK_IN theSet=set   // XXX: Extension
 ;
 /*
   <leftHandSide> ::= ID         // XXX: Extension
