@@ -13,6 +13,7 @@ class IdInfo {
     // String big_name;
     // String var_prefix;
     String parent;
+    EventStructure methodStructure=null; // used by events/methods only
     IdInfo(XCD_type tp, boolean is_paramp
            , ArraySizeContext arraySize
            , VariableDefaultValueContext theInitVal

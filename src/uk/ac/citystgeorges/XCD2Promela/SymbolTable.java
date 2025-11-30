@@ -243,28 +243,25 @@ class EventStructure {
     public Sig param_types = null;
     // sig is <name, param_types>
     public SeqOfTypeNamePairs full_sig = null;
-    public LstStr interaction_constraintsReq = null;
-    public LstStr interaction_constraintsRes = null;
-    public LstStr functional_constraintsReq = null;
-    public LstStr functional_constraintsRes = null;
     public LstStr exceptions = new LstStr();
-    EventStructure(Name n, Sig s, SeqOfTypeNamePairs fs, LstStr icQ, LstStr icS, LstStr fcQ, LstStr fcS, LstStr excs) {
+    public LstStr x_constraintsAccepts = null;
+    public LstStr x_constraintsWaits = null;
+    public LstStr x_constraintsAllows = null;
+    public LstStr x_constraintsEnsures = null;
+    public LstStr f_constraintsWhen = null;
+    public LstStr f_constraintsWEnsures = null;
+    public LstStr f_constraintsRequires = null;
+    public LstStr f_constraintsREnsures = null;
+    EventStructure(Name n, Sig s, SeqOfTypeNamePairs fs, LstStr excs) {
         name = n; param_types = s; full_sig = fs;
-        interaction_constraintsReq = icQ;
-        interaction_constraintsRes = icS;
-        functional_constraintsReq = fcQ;
-        functional_constraintsRes = fcS;
         exceptions = excs;
     }
 }
 class MethodStructure extends EventStructure {
     public Type resultType = null;
-    MethodStructure(Name n, Sig s, SeqOfTypeNamePairs fs
-                    , Type res
-                    , LstStr icQ, LstStr icS
-                    , LstStr fcQ, LstStr fcS
-                    , LstStr excs) {
-        super(n, s, fs, icQ, icS, fcQ, fcS, excs);
+    MethodStructure(Name n, Sig s, SeqOfTypeNamePairs fs, LstStr excs
+                    , Type res) {
+        super(n, s, fs, excs);
         resultType = res;
     }
 }
@@ -426,7 +423,7 @@ class MethodConstructs extends EventConstructs {
 }
 class SymbolTableMethod extends SymbolTable { // METHOD or EVENT
     MethodConstructs methodConstructs = new MethodConstructs();
-
+    EventStructure methodStructure = null;
     @Override
     SymbolTableMethod you() {// System.err.println("I'm a SymbolTableMethod!");
         return this;}
