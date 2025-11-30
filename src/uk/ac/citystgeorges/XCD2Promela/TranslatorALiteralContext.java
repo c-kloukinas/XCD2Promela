@@ -15,11 +15,11 @@ public class TranslatorALiteralContext implements TranslatorI {
         bv.updateln(ctx);
         T res = new T(1);
         String val = "";
-	if (ctx.trueToken!=null)
-          val="true";
-	else if (ctx.falseToken!=null)
-          val="false";
-	else 
+        if (ctx.trueToken!=null)
+          val=Names.True;
+        else if (ctx.falseToken!=null)
+          val=Names.False;
+        else
           val=ctx.number.getText();
         res.add(val);
         return res;
