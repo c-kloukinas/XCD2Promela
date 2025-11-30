@@ -285,7 +285,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             }
 
             for (var trVar : translationVarsBool) {
-                bv.mywarning(trVar + " should NOT have a _PRE");
+                // bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
                     .visitVarOrParamDecl
                     ("bit"
@@ -295,7 +295,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                      , true);
             }
             for (var trVar : translationVarsByte) {
-                bv.mywarning(trVar + " should NOT have a _PRE");
+                // bv.mywarning(trVar + " should NOT have a _PRE");
                 ((EnvironmentCreationVisitor)bv)
                     .visitVarOrParamDecl
                     ("byte"
