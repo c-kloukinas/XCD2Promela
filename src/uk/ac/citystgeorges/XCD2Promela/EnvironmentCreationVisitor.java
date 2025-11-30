@@ -113,9 +113,10 @@ class EnvironmentCreationVisitor
          */
 
         // Add the name to the current environment
-        addIdInfo(name, tp, false
-                  , arraySize // roles, portvars, ports, sub-component/connector
-                  , null, framenow.compilationUnitID);
+        globalIdInfo = addIdInfo(name, tp, false
+                                 // roles,portvars,ports,sub-component/connector
+                                 , arraySize
+                                 , null, framenow.compilationUnitID);
 
         // push new environment context
         pushSymbolTable(newctx);
@@ -433,17 +434,21 @@ class EnvironmentCreationVisitor
             theEventM
                 = new MethodStructure(eventName, theSig
                                       , theSigWithNames
-                                      , new Type(ret.get(0))
-                                      , null, null
-                                      , null, null
-                                      , exceptions);
+                                      , exceptions
+                                      , new Type(ret.get(0)));
+            // store it in your symbol table too
+            thisEventFrame.methodStructure = theEventM;
+            // store it in your IdInfo too - how?
+            globalIdInfo.methodStructure = theEventM;
         } else {
             theEventE
                 = new EventStructure (eventName
                                       , theSig, theSigWithNames
-                                      , null, null
-                                      , null, null
                                       , exceptions);
+            // store it in your symbol table too
+            thisEventFrame.methodStructure = theEventE;
+            // store it in your IdInfo too - how?
+            globalIdInfo.methodStructure = theEventE;
         }
         // Map<Name, Map<String, EventStructure>> eventOverloads
         var theMapE
@@ -760,8 +765,8 @@ class EnvironmentCreationVisitor
             T res = visit(array_sz);
             if (res.size()!=0) {
                 idinfo.translation.add(res.get(0));
-                mywarning("VarDecl: " + varName
-                          + " has arraySz " + res.get(0));
+                // mywarning("VarDecl: " + varName
+                //           + " has arraySz " + res.get(0));
             } else {
                 idinfo.translation.add("UNKNOWN_ARRAY_SZ_TRANSLATION");
                 myassert(false
@@ -770,15 +775,15 @@ class EnvironmentCreationVisitor
             }
         } else {
             idinfo.translation.add("1");
-            mywarning("VarDecl: " + varName
-                      + " has arraySz 1");
+            // mywarning("VarDecl: " + varName
+            //           + " has arraySz 1");
         }
         if (initVal!=null) {
             T res = visit(initVal);
             if (res.size()!=0) {
                 idinfo.translation.add(res.get(0));
-                mywarning("VarDecl: " + varName
-                          + " has initVal " + res.get(0));
+                // mywarning("VarDecl: " + varName
+                //           + " has initVal " + res.get(0));
             } else {
                 idinfo.translation.add("UNKNOWN_INITVAL_TRANSLATION");
                 myassert(false
@@ -787,8 +792,8 @@ class EnvironmentCreationVisitor
             }
         } else {
             idinfo.translation.add(null);
-                mywarning("VarDecl: " + varName
-                          + " has initVal null");
+                // mywarning("VarDecl: " + varName
+                //           + " has initVal null");
         }
         return defaultResult();
     }
@@ -1190,9 +1195,24 @@ class EnvironmentCreationVisitor
     @Override public T visitFunctionInvocation(XCDParser.FunctionInvocationContext ctx) { return visitChildren(ctx); }
 
 
-    @Override public T visitStatement(XCDParser.StatementContext ctx) { return visitChildren(ctx); }
+    @Override public T visitStatement(XCDParser.StatementContext ctx) {
+        T res = defaultResult();
+        if (ctx.skip!=null)
+            res.add("skip");
+        else if (ctx.anAssert!=null) {
+            res.add(visit(ctx.anAssert).get(0));
+        } else {                // anAssgn
+            res.add(visit(ctx.anAssgn).get(0));
+        }
+        return res;
+    }
 
-    @Override public T visitAssignment(XCDParser.AssignmentContext ctx) { return visitChildren(ctx); }
+    @Override public T visitAssignment(XCDParser.AssignmentContext ctx) {
+        updateln(ctx);
+        var tr = new TranslatorAssignmentContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitAssignmentExpression(XCDParser.AssignmentExpressionContext ctx) {
         if (ctx.condExpr!=null)
@@ -1268,17 +1288,160 @@ class EnvironmentCreationVisitor
     @Override public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
     @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
 
-    @Override public T visitGeneralInteractionContract(XCDParser.GeneralInteractionContractContext ctx) { return visitChildren(ctx); }
-    @Override public T visitComponentInteractionConstraint(XCDParser.ComponentInteractionConstraintContext ctx) { return visitChildren(ctx); }
-    @Override public T visitRoleInteractionConstraint(XCDParser.RoleInteractionConstraintContext ctx) { return visitChildren(ctx); }
-    @Override public T visitGeneralFunctionalContract(XCDParser.GeneralFunctionalContractContext ctx) { return visitChildren(ctx); }
+    @Override public T visitComponentInteractionConstraint(XCDParser.ComponentInteractionConstraintContext ctx) {
+        SymbolTable framenow = symbolTableNow();
+        SymbolTable parent = framenow.parent;
+        SymbolTable grandParent = parent.parent;
+        mySyntaxCheck(grandParent.type==XCD_type.componentt
+                      , "Component interaction constraints can only be"
+                      + " used in component port methods - instead use\n"
+                      + "\t\"( allows: guard; ensures: statements; )+\"");
+        EventStructure methodStructure = null;
+        if (framenow instanceof SymbolTableMethod)
+            methodStructure = ((SymbolTableMethod)framenow).methodStructure;
+        else
+            myassert(false, "Current symbol table is not of a method type.");
+        T resAccepts = defaultResult();
+        T resWaits = defaultResult();
+        if (ctx.accept!=null) {
+            resAccepts = visit(ctx.accept);
+            mySyntaxCheck(   parent.type==XCD_type.consumert
+                          || parent.type==XCD_type.providedt
+                          , "Accepts constraints can only be used in a"
+                          + " consumer or provided port - instead use\n"
+                          + "\t\"( when: guard; )?\"");
+            methodStructure.x_constraintsAccepts = resAccepts;
+        }
+        if (ctx.wait!=null) {
+            resWaits = visit(ctx.wait);
+            methodStructure.x_constraintsWaits = resWaits;
+        }
+        return defaultResult();
+    }
+    @Override public T visitRoleInteractionConstraint(XCDParser.RoleInteractionConstraintContext ctx) {
+        SymbolTable framenow = symbolTableNow();
+        SymbolTable parent = framenow.parent;
+        SymbolTable grandParent = parent.parent;
+        mySyntaxCheck(grandParent.type==XCD_type.rolet
+                      , "Role interaction constraints can only be"
+                      + " used in role port methods - instead use\n"
+                      + "\t\"( accepts: domain-guard; )? ( waits: guard; )?\"");
+        EventStructure methodStructure = null;
+        if (framenow instanceof SymbolTableMethod)
+            methodStructure = ((SymbolTableMethod)framenow).methodStructure;
+        else
+            myassert(false, "Current symbol table is not of a method type.");
+        T resAllows = defaultResult();
+        T resEnsures = defaultResult();
+        if (ctx.allows!=null && ctx.allows.size()!=0) {
+            for (var cons : ctx.allows) {
+                resAllows.add(visit(cons).get(0));
+            }
+            methodStructure.x_constraintsAllows = resAllows;
+            for (var cons : ctx.alEnsures) {
+                resEnsures.add(visit(cons).get(0));
+            }
+            methodStructure.x_constraintsEnsures = resEnsures;
+        }
+        return defaultResult();
+    }
+    @Override public T visitGeneralFunctionalContract(XCDParser.GeneralFunctionalContractContext ctx) {
+        SymbolTable framenow = symbolTableNow();
+        SymbolTable parent = framenow.parent;
+        SymbolTable grandParent = parent.parent;
+        mySyntaxCheck(grandParent.type==XCD_type.componentt
+                      , "Functional constraints can only be used in"
+                      + " component port methods.\n"
+                      + "Roles only have interaction constraints\n"
+                      + "\t\"( allows: guard; ensures: statements; )+\"");
+        mySyntaxCheck(ctx.wGuards.size()==0 // !wGuards -> ...
+                      || (   parent.type==XCD_type.emittert
+                          || parent.type==XCD_type.requiredt)
+                      , "Can only use \"(when: guard ; ensures: statements;)*\""
+                      + " in emitter and required ports - use\n"
+                      + "\"(requires: guard; ensures: statements;)*\" instead"
+
+                      // + "\nwGuards==null: "
+                      // + (ctx.wGuards==null) + ctx.wGuards.size()
+                      // + "\nparent.type==XCD_type.emittert: "
+                      // + (parent.type==XCD_type.emittert)
+                      // + "\nparent.type==XCD_type.requiredt: "
+                      // + (parent.type==XCD_type.requiredt)
+                      // + "\nFrames are: "
+                      // + printFrameItsParentAndItsGrandparent(framenow
+                      //                                        , parent
+                      //                                        , grandParent)
+                      );
+        mySyntaxCheck(ctx.rGuards.size()==0 // !rGuards -> ...
+                      || (   parent.type==XCD_type.consumert
+                          || parent.type==XCD_type.requiredt
+                          || parent.type==XCD_type.providedt)
+                      , "Can only use \"(requires: guard ; ensures: statements;)*\""
+                      + " in consumer, required and provided ports - use\n"
+                      + "\"(when: guard; ensures: statements;)*\" instead"
+
+                      // + "\nrGuards==null: "
+                      // + (ctx.rGuards==null) + ctx.rGuards.size()
+                      // + "\nparent.type==XCD_type.consumert: "
+                      // + (parent.type==XCD_type.consumert)
+                      // + "\nparent.type==XCD_type.requiredt: "
+                      // + (parent.type==XCD_type.requiredt)
+                      // + "\nparent.type==XCD_type.providedt: "
+                      // + (parent.type==XCD_type.providedt)
+                      // + "\nFrames are: "
+                      // + printFrameItsParentAndItsGrandparent(framenow
+                      //                                        , parent
+                      //                                        , grandParent)
+                      );
+        EventStructure methodStructure = null;
+        if (framenow instanceof SymbolTableMethod)
+            methodStructure = ((SymbolTableMethod)framenow).methodStructure;
+        else
+            myassert(false, "Current symbol table is not of a method type.");
+        T reswGuards = defaultResult();
+        T reswEnsures = defaultResult();
+        T resrGuards = defaultResult();
+        T resrEnsures = defaultResult();
+        if (ctx.wGuards!=null) {
+            for (var cons : ctx.wGuards)
+                reswGuards.add(visit(cons).get(0));
+            methodStructure.f_constraintsWhen = reswGuards;
+            for (var cons : ctx.wEnsures)
+                reswEnsures.add(visit(cons).get(0));
+            methodStructure.f_constraintsWEnsures = reswEnsures;
+        }
+        if (ctx.rGuards!=null) {
+            for (var cons : ctx.rGuards)
+                resrGuards.add(visit(cons).get(0));
+            methodStructure.f_constraintsRequires = resrGuards;
+            for (var cons : ctx.rEnsures)
+                resrEnsures.add(visit(cons).get(0));
+            methodStructure.f_constraintsREnsures = resrEnsures;
+        }
+        return defaultResult();
+    }
 
     /**
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
      */
 
-    @Override public T visitLeftHandSide(XCDParser.LeftHandSideContext ctx) { return visitChildren(ctx); }
+    @Override public T visitLeftHandSide(XCDParser.LeftHandSideContext ctx) {
+        T res = defaultResult();
+        if (ctx.name!=null) {
+            var tr = new TranslatorPrimaryContext();
+            String s = tr.translate_ID(this, ctx.name.getText());
+            res.add( s );
+        } else if (ctx.res!=null) {
+            res.add("WRONG"+keywordResult);
+        } else if (ctx.exc!=null) {
+            res.add("WRONG"+keywordException);
+        } else {                // arrayAcc
+            myassert(ctx.arrayAcc==null
+                     , "TODO: LHS array access - haven't implemented this yet");
+        }
+        return res;
+    }
 
     @Override public T visitExpression(XCDParser.ExpressionContext ctx) { return visitChildren(ctx); }
 
@@ -1287,6 +1450,8 @@ class EnvironmentCreationVisitor
     @Override public T visitStatements(XCDParser.StatementsContext ctx) { return visitChildren(ctx); }
 
     @Override public T visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitGeneralInteractionContract(XCDParser.GeneralInteractionContractContext ctx) { return visitChildren(ctx); }
         /**
          * {@inheritDoc}
          *
@@ -1298,6 +1463,9 @@ class EnvironmentCreationVisitor
      * Miscellaneous helper functions
      */
     boolean readingParams = true; // TODO: check it's used correctly!
+    // used by registerNewEnvironment to pass the IdInfo created back
+    // to the current visitor method
+    IdInfo globalIdInfo = null;
 
     private String printFrame(SymbolTable fr) {
         return "frame " + fr.compilationUnitID + " of type " + fr.type;
