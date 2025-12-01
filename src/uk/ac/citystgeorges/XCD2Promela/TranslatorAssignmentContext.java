@@ -22,12 +22,22 @@ public class TranslatorAssignmentContext implements TranslatorI {
                     + lhs.size());
         if (ctx.is!=null) {
             T assgnExpr = bv.visit(ctx.assgnExpr);
-            bv.myassert(assgnExpr.size()==1
-                        , "AssignmentExpression: didn't return exactly one element"
-                        + assgnExpr.size());
-            s = lhs.get(0)
-                + "="
-                + assgnExpr.get(0);
+            if (assgnExpr.size()==1) {
+                s = lhs.get(0)
+                    + "="
+                    + assgnExpr.get(0);
+            } else {            // assignment chaining: x := y := z \in [2, 4];
+                s = "";
+                while (assgnExpr.size()!=1) {
+                    s += assgnExpr.get(0)
+                        + "; ";
+                    assgnExpr.remove(0);
+                }
+                s += lhs.get(0)
+                    + "="
+                    + assgnExpr.get(0);
+                // bv.mywarning("*** final assignment is:\n" + s);
+            }
         } else if (ctx.inRange!=null) { // inRange
             T theRange = bv.visit(ctx.theRange);
             String valMin = theRange.get(0);
@@ -63,6 +73,8 @@ public class TranslatorAssignmentContext implements TranslatorI {
                 + "}\n";
         }
         res.add(s);
+        res.add(lhs.get(0)); // add this so chained assignments know
+                             // what to assign themselves to
         return res;
     }
 }

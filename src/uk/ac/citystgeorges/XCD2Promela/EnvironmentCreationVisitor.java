@@ -424,7 +424,6 @@ class EnvironmentCreationVisitor
             theSig.add(theType);
             theSigWithNames.addPair(theType, theName);
         }
-
         MethodStructure theEventM = null;
         EventStructure  theEventE = null;
         LstStr exceptions = null;
@@ -479,6 +478,7 @@ class EnvironmentCreationVisitor
             // The slot has a map, so add the actual event structure inside it
             theMapE.get(eventName).put(eventNameStr, theEventE);
         }
+        globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
         return res;
     }
 
@@ -660,7 +660,12 @@ class EnvironmentCreationVisitor
                                     , !readingParams);
         if (!readingParams) {
             IdInfo idinfo = getIdInfo(varName);
-            idinfo.has_pre = true;
+            SymbolTable framenow = symbolTableNow();
+            if(framenow.type!=XCD_type.methodt
+               && framenow.type!=XCD_type.eventt)
+                idinfo.has_pre = true;
+            else
+                idinfo.type=XCD_type.mparamt;
         }
         return res;
     }
@@ -1188,8 +1193,6 @@ class EnvironmentCreationVisitor
         return res;
     }
 
-    @Override public T visitArrayAccess(XCDParser.ArrayAccessContext ctx) { return visitChildren(ctx); }
-
     @Override public T visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
 
     @Override public T visitFunctionInvocation(XCDParser.FunctionInvocationContext ctx) { return visitChildren(ctx); }
@@ -1217,9 +1220,9 @@ class EnvironmentCreationVisitor
     @Override public T visitAssignmentExpression(XCDParser.AssignmentExpressionContext ctx) {
         if (ctx.condExpr!=null)
             return visit(ctx.condExpr);
-
-        mySyntaxCheck(false, "We do not yet support chained assignments");
-        return defaultResult(); }
+        else
+            return visit(ctx.assgnmnt);
+    }
 
     @Override public T visitConditionalOrExpression(XCDParser.ConditionalOrExpressionContext ctx) {
         if (ctx.andExpr!=null)
@@ -1406,8 +1409,36 @@ class EnvironmentCreationVisitor
             for (var cons : ctx.wGuards)
                 reswGuards.add(visit(cons).get(0));
             methodStructure.f_constraintsWhen = reswGuards;
-            for (var cons : ctx.wEnsures)
+            for (var cons : ctx.wEnsures) {
+                // setup assignable parameter list for emitters/producers
+                globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
+                globalSeqOfTypeNamePairs.addAll( methodStructure.full_sig );
                 reswEnsures.add(visit(cons).get(0));
+                if (globalSeqOfTypeNamePairs.size()!=0) {
+                    // some parameters have not been assigned yet
+                    mywarning("These parameters have not been assigned:");
+                    for (var v : globalSeqOfTypeNamePairs) {
+                        mywarning("\t" + v.name + " of type " + v.type);
+                    }
+                    // var debug = symbolTableNow();
+                    // mywarning
+                    //     (printFrameItsParentAndItsGrandparent
+                    //      (debug
+                    //       , debug.parent
+                    //       , debug.parent.parent));
+                    mySyntaxCheck
+                        (globalSeqOfTypeNamePairs.size()==0
+                         , "\n\t*** Each ensures clause should provide values for all event/method parameters."
+                         + "\n\t*** To choose any valid value, use range/set assignment, e.g., "
+                         + globalSeqOfTypeNamePairs.get(0).name
+                         + " "
+                         + keywordIn
+                         + " [0, <typeUpperBound>] (here \""
+                         + globalSeqOfTypeNamePairs.get(0).type
+                         + "\")");
+
+                }
+            }
             methodStructure.f_constraintsWEnsures = reswEnsures;
         }
         if (ctx.rGuards!=null) {
@@ -1425,27 +1456,92 @@ class EnvironmentCreationVisitor
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
      */
-
+    T getAssignableName(String name) {
+        T res = defaultResult();
+        var tr = new TranslatorPrimaryContext();
+        String s = tr.translate_ID(this, name);
+        IdInfo sRecord = getIdInfo(name);
+        if (globalAssignableName) {
+            if (sRecord.type!=XCD_type.mparamt
+                && sRecord.type!=XCD_type.vart)
+                myassert(false
+                         , "LeftHandSide: How can one assign into \""
+                         + name
+                         + "\" (" + s + ") ?");
+            s = Names.varPreName(s);
+        }
+        if (sRecord.type==XCD_type.mparamt) {
+            // could this be a method parameter?
+            // SymbolTableMethod framenow = (SymbolTableMethod) symbolTableNow();
+            if (globalSeqOfTypeNamePairs.size()!=0) {
+                // mywarning("Parameter "
+                //           + name
+                //           + " found - removing it when size: "
+                //           + globalSeqOfTypeNamePairs.size());
+                globalSeqOfTypeNamePairs
+                    .removeIf( x -> x.name.toString().equals(name) );
+                // mywarning("Now globalSeqOfTypeNamePairs has size: "
+                //           + globalSeqOfTypeNamePairs.size());
+            }
+        } else {
+            mywarning("LHS " + name + " is of type " + sRecord.type);
+        }
+        res.add( s );
+        return res;
+    }
+    boolean globalAssignableName=false;
+    SeqOfTypeNamePairs globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
     @Override public T visitLeftHandSide(XCDParser.LeftHandSideContext ctx) {
         T res = defaultResult();
+        // mywarning("TESTING: Here're the result and exception names:"
+        //           + "\n\t" + getThisMethodResultName()
+        //           + "\n\t" + getThisMethodExceptionName());
         if (ctx.name!=null) {
-            var tr = new TranslatorPrimaryContext();
-            String s = tr.translate_ID(this, ctx.name.getText());
-            res.add( s );
+            String name = ctx.name.getText();
+            // for (var v : getAssignableName(name, true))
+            //     res.add( Names.varPreName(v) );
+            globalAssignableName=true;
+            res.addAll( getAssignableName(name) );
+            globalAssignableName=false;
         } else if (ctx.res!=null) {
-            res.add("WRONG"+keywordResult);
+            res.add( getThisMethodResultName() );
         } else if (ctx.exc!=null) {
-            res.add("WRONG"+keywordException);
+            res.add( getThisMethodExceptionName() );
         } else {                // arrayAcc
-            myassert(ctx.arrayAcc==null
-                     , "TODO: LHS array access - haven't implemented this yet");
+            globalAssignableName=true;
+            T arr = visit(ctx.arrayAcc);
+            globalAssignableName=false;
+            myassert(arr.size()==1
+                     , "ArrayAccess didn't return exactly one element");
+            res = arr;
         }
         return res;
     }
 
-    @Override public T visitExpression(XCDParser.ExpressionContext ctx) { return visitChildren(ctx); }
+    @Override public T visitArrayAccess(XCDParser.ArrayAccessContext ctx) {
+        T name = defaultResult();
+        // at this point I don't know if I'm looking for an LHS or an RHS
+        name.addAll( getAssignableName( ctx.arrayName.getText() ) );
+        myassert(name.size()==1
+                 , "ArrayAccess: The name translated to more than one thing!"
+                 + name.size());
+        T expr = visit(ctx.arrIndex);
+        if (expr.size()!=1)
+            mywarning("ArrayAccess: The expression has "
+                      + expr.size()
+                      + " elements!");
+        T res = defaultResult();
+        res.add(name.get(0)
+                     + "["
+                     + expr.get(0)
+                     + "]");
+        return res;
+    }
 
     @Override public T visitArrayIndex(XCDParser.ArrayIndexContext ctx) { return visitChildren(ctx); }
+
+    @Override public T visitExpression(XCDParser.ExpressionContext ctx) { return visitChildren(ctx); }
+
 
     @Override public T visitStatements(XCDParser.StatementsContext ctx) { return visitChildren(ctx); }
 
