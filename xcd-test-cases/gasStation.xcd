@@ -13,7 +13,7 @@ component Customer(){
         @functional{
             when: true;
             ensures:  requestMade := true;
-            chosenAmount := amount;
+            amount := chosenAmount;
         }
         payF(Amount amount);
     }

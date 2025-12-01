@@ -15,7 +15,7 @@ component Customer(){
         @functional{
             when: true;
             ensures:  requestMade := true;
-            chosenAmount := amount;
+            amount := chosenAmount;
             dummyVar1 := 1;
         }
         payF(Amount amount, int dummyVar1);
