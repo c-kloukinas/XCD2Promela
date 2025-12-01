@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
@@ -210,6 +211,32 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return tree;
     }
 
+    String getThisMethodXXXName(Function<String
+                                , Function<String
+                                , Function<String, String>>> func) {
+        SymbolTable framenow=symbolTableNow();
+        String methodName = framenow.compilationUnitID;
+        String portName = framenow.parent.compilationUnitID;
+        String compName = framenow.parent.parent.compilationUnitID;
+        // Code assumes that we're in a component. We could be in a role!
+        if (framenow.parent.parent.type!=XCD_type.componentt)
+            mywarning("LHS: wrong translation for role variables");
+        return func.apply(compName).apply(portName).apply(methodName);
+    }
+    String getThisMethodResultName() {
+        Function<String
+            , Function<String
+            , Function<String, String>>>
+            res = c -> p -> m -> Names.varNameRESULT(c, p, m);
+        return getThisMethodXXXName(res);
+    }
+    String getThisMethodExceptionName() {
+        Function<String
+            , Function<String
+            , Function<String, String>>>
+            res = c -> p -> m -> Names.varNameEXCEPTION(c, p, m);
+        return getThisMethodXXXName(res);
+    }
     //
 
     boolean isComposite(SymbolTableComposite info)
