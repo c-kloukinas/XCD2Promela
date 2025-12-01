@@ -429,7 +429,7 @@ argumentList: arg1=expression ( TK_COMMA restArgs+=expression )* ;
   <arrayAccess> ::= ID [ <expression> ]
 */
 arrayAccess: arrayName=ID // TK_LBRACKET arrayOffset=expression TK_RBRACKET
-      arrayIndex
+      arrIndex=arrayIndex
 ;
 arrayIndex:
   TK_LBRACKET
