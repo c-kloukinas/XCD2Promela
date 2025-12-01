@@ -34,8 +34,25 @@ class Names {
 
     static String varNameComponent( String comp, String var ) {
         return componentName(comp) + "_VAR_" + var; }
-    static String varNamePort( String comp, String var ) {
-        return varNameComponent(comp, var); } // STRANGE
+    static String varNamePort( String comp, String port, String var ) {
+        return varNameComponent(comp
+                                , "PORT_" + port + "_" + var); } // STRANGE
+
+    static String varNameMethod( String comp, String port, String method
+                                , String var ) {
+        return varNamePort(comp, port, "METHOD_" + method + "_" + var);
+    }
+    static String varNameAction( String comp, String port, String method
+                                , String var ) {
+        return varNamePort(comp, port, "ACTION_" + method + "_" + var);
+    }
+    static String varNameRESULT( String comp, String port, String method ) {
+        return varNameAction(comp, port, method, "RESULT");
+    }
+    static String varNameEXCEPTION( String comp, String port, String method ) {
+        return varNameAction(comp, port, method, "EXCEPTION");
+    }
+
     static String typeOfVarDefName( String comp, String var ) {
         return "TYPEOF_" + varNameComponent(comp, var); }
     static String typeOfVar( String var ) {
