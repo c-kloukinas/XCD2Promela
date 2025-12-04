@@ -663,7 +663,7 @@ class EnvironmentCreationVisitor
             SymbolTable framenow = symbolTableNow();
             if(framenow.type!=XCD_type.methodt
                && framenow.type!=XCD_type.eventt)
-                idinfo.has_pre = true;
+                idinfo.has_post = true;
             else
                 idinfo.type=XCD_type.mparamt;
         }
@@ -1468,7 +1468,7 @@ class EnvironmentCreationVisitor
                          , "LeftHandSide: How can one assign into \""
                          + name
                          + "\" (" + s + ") ?");
-            s = Names.varPreName(s);
+            s = Names.varPostName(s);
         }
         if (sRecord.type==XCD_type.mparamt) {
             // could this be a method parameter?
@@ -1499,7 +1499,7 @@ class EnvironmentCreationVisitor
         if (ctx.name!=null) {
             String name = ctx.name.getText();
             // for (var v : getAssignableName(name, true))
-            //     res.add( Names.varPreName(v) );
+            //     res.add( Names.varPostName(v) );
             globalAssignableName=true;
             res.addAll( getAssignableName(name) );
             globalAssignableName=false;

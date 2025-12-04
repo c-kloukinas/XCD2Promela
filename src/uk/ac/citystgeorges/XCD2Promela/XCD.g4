@@ -472,7 +472,7 @@ TK_REQUIRES: 'requires';
 TK_ENSURES: 'ensures';
 
 TK_THROWS: 'throws';
-TK_PRE: 'pre';                  /* Do I *REALLY* need it? Anything in
+/* TK_PRE: 'pre'; */            /* Do I *REALLY* need it? Anything in
                                  * the LHS ':=' is a POST variable,
                                  * anything in the RHS is a PRE
                                  * variable */

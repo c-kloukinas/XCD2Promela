@@ -285,7 +285,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
             }
 
             for (var trVar : translationVarsBool) {
-                // bv.mywarning(trVar + " should NOT have a _PRE");
+                // bv.mywarning(trVar + " should NOT have a _POST");
                 ((EnvironmentCreationVisitor)bv)
                     .visitVarOrParamDecl
                     ("bit"
@@ -295,7 +295,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                      , true);
             }
             for (var trVar : translationVarsByte) {
-                // bv.mywarning(trVar + " should NOT have a _PRE");
+                // bv.mywarning(trVar + " should NOT have a _POST");
                 ((EnvironmentCreationVisitor)bv)
                     .visitVarOrParamDecl
                     ("byte"
@@ -347,7 +347,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                 String initTrans = translation.get(2);
                 if (initTrans==null)
                     initTrans = "0";
-                String pre_nm = Names.varPreName(nm);
+                String post_nm = Names.varPostName(nm);
                 // both var & pre(var) have the same initial value.
                 header +=
                     "#define INITIALVALUE_"
@@ -360,9 +360,9 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                     + " " + nm
                     + "[" + arrSzTrans + "] = "
                     + initTrans + ";\n";
-                if (info.has_pre)
+                if (info.has_post)
                     instance += type +
-                        " " + pre_nm
+                        " " + post_nm
                         + "[" + arrSzTrans + "] = "
                         + initTrans + ";\n";
             }

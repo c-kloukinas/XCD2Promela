@@ -57,8 +57,8 @@ class Names {
         return "TYPEOF_" + varNameComponent(comp, var); }
     static String typeOfVar( String var ) {
         return "TypeOf(" + var + ")"; }
-    static String varPreName( String var ) {
-        return "PRE(" + var + ")"; }
+    static String varPostName( String var ) {
+        return "POST(" + var + ")"; }
     static String varNameComponentInitialValue( String comp, String var ) {
         return "InitialValue("
             + varNameComponent(comp, var)
