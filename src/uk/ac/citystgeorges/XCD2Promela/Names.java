@@ -6,6 +6,14 @@ class Names {
     static String False = "false";
     static String componentName( String comp ) {
         return "COMPONENT_"+comp; }
+    static String portName( String port ) {
+        return "PORT_" + port; }
+    static String methodName( String method ) {
+        return "METHOD_" + method; }
+    static String actionName( String action ) {
+        return "ACTION_" + action; }
+    static String componentPortName( String comp, String port ) {
+        return componentName(comp + "_" + portName(port)); }
     static String componentHeaderName( String comp ) {
         return "proctype instance_name(CompositeName,CompositeID,"
             + comp + ",CompInstanceID,Instance)"; }
@@ -30,21 +38,28 @@ class Names {
         return "Component_i_Param_N(CompositeName,CompositeID,"
             + comp + ",CompInstanceID,Instance," + param + ")"; }
     static String paramNamePort( String comp, String param ) {
-        return varNameComponent(comp, param); } // STRANGE
+        // return varNameComponent(comp, param); // STRANGE
+        return componentName(comp) + "_PARAM_" + param; }
 
     static String varNameComponent( String comp, String var ) {
         return componentName(comp) + "_VAR_" + var; }
     static String varNamePort( String comp, String port, String var ) {
         return varNameComponent(comp
-                                , "PORT_" + port + "_" + var); } // STRANGE
+                                ,  portName(port + "_" + var)); } // STRANGE
+        // return varNameComponent(comp + "_" + portName(port)
+        //                         , var); } // STRANGE
 
     static String varNameMethod( String comp, String port, String method
                                 , String var ) {
-        return varNamePort(comp, port, "METHOD_" + method + "_" + var);
+        return varNamePort(comp, port
+                           , methodName(method + "_" + var));
+        // return varNamePort(comp, port + "_" + methodName(method),  var);
     }
     static String varNameAction( String comp, String port, String method
                                 , String var ) {
-        return varNamePort(comp, port, "ACTION_" + method + "_" + var);
+        return varNamePort(comp, port
+                           , actionName(method + "_" + var));
+        // return varNamePort(comp, port + "_" + actionName(method), var);
     }
     static String varNameRESULT( String comp, String port, String method ) {
         return varNameAction(comp, port, method, "RESULT");
@@ -79,7 +94,11 @@ class Names {
         return xVarName(x,role,var)+inst; }
 
     static String portActionName( String comp, String port, String act) {
-        return  componentName(comp) + "_VAR_PORT_" + port + "_ACTION_" + act; }
+        // return  componentName(comp) + "_VAR_PORT_" + port + "_ACTION_" + act;
+        return  componentPortName(comp
+                                  , port
+                                  + "_"
+                                  + actionName(act)); }
     static String portActionNameRes( String comp, String port, String action) {
         return portActionName(comp, port, action) + "_RESULT"; }
     static String portActionNameExc( String comp, String port, String action) {
