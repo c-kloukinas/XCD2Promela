@@ -256,6 +256,13 @@ class EventStructure {
         name = n; param_types = s; full_sig = fs;
         exceptions = excs;
     }
+    @Override
+    public String toString() {
+        return "Name: " + name
+            + "\nSig: " + param_types
+            + "\nFull Sig: " + full_sig
+            + "\nExceptions: " + exceptions;
+    }
 }
 class MethodStructure extends EventStructure {
     public Type resultType = null;
@@ -263,6 +270,11 @@ class MethodStructure extends EventStructure {
                     , Type res) {
         super(n, s, fs, excs);
         resultType = res;
+    }
+    @Override
+    public String toString() {
+        return super.toString()
+            + "\nResult: " + resultType;
     }
 }
 class PortConstructs extends CommonConstructs {
