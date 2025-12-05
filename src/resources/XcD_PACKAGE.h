@@ -2,8 +2,8 @@
 #define PACKAGE 1
 
 //#include "TYPE_ID.h"
-//#include "TYPE_Action.h" 
-//#include "TYPE_Amount.h" 
+//#include "TYPE_Action.h"
+//#include "TYPE_Amount.h"
 
 /******Constants*********/
 #define RESULT 0
@@ -15,14 +15,14 @@
 #define byte_MIN 0
 #define byte_MAX 255
 #define mtype_MIN 0
-#define mtype_MAX 255	
+#define mtype_MAX 255
 
 /********Macros for Conditional Expressions*********/
 //// macro for returning AND of expressions
 #define AND(a, b) ((a) && (b))
 //// macro for returning OR of expressions
 #define OR(a, b) ((a) || (b))
-//// macro for returning IMPLIES 
+//// macro for returning IMPLIES
 #define IMPLIES(a, b) (!(a) || (b))
 
 /************Macro for naming convention********/
@@ -43,34 +43,32 @@
 #define Component_i_smt_pre_post(pre, component,i, smt)  Component_i_2_pre_post(pre,component,i, smt)
 #define Component_i_2_pre_post(pre,component,i,smt) pre##COMPONENT_##component##_##i ## smt
 /*******Macros for VARIABLE Operations************/
-//macro for returning process names for component instances 
+//macro for returning process names for component instances
 #define instance_name(CompositeName,CompositeID,SubCompType,SubCompIns, Instance) \
-             instance_name2(CompositeName,CompositeID,SubCompType, SubCompIns, Instance) 
+             instance_name2(CompositeName,CompositeID,SubCompType, SubCompIns, Instance)
 #define instance_name2(CompositeName,CompositeID,SubCompType,SubCompIns, Instance) \
                 COMPONENT_TYPE_##CompositeName##_##CompositeID##_SUBCOMPONENT_## SubCompType##_##SubCompIns##_##Instance
 // macro for returning the minimum value of a type
 #define Min_of_Type(Type) Type##_MIN
-// macro for returning the maximim value of a type
+// macro for returning the maximum value of a type
 #define Max_of_Type(Type) Type##_MAX
-// macro for returning the minimum value for a variable 
-#define Min_of_Var(Var) Min_of_Var2(TYPEOF_##Var) 
-#define Min_of_Var2(Type) Min_of_Type(Type) 
-// macro for returning the minimum value for a variable 
-#define Max_of_Var(Var) Max_of_Var2(TYPEOF_##Var) 
-#define Max_of_Var2(Type) Max_of_Type(Type) 
+// macro for returning the minimum value for a variable
+#define Min_of_Var(Var) Min_of_Var2(TYPEOF_##Var)
+#define Min_of_Var2(Type) Min_of_Type(Type)
+// macro for returning the minimum value for a variable
+#define Max_of_Var(Var) Max_of_Var2(TYPEOF_##Var)
+#define Max_of_Var2(Type) Max_of_Type(Type)
 //macro for returning the variable name that holds a result
-#define Result_var(ComponentType, port, method) COMPONENT_##ComponentType ##_VAR_PORT_##port ##_METHOD_##method##_RESULT
-//macro for returning the variable name that holds a pre value of a variable
-#define PRE(X) pre_##X
+#define Result_var(ComponentType, port, method) COMPONENT_##ComponentType##_VAR_PORT_##port##_METHOD_##method##_RESULT
 #define TEMP(X) temp_##X
 //macro for returning the variable name that holds a post value of a variable
 #define POST(X) post_##X
-//macro for returning the constant for a variable type 
+//macro for returning the constant for a variable type
 #define TypeOf(X) TYPEOF_##X
 //macro for returning the constant for an initial value of a variable
 #define InitialValue(X) INITIALVALUE_##X
-//macro for returning the constant for an initial pre value of a variable
-#define InitialValue_pre(X) InitialValue_pre_##X
+//macro for returning the constant for an initial post value of a variable
+#define InitialValue_post(X) InitialValue_post_##X
 //macro for returning variable name
 #define Variable_Name(compType, variable) COMPONENT_##compType##_VAR_##variable
 //macro for returning refined contract id
@@ -88,7 +86,7 @@ SubComponent_i_smt(compositeName,compositeIndex,comptype,compIns, Instance, _POR
 
 #define port_index(CompositeName, CompositeID,compType,CompInsID,Instance, portName, portID) \
  c_expr{[ValueOfProcessLocalVar(CompositeName, CompositeID, compType, CompInsID,Instance, portID)]};
- 
+
 //macro for returning the port size array
 #define Component_i_port_j_Size(compType, Instance, portName)  Component_i_smt(compType,Instance,portName##_SIZE)
 
@@ -103,7 +101,7 @@ SubComponent_i_smt(compositeName,compositeID,component,compIns,Instance,_PARAM_#
 SubConnector_i_smt(compositeName,compositeID,connector,connIns_i,_PARAM_##N)
 
 
-//COMPONENT PORT 
+//COMPONENT PORT
 ////Macro for number of instances for a PORT
 #define Component_i_Port_Num(compositeName, compositeIndex, component,compIns,Instance, pname) \
             SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##pname##_NUM)
@@ -113,22 +111,22 @@ SubConnector_i_smt(compositeName,compositeID,connector,connIns_i,_PARAM_##N)
 SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##port##_##j##_CONNECTIONS)
 ////Macro for number of connected PORTS to ALL instances of a CONSUMER/PROVIDED PORT
 #define Component_i_port_SUMCONNECTIONS(compositeName, compositeIndex, component, compIns,Instance,port) \
-SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##port##_SUMCONNECTIONS) 
+SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##port##_SUMCONNECTIONS)
 //Macro for number of connected PORTS to CONSUMER/PROVIDED PORT instance
 #define Component_i_port_NUMOFCONNECTIONS(compositeName, compositeIndex, component, compIns,Instance,port) \
-SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##port##_NUMOFCONNECTIONS) 
+SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT_##port##_NUMOFCONNECTIONS)
 ////macro for a name of the array that holds the offset of the CONSUMER/PROVIDED PORTS
 #define Component_i_port_offsetArray(compositeName,compositeIndex, component,compIns, i, pname) \
-   SubComponent_i_smt(compositeName,compositeIndex, component,compIns, i,_PORT_##pname##_OFFSET) 
+   SubComponent_i_smt(compositeName,compositeIndex, component,compIns, i,_PORT_##pname##_OFFSET)
 
 ////macro for buffer of the CONSUMER/PROVIDED PORTS
 #define Component_i_port_buffer(component, Instance, port) PORT_##port##_BUFFER
 ////macro for a name of the array that holds the number of CONNECTIONS for the instances of a PORT
 #define Component_i_port_connectionArray(component, Instance, pname) Component_i_smt(component,Instance,_PORT_##pname##_CONNECTS)
-////macro for an array slot that stores the number of CONNECTIONS for a PORT INSTANCE 
+////macro for an array slot that stores the number of CONNECTIONS for a PORT INSTANCE
 #define port_connection_size(CompositeName, CompositeID,Component, CompInsID,Instance, pname, pnum)\
                c_expr{Component_i_port_connectionArray(Component, Instance, pname)[ValueOfProcessLocalVar(CompositeName, CompositeID, Component,CompInsID, Instance, pnum)]}
-////macro for an array index that stores the BUFFER value received from a specific CONNECTION of a PORT INSTANCE 
+////macro for an array index that stores the BUFFER value received from a specific CONNECTION of a PORT INSTANCE
 #define slot(CompositeName, CompositeID,Component,CompInsID, Instance, pname, pnum, conn) \
           c_expr{Component_i_port_offsetArray(CompositeName, CompositeID,Component,CompInsID, Instance, pname)[ValueOfProcessLocalVar(CompositeName, CompositeID, Component, CompInsID,Instance, pnum)]} + conn
 #define slot2(CompositeName, CompositeID,Component, CompInsID, Instance, pname, pnum, conn) \
@@ -137,9 +135,9 @@ SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT
 #define ValueOfProcessLocalVar(CompositeName, CompositeID, Component, CompInstance, Instance, var) \
        PCOMPONENT_TYPE_##CompositeName##_##CompositeID##_SUBCOMPONENT_## Component##_##CompInstance##_##Instance-> var
 
-////macro for the name of the array which stores the INDEX of a CHANNEL that the INSTANCES of a PORT uses 
+////macro for the name of the array which stores the INDEX of a CHANNEL that the INSTANCES of a PORT uses
 #define Component_i_portChannelIndexArray(compType, Instance, pname) Component_i_smt(component,Instance,_PORT_##pname##_CHINDEXARRAY)
-////macros for the INDEX of a CHANNEL that an INSTANCE of a PORT uses 
+////macros for the INDEX of a CHANNEL that an INSTANCE of a PORT uses
 #define Component_i_portChannelIndex(CompositeName, CompositeID,compType, Instance, pname, pnum)\
               c_expr{Component_i_portChannelIndexArray(compType, Instance, pname)[ValueOfProcessLocalVar(CompositeName, CompositeID, compType, Instance, pnum)]}
 #define Component_i_portChannelIndex_CONS(compType, Instance, pname, consVal) \
@@ -179,7 +177,7 @@ SubComponent_i_smt(compositeName,compositeIndex,component,compIns,Instance,_PORT
 #define Component_i_2_smt_CH(compositeName, compositeIndex,chpre,component,i,smt) \
                  chpre##compositeName##_##compositeIndex##_##COMPONENT_##component##_## i ## smt
 
-//macro for the name of c_code block 
+//macro for the name of c_code block
 #define Component_i_c_code(compositeName, compositeIndex,compType, compIns,Instance) SubComponent_i_smt(compositeName,compositeIndex,compType,compIns,Instance,_ARRAY_INITIALISATIONS)()
 //macro for the name of the role data block
 #define Component_i_roleData(compType, compInstance,Instance) Component_i_smt_ins(compType,compInstance, Instance,_ROLE_DATA)()
@@ -197,6 +195,3 @@ SubComponent_i_smt(compositeName,compositeID,compType,compIns,Instance,_PORT_##p
 SubComponent_i_smt(compositeName,compositeID,compType,compIns,Instance,_PORT_##port##_ACTION_##action##_ROLE_DATAUPDATE_RESPONSE)()
 
 #endif
-
-
-
