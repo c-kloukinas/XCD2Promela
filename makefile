@@ -53,10 +53,10 @@ JAVA_CLASSES=$(PJC) $(NJC)
 
 .PRECIOUS: $(JAVA_SRC)
 
-.PHONY: all compile jar tests test1 test clean backup-incremental backup-full backupi backupf
+.PHONY: all unused compile jar tests test1 test clean backup-incremental backup-full backupi backupf
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR) $(SRCDIR)/$(PKGDIR)/$*.java
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $(SRCDIR)/$(PKGDIR)/$*.java
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
@@ -66,18 +66,22 @@ $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(TOPDIR)/1-scripts/test
 
 all:	jar
 
+unused: $(NJS)
+	@for f in $(NJS) ; do b=`basename $$f .java` ; n=`grep $$b $(NJS) | wc -l` ; if [ $$n = 1 ]; then echo $$f unused ; fi; done
+
 check:
 	echo ALL_TESTS=$(ALL_TESTS) 
 	echo ALL_TESTS_PASSED=$(ALL_TESTS_PASSED) 
 
-compile: $(JAVA_CLASSES) makefile
+compile: $(BLDSRC)/$(PKGDIR)/$(GRAMMAR)Parser.java $(BLDCLS)/$(PKGDIR)/$(TARGET).class $(JAVA_CLASSES) makefile \
+	unused
 
 #	@echo Java src: $(NJS)
 #	@echo Java src produced: $(PJS)
 #	@echo Java classes: $(NJC)
 #	@echo Java classes produced: $(PJC)
 
-jar: $(TARGETJAR)
+jar: compile $(TARGETJAR)
 
 $(PJS): $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4 makefile
 	(cd $(SRCDIR); $(ANTLR) -visitor -o $(TOPDIR)/$(BLDSRC) -package $(PKG) $(PKGDIR)/$(GRAMMAR).g4)
