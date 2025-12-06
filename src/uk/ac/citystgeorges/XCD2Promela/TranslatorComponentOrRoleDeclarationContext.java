@@ -230,16 +230,20 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
              * byte COMPONENT_<compName>_VAR_PORT_<portName>_ACTION_<eventOrMethodName>_RESULT = 0;
              */
             LstStr translationVarsBool = new LstStr();
-            translationVarsBool.add("VALUEEXIST");
+            translationVarsBool
+                .add("VALUEEXIST");
             LstStr translationVarsByte = new LstStr();
             for (var port
                      : USet.setUnion(thisEnv.compConstructs.providedprts
                                      , thisEnv.compConstructs.requiredprts
                                      , thisEnv.compConstructs.consumerprts
                                      , thisEnv.compConstructs.emitterprts)) {
-                translationVarsByte.add("PORT_" + port + "_INDEX");
-                translationVarsByte.add("PORT_" + port + "_CONNECTIONINDEX");
-                translationVarsByte.add("PORT_" + port + "_CALLER");
+                translationVarsByte.add(Names.portName(port
+                                                       + "_INDEX"));
+                translationVarsByte.add(Names.portName(port
+                                                       + "_CONNECTIONINDEX"));
+                translationVarsByte.add(Names.portName(port
+                                                       + "_CALLER"));
                 List<SymbolTable> ports
                     = thisEnv.children.stream()
                     .filter((SymbolTable x) ->
@@ -254,9 +258,14 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                             + "\" - instead we have "
                             + matches);
                 SymbolTablePort thePort = (SymbolTablePort) ports.get(0);
-                for (var mtd : thePort.portConstructs.basicMethodNames) {
-                    Map<String, MethodStructure> sigFull
-                        = thePort.portConstructs.methodOverloads.get(mtd);
+                PortConstructs portConstructs = thePort.portConstructs;
+                for (var mtd : portConstructs.basicMethodNames) {
+                    Map<Sig, MethodStructure> sigFull
+                        = portConstructs
+                        .methodOverloads.get(new Name(mtd));
+                    // bv.mywarning("port: " + thePort.compilationUnitID
+                    //              + " DUMP: for method " + mtd
+                    //              + " " + sigFull);
                     if (sigFull!=null) {
                         List<Type> retTypes
                             = sigFull.values()
@@ -266,19 +275,25 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                             .distinct()
                             .toList();
                         Type ret = retTypes.get(0);
-
+                        String newVarName
+                            = Names.portName(port
+                                             + "_"
+                                             + Names.actionName(mtd
+                                                                + "_RESULT"));
                         if (ret.equals("void")
                             || ret.equals("bool")
                             || ret.equals("bit"))
-                            translationVarsBool.add("PORT_" + port
-                                                    + "_ACTION_" + mtd
-                                                    + "_RESULT");
+                            translationVarsBool
+                                .add(newVarName);
                         else
-                            translationVarsByte.add("PORT_" + port
-                                                    + "_ACTION_" + mtd
-                                                    + "_RESULT");
+                            translationVarsByte
+                                .add(newVarName);
                     } else {
-                        // bv.mywarning("sigFull is null for mtd " + mtd + " :-(")
+                        portConstructs
+                            .methodOverloads
+                            .forEach( (k,v)
+                                      -> {bv.mywarning("\n\tMap[" + k + "]=" +v);} );
+                        bv.myassert(false, "sigFull is null for mtd " + mtd + " :-(")
                         ;
                     }
                 }
