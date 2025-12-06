@@ -382,7 +382,10 @@ class EnvironmentCreationVisitor
          * that interaction/functional constraints will be processed
          * inside it */
         pushSymbolTable(newctx);
-        res = visit(ctx.params);
+        if (ctx.params!=null)
+            res = visit(ctx.params);
+        else
+            res = defaultResult();
 
         // visit exceptions
         if (ctx.exc_pre!=null) {
@@ -439,6 +442,9 @@ class EnvironmentCreationVisitor
             thisEventFrame.methodStructure = theEventM;
             // store it in your IdInfo too - how?
             globalIdInfo.methodStructure = theEventM;
+            // mywarning("sigFull is not null for method " + eventName
+            //           + " return type is " + ret.get(0));
+            // mywarning("DUMP: " + theEventM);
         } else {
             theEventE
                 = new EventStructure (eventName
@@ -465,18 +471,38 @@ class EnvironmentCreationVisitor
              + ": Expected to be called as a grandchild "
              + "of a component/connector\nInstead, " + msg);
 
+        var eventNm =
+            // eventNameStr
+            eventName
+            ;
         if (imaMethod) {
-            if (!theMapM.containsKey(eventName))
-                theMapM.put(eventName
-                            , new HashMap<String, MethodStructure>());
+            if (!theMapM.containsKey(eventNm))
+                theMapM.put(eventNm
+                            , new HashMap<Sig, MethodStructure>());
+            mySyntaxCheck(!theMapM.get(eventNm).containsKey(theSig)
+                          , "Cannot overload the same signature" + theSig);
             // The slot has a map, so add the actual event structure inside it
-            theMapM.get(eventName).put(eventNameStr, theEventM);
+            theMapM.get(eventNm).put(theSig, theEventM);
+            // mywarning("port: " + myCompParent.compilationUnitID
+            //           + " Placed " + eventNm + " with sig " + theEventM);
+            // mywarning("Method structure entered "
+            //           + ((SymbolTablePort) (symbolTableNow().parent))
+            //           .portConstructs.methodOverloads
+            //           .get(eventNm).get(theSig) );
         } else {
-            if (!theMapE.containsKey(eventName))
-                theMapE.put(eventName
-                            , new HashMap<String, EventStructure >());
+            if (!theMapE.containsKey(eventNm))
+                theMapE.put(eventNm
+                            , new HashMap<Sig, EventStructure >());
+            mySyntaxCheck(!theMapE.get(eventNm).containsKey(theSig)
+                          , "Cannot overload the same signature" + theSig);
             // The slot has a map, so add the actual event structure inside it
-            theMapE.get(eventName).put(eventNameStr, theEventE);
+            theMapE.get(eventNm).put(theSig, theEventE);
+            // mywarning("port: " + myCompParent.compilationUnitID
+            //           + " Placed " + eventNm + " with sig " + theEventE);
+            // mywarning("Event structure entered "
+            //           + ((SymbolTablePort) (symbolTableNow().parent))
+            //           .portConstructs.eventOverloads
+            //           .get(eventNm).get(theSig) );
         }
         globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
         return res;
@@ -705,15 +731,19 @@ class EnvironmentCreationVisitor
             || tp==XCD_type.functiont) {
             T res = new T();
             res.add(dtype); res.add(varName);
-            mywarning("visitVarOrParamDecl: Have added "
-                      + varName
-                      + " into the current environment, with type "
-                      + dtype
-                      + " as a "
-                      + (readingParams?"parameter":"variable"));
+            // mywarning("visitVarOrParamDecl: Have added "
+            //           + varName
+            //           + " into the current environment, with type "
+            //           + dtype
+            //           + " as a "
+            //           + (readingParams?"parameter":"variable"));
             idinfo.translation.add(varName);
             return res;
         } else {
+            // mywarning("visitVarOrParamDecl: Not inside a method/etc. "
+            //           + varName
+            //           + " ignoring type "
+            //           + dtype);
             LstStr paramsOrvars = null;
             String trans = "";
             CompositeConstructs theEnvCompConstructs = null;

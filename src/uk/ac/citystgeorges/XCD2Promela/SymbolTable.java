@@ -224,14 +224,37 @@ class SymbolTableComponent extends SymbolTable { // COMPONENT or ROLE
     }
 }
 
-class Name {public String name; Name(String n) {name=n;}@Override public String toString(){return name;}}
-class Type {public String type; Type(String t) {type=t;}@Override public String toString(){return type;}}
-class Sig extends ArrayList<Type> { Sig(){super();} }
+final class Name {final private String value;
+    Name(String name) {value=name;}
+    @Override public String toString(){return value;}
+    @Override public boolean equals(Object o)
+    {return o!=null
+            && (o instanceof Name)
+            && value.equals( ((Name) o).value);}
+    @Override public int hashCode() {return value.hashCode();}
+}
+final class Type {final private String value;
+    Type(String type) {value=type;}
+    @Override public String toString(){return value;}
+    @Override public boolean equals(Object o)
+    {return o!=null
+            && (o instanceof Type)
+            && value.equals(((Type) o).value);}
+    @Override public int hashCode() {return value.hashCode();}
+}
+
+class Sig extends ArrayList<Type> {Sig(){super();}}
 class TypeNamePair {
     TypeNamePair(Type t, Name n) {name=n; type=t;}
     public Type type;
     public Name name;
-    @Override public String toString(){return type.toString() + "," + name.toString();}
+    @Override public String toString()
+    {return type.toString() + "," + name.toString();}
+    @Override public boolean equals(Object o)
+    {return o!=null
+            && (o instanceof TypeNamePair)
+            && type.equals(o)
+            && name.equals(o);}
 }
 class SeqOfTypeNamePairs extends ArrayList<TypeNamePair> {
     SeqOfTypeNamePairs() {super();}
@@ -258,10 +281,10 @@ class EventStructure {
     }
     @Override
     public String toString() {
-        return "Name: " + name
-            + "\nSig: " + param_types
-            + "\nFull Sig: " + full_sig
-            + "\nExceptions: " + exceptions;
+        return "\n\tName: " + name
+            + "\n\tSig: " + param_types
+            + "\n\tFull Sig: " + full_sig
+            + "\n\tExceptions: " + exceptions;
     }
 }
 class MethodStructure extends EventStructure {
@@ -274,7 +297,7 @@ class MethodStructure extends EventStructure {
     @Override
     public String toString() {
         return super.toString()
-            + "\nResult: " + resultType;
+            + "\n\tResult: " + resultType;
     }
 }
 class PortConstructs extends CommonConstructs {
@@ -303,20 +326,12 @@ class PortConstructs extends CommonConstructs {
     */
     LstStr basicEventNames = new LstStr(); // potentially overloaded
     LstStr basicMethodNames = new LstStr();
-    // Name 2 Map of <Sig.toString() 2 EventStructure>
-    Map<Name, Map<String, EventStructure>> eventOverloads
-        = new HashMap<Name, Map<String, EventStructure>>();
-    // Name 2 Map of <Sig.toString() 2 MethodStructure>
-    Map<Name, Map<String, MethodStructure>> methodOverloads
-        = new HashMap<Name, Map<String, MethodStructure>>();
-    // Map<String, EventStructure> allEventInfo = new HashMap<String, EventStructure>();
-    // Map<String, String> interaction_constraints
-    //     = new HashMap<String, String>(); // event/method *sig* to IC
-    // Map<String, String> functional_constraints
-    //     = new HashMap<String, String>(); // event/method *sig* to FC
-    // Map<String, LstStr> params
-    //     = new HashMap<String, LstStr>(); // event/method *sig* to params
-
+    // Name 2 Map of <Sig 2 EventStructure>
+    Map<Name, Map<Sig, EventStructure>> eventOverloads
+        = new HashMap<Name, Map<Sig, EventStructure>>();
+    // Name 2 Map of <Sig 2 MethodStructure>
+    Map<Name, Map<Sig, MethodStructure>> methodOverloads
+        = new HashMap<Name, Map<Sig, MethodStructure>>();
     PortConstructs() {super();}
 }
 
