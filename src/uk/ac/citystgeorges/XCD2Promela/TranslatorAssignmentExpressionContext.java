@@ -18,10 +18,10 @@ public class TranslatorAssignmentExpressionContext implements TranslatorI {
         String s = "";
         if (ctx.condExpr!=null) {
             s = bv.visit(ctx.condExpr).get(0);
+            res.add(s);
         } else {
-            s = bv.visit(ctx.assgnmnt).get(0);
+            res = bv.visit(ctx.assgnmnt);
         }
-        res.add(s);
         return res;
     }
 }

@@ -17,64 +17,47 @@ public class TranslatorAssignmentContext implements TranslatorI {
         T res = new T();
         String s = "";
         T lhs = bv.visit(ctx.lhs);
+        String theLHS = lhs.get(0);
         bv.myassert(lhs.size()==1
                     , "LeftHandSide: didn't return exactly one element"
                     + lhs.size());
         if (ctx.is!=null) {
             T assgnExpr = bv.visit(ctx.assgnExpr);
             if (assgnExpr.size()==1) {
-                s = lhs.get(0)
+                s = theLHS
                     + "="
                     + assgnExpr.get(0);
             } else {            // assignment chaining: x := y := z \in [2, 4];
-                s = "";
-                while (assgnExpr.size()!=1) {
-                    s += assgnExpr.get(0)
-                        + "; ";
-                    assgnExpr.remove(0);
-                }
-                s += lhs.get(0)
+                s = assgnExpr.get(0) // = assignment expression so far
+                    + "; ";
+                s += theLHS
                     + "="
-                    + assgnExpr.get(0);
+                    + assgnExpr.get(1); // = last variable assigned
                 // bv.mywarning("*** final assignment is:\n" + s);
             }
         } else if (ctx.inRange!=null) { // inRange
             T theRange = bv.visit(ctx.theRange);
             String valMin = theRange.get(0);
             String valMax = theRange.get(1);
-            String theLoopIndex = bv.loopGenSym;
             // ensure the range isn't empty
-            s = "assert( (" + valMin + ")<=(" + valMax + ") );";
-            s += "atomic {\n  "
-                + theLoopIndex + "=" + valMin + ";\n"
-                + "  do\n"
-                + "  :: " + theLoopIndex + "<" + valMax
-                /* Option one - choose this value */
-                + " -> break;"
-                + "  :: " + theLoopIndex + "<" + valMax
-                /* Option two - try next value */
-                + " -> " + theLoopIndex + "=" + theLoopIndex + "+1;"
-                /* Final option - must choose it */
-                + "  :: " + theLoopIndex + "==" + valMax + " -> break;"
-                + "  od ; skip ;\n"
-                + "  " + lhs.get(0) + "=" + theLoopIndex + ";\n"
-                /* Reset theLoopIndex to save states */
-                + "  " + theLoopIndex + "=0 ;\n"
-                + "}\n";
+            s = "assert( (" + valMin + ")<=(" + valMax + ") );"
+                + "select( "
+                + theLHS
+                + " : ( " + valMin + " ) .. ( "
+                + valMax
+                + " ) )";
         } else {                    // inSet
             T theSet = bv.visit(ctx.theSet);
             bv.myassert(theSet.size()!=0
                         , "Assignment: Cannot choose a value from an empty set");
-            s += "atomic {\n  "
-                + "  if\n";
+            s += "  if";
             for (var val : theSet)
-                s += "  :: true -> " + lhs.get(0) + "=" + val + "; break;\n";
-            s += "  fi; skip\n"
-                + "}\n";
+                s += "  :: true -> " + theLHS + "=" + val + "; break;";
+            s += "  fi";
         }
         res.add(s);
-        res.add(lhs.get(0)); // add this so chained assignments know
-                             // what to assign themselves to
+        res.add(theLHS);       // add this so that chained assignments
+                               // know what to assign themselves to
         return res;
     }
 }
