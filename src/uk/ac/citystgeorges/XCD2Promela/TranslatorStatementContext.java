@@ -19,7 +19,7 @@ public class TranslatorStatementContext implements TranslatorI {
         if (ctx.anAssgn!=null) {
             s = bv.visit(ctx.anAssgn).get(0);
         } else if (ctx.skip!=null) {
-            s = "skip;\n";
+            s = "skip";
         } else if (ctx.anAssert!=null) {
             s = bv.visit(ctx.anAssert).get(0);
         }
