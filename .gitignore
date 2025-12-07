@@ -37,3 +37,7 @@ build/*
 XCD2Promela.jar
 TestGrammar.jar
 
+# Dependency files
+TestGrammar.deps
+XCD2Promela.deps
+
