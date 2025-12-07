@@ -40,7 +40,7 @@ public class TranslatorAssignmentContext implements TranslatorI {
             String valMin = theRange.get(0);
             String valMax = theRange.get(1);
             // ensure the range isn't empty
-            s = "assert( (" + valMin + ")<=(" + valMax + ") );"
+            s = "assert( (" + valMin + ")<=(" + valMax + ") ); "
                 + "select( "
                 + theLHS
                 + " : ( " + valMin + " ) .. ( "
@@ -50,10 +50,10 @@ public class TranslatorAssignmentContext implements TranslatorI {
             T theSet = bv.visit(ctx.theSet);
             bv.myassert(theSet.size()!=0
                         , "Assignment: Cannot choose a value from an empty set");
-            s += "  if";
+            s += "if\n";
             for (var val : theSet)
-                s += "  :: true -> " + theLHS + "=" + val + "; break;";
-            s += "  fi";
+                s += " :: true -> " + theLHS + "=" + val + ";\n";
+            s += "fi\n";
         }
         res.add(s);
         res.add(theLHS);       // add this so that chained assignments

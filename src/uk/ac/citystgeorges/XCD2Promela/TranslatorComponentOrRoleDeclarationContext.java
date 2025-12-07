@@ -184,7 +184,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                         ArraySizeContext sz = info.arraySz;
                         if (is_array)
                             instance += "  do\n"
-                                + "  :: " + loop_offset + " < " + sz + " -> \n   ";
+                                + "   :: " + loop_offset + " < " + sz + " -> \n       ";
                         instance +=
                             Names
                             .componentRunInstanceName(component_def
@@ -194,7 +194,7 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                                                          : "0"))
                             + "\n";
                         if (is_array)
-                            instance += "  :: else -> break;\n  od;\n"
+                            instance += "   :: else -> break;\n  od;\n"
                                 + "  " + loop_offset + " = 0;\n";
                     }
                     instance += "}\n\n";
