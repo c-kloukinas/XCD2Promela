@@ -113,7 +113,7 @@ $(TESTDIR):
 
 test1:  $(TESTDIR)/aegis_deadlocking.passed
 
-tests:	$(ALL_TESTS)
+tests:	jar $(ALL_TESTS)
 	-rm -f $(TESTDIR)/*.failed
 	MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
 
