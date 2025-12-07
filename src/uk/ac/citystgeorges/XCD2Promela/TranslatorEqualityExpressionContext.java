@@ -29,14 +29,23 @@ public class TranslatorEqualityExpressionContext implements TranslatorI {
         } else if (ctx.inRange!=null) {
             var eqExpr1=bv.visit(ctx.eqExpr1).get(0);
             var theRange=bv.visit(ctx.theRange);
-            s = "( ("
+            var min=theRange.get(0);
+            var max=theRange.get(1);
+            s = /* cannot assert here, since this range expression may be
+                 * inside a bigger expression */
+                // "assert( ("
+                // + min
+                // + ") <= ("
+                // + max
+                // + ") ); "
+                "( ("
                 + eqExpr1
                 + "<="
-                + theRange.get(0)
+                + min
                 + ") && ("
                 + eqExpr1
                 + "<="
-                + theRange.get(1)
+                + max
                 + ") )";
         } else { // inSet
             var eqExpr1=bv.visit(ctx.eqExpr1).get(0);
