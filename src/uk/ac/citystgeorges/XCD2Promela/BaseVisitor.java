@@ -237,6 +237,11 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
             res = c -> p -> m -> Names.varNameEXCEPTION(c, p, m);
         return getThisMethodXXXName(res);
     }
+
+    abstract T getAssignableName(String name);
+
+    SeqOfTypeNamePairs globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
+    boolean globalAssignableName=false;
     //
 
     boolean isComposite(SymbolTableComposite info)

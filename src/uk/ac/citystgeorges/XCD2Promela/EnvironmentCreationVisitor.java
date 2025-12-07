@@ -1460,65 +1460,10 @@ class EnvironmentCreationVisitor
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
      */
-    T getAssignableName(String name) {
-        T res = defaultResult();
-        var tr = new TranslatorPrimaryContext();
-        String s = tr.translate_ID(this, name);
-        IdInfo sRecord = getIdInfo(name);
-        if (globalAssignableName) {
-            if (sRecord.type!=XCD_type.mparamt
-                && sRecord.type!=XCD_type.vart)
-                myassert(false
-                         , "LeftHandSide: How can one assign into \""
-                         + name
-                         + "\" (" + s + ") ?");
-            s = Names.varPostName(s);
-        }
-        if (sRecord.type==XCD_type.mparamt) {
-            // could this be a method parameter?
-            // SymbolTableMethod framenow = (SymbolTableMethod) symbolTableNow();
-            if (globalSeqOfTypeNamePairs.size()!=0) {
-                // mywarning("Parameter "
-                //           + name
-                //           + " found - removing it when size: "
-                //           + globalSeqOfTypeNamePairs.size());
-                globalSeqOfTypeNamePairs
-                    .removeIf( x -> x.name.toString().equals(name) );
-                // mywarning("Now globalSeqOfTypeNamePairs has size: "
-                //           + globalSeqOfTypeNamePairs.size());
-            }
-        } else {
-            mywarning("LHS " + name + " is of type " + sRecord.type);
-        }
-        res.add( s );
-        return res;
-    }
-    boolean globalAssignableName=false;
-    SeqOfTypeNamePairs globalSeqOfTypeNamePairs = new SeqOfTypeNamePairs();
     @Override public T visitLeftHandSide(XCDParser.LeftHandSideContext ctx) {
-        T res = defaultResult();
-        // mywarning("TESTING: Here're the result and exception names:"
-        //           + "\n\t" + getThisMethodResultName()
-        //           + "\n\t" + getThisMethodExceptionName());
-        if (ctx.name!=null) {
-            String name = ctx.name.getText();
-            // for (var v : getAssignableName(name, true))
-            //     res.add( Names.varPostName(v) );
-            globalAssignableName=true;
-            res.addAll( getAssignableName(name) );
-            globalAssignableName=false;
-        } else if (ctx.res!=null) {
-            res.add( getThisMethodResultName() );
-        } else if (ctx.exc!=null) {
-            res.add( getThisMethodExceptionName() );
-        } else {                // arrayAcc
-            globalAssignableName=true;
-            T arr = visit(ctx.arrayAcc);
-            globalAssignableName=false;
-            myassert(arr.size()==1
-                     , "ArrayAccess didn't return exactly one element");
-            res = arr;
-        }
+        updateln(ctx);
+        var tr = new TranslatorLeftHandSideContext();
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1562,6 +1507,41 @@ class EnvironmentCreationVisitor
     /**
      * Miscellaneous helper functions
      */
+    @Override
+    T getAssignableName(String name) {
+        T res = defaultResult();
+        var tr = new TranslatorPrimaryContext();
+        String s = tr.translate_ID(this, name);
+        IdInfo sRecord = getIdInfo(name);
+        if (globalAssignableName) {
+            if (sRecord.type!=XCD_type.mparamt
+                && sRecord.type!=XCD_type.vart)
+                myassert(false
+                         , "LeftHandSide: How can one assign into \""
+                         + name
+                         + "\" (" + s + ") ?");
+            s = Names.varPostName(s);
+        }
+        if (sRecord.type==XCD_type.mparamt) {
+            // could this be a method parameter?
+            // SymbolTableMethod framenow = (SymbolTableMethod) symbolTableNow();
+            if (globalSeqOfTypeNamePairs.size()!=0) {
+                // mywarning("Parameter "
+                //           + name
+                //           + " found - removing it when size: "
+                //           + globalSeqOfTypeNamePairs.size());
+                globalSeqOfTypeNamePairs
+                    .removeIf( x -> x.name.toString().equals(name) );
+                // mywarning("Now globalSeqOfTypeNamePairs has size: "
+                //           + globalSeqOfTypeNamePairs.size());
+            }
+        } else {
+            mywarning("LHS " + name + " is of type " + sRecord.type);
+        }
+        res.add( s );
+        return res;
+    }
+
     boolean readingParams = true; // TODO: check it's used correctly!
     // used by registerNewEnvironment to pass the IdInfo created back
     // to the current visitor method
