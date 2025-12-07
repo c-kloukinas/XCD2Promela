@@ -198,7 +198,7 @@ dataType:
   | id=ID
 ;
 
-statements: (stmts+=statement)+
+statements: stmt1=statement (stmts+=statement)*
 ;
 statement:
   anAssgn=assignment TK_SEMICOLON

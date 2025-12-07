@@ -1456,6 +1456,19 @@ class EnvironmentCreationVisitor
         return defaultResult();
     }
 
+    @Override public T visitStatements(XCDParser.StatementsContext ctx) {
+        // too simple to create a translator - just separating
+        // statements with a ';'
+        T res = defaultResult();
+        String s = "\t" + visit(ctx.stmt1).get(0);
+        for (var stmt : ctx.stmts) {
+            s += ";\n\t" + visit(stmt).get(0);
+        }
+        mywarning("XXX: Read the following code: \n" + s);
+        res.add(s);
+        return res;
+    }
+
     /**
      * Nothing to be done for these; default behaviour suffices - here
      * for completion.
@@ -1491,9 +1504,6 @@ class EnvironmentCreationVisitor
 
     @Override public T visitExpression(XCDParser.ExpressionContext ctx) { return visitChildren(ctx); }
 
-
-    @Override public T visitStatements(XCDParser.StatementsContext ctx) { return visitChildren(ctx); }
-
     @Override public T visitFormalParameters(XCDParser.FormalParametersContext ctx) { return visitChildren(ctx); }
 
     @Override public T visitGeneralInteractionContract(XCDParser.GeneralInteractionContractContext ctx) { return visitChildren(ctx); }
@@ -1514,13 +1524,14 @@ class EnvironmentCreationVisitor
         String s = tr.translate_ID(this, name);
         IdInfo sRecord = getIdInfo(name);
         if (globalAssignableName) {
-            if (sRecord.type!=XCD_type.mparamt
-                && sRecord.type!=XCD_type.vart)
-                myassert(false
-                         , "LeftHandSide: How can one assign into \""
-                         + name
-                         + "\" (" + s + ") ?");
-            s = Names.varPostName(s);
+            myassert((sRecord.type==XCD_type.mparamt)
+                     || (sRecord.type==XCD_type.vart)
+                     , "LeftHandSide: How can one assign into \""
+                     + name
+                     + "\" (" + s + ") ? " + sRecord.type);
+            if (sRecord.type==XCD_type.vart
+                && sRecord.has_post)
+                s = Names.varPostName(s);
         }
         if (sRecord.type==XCD_type.mparamt) {
             // could this be a method parameter?
@@ -1536,7 +1547,10 @@ class EnvironmentCreationVisitor
                 //           + globalSeqOfTypeNamePairs.size());
             }
         } else {
-            mywarning("LHS " + name + " is of type " + sRecord.type);
+            myassert(!globalAssignableName
+                     || (sRecord.type==XCD_type.vart)
+                     , "LHS " + name + " (" + s
+                     + ") is of type " + sRecord.type);
         }
         res.add( s );
         return res;
