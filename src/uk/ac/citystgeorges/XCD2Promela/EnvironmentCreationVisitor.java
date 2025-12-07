@@ -1052,11 +1052,9 @@ class EnvironmentCreationVisitor
     @Override
     public T visitSet(XCDParser.SetContext ctx) {
         updateln(ctx);
-        T res = new T();
-        if (ctx.val1!= null)    // maybe it's the empty set
-            res.add(visit(ctx.val1).get(0));
-        for (var val : ctx.vals)
-            res.add(visit(val).get(0));
+        T res = visitChildren(ctx);
+        var tr = new TranslatorSetContext();
+        res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1250,65 +1248,46 @@ class EnvironmentCreationVisitor
     }
 
     @Override public T visitConditionalOrExpression(XCDParser.ConditionalOrExpressionContext ctx) {
-        if (ctx.andExpr!=null)
-            return visit(ctx.andExpr);
-
-        String s = visit(ctx.orExpr1).get(0)
-            + "||"
-            + visit(ctx.andExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
+        updateln(ctx);
+        var tr = new TranslatorConditionalOrExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitConditionalAndExpression(XCDParser.ConditionalAndExpressionContext ctx) {
-        if (ctx.bitorExpr!=null)
-            return visit(ctx.bitorExpr);
-
-        String s = visit(ctx.andExpr1).get(0)
-            + "&&"
-            + visit(ctx.bitorExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
+        updateln(ctx);
+        var tr = new TranslatorConditionalAndExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitInclusiveOrExpression(XCDParser.InclusiveOrExpressionContext ctx) {
-        if (ctx.bitxorExpr!=null)
-            return visit(ctx.bitxorExpr);
-
-        String s = visit(ctx.bitorExpr1).get(0)
-            + "|"
-            + visit(ctx.bitxorExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
+        updateln(ctx);
+        var tr = new TranslatorInclusiveOrExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitExclusiveOrExpression(XCDParser.ExclusiveOrExpressionContext ctx) {
-        if (ctx.bitandExpr!=null)
-            return visit(ctx.bitandExpr);
-
-        String s = visit(ctx.bitxorExpr1).get(0)
-            + "^"
-            + visit(ctx.bitandExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
-
+        updateln(ctx);
+        var tr = new TranslatorExclusiveOrExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitAndExpression(XCDParser.AndExpressionContext ctx) {
-        if (ctx.eqExpr!=null)
-            return visit(ctx.eqExpr);
-
-        String s = visit(ctx.bitandExpr1).get(0)
-            + "&"
-            + visit(ctx.eqExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
+        updateln(ctx);
+        var tr = new TranslatorAndExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitShiftExpression(XCDParser.ShiftExpressionContext ctx) {
-        if (ctx.addExpr!=null)
-            return visit(ctx.addExpr);
-
-        String s = visit(ctx.shiftExpr1).get(0)
-            + ctx.op.getText()
-            + visit(ctx.addExpr2).get(0);
-        T res = new T(); res.add(s);
-        return res; }
+        updateln(ctx);
+        var tr = new TranslatorShiftExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
+    }
 
     @Override public T visitVariableDefaultValue(XCDParser.VariableDefaultValueContext ctx) { return visitChildren(ctx); }
 
