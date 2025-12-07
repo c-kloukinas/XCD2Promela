@@ -16,8 +16,10 @@ public class TranslatorSetContext implements TranslatorI {
         bv.updateln(ctx);
         T res = new T();
         String s = "";
-        s = bv.visit(ctx.val1).get(0);
-        res.add(s);
+        if (ctx.val1!= null) {  // maybe it's the empty set
+            s = bv.visit(ctx.val1).get(0);
+            res.add(s);
+        }
         for (var val : ctx.vals) {
             s = bv.visit(val).get(0);
             res.add(s);
