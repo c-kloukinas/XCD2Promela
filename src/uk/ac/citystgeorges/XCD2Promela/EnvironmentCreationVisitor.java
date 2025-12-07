@@ -1229,14 +1229,9 @@ class EnvironmentCreationVisitor
 
 
     @Override public T visitStatement(XCDParser.StatementContext ctx) {
-        T res = defaultResult();
-        if (ctx.skip!=null)
-            res.add("skip");
-        else if (ctx.anAssert!=null) {
-            res.add(visit(ctx.anAssert).get(0));
-        } else {                // anAssgn
-            res.add(visit(ctx.anAssgn).get(0));
-        }
+        updateln(ctx);
+        var tr = new TranslatorStatementContext();
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1248,10 +1243,10 @@ class EnvironmentCreationVisitor
     }
 
     @Override public T visitAssignmentExpression(XCDParser.AssignmentExpressionContext ctx) {
-        if (ctx.condExpr!=null)
-            return visit(ctx.condExpr);
-        else
-            return visit(ctx.assgnmnt);
+        updateln(ctx);
+        var tr = new TranslatorAssignmentExpressionContext();
+        T res = tr.translate(this, ctx);
+        return res;
     }
 
     @Override public T visitConditionalOrExpression(XCDParser.ConditionalOrExpressionContext ctx) {
