@@ -4,6 +4,7 @@ GRAMMAR=XCD
 PKG=uk.ac.citystgeorges.XCD2Promela
 PKGDIR=$(shell echo $(PKG) | tr . /)
 TOPDIR=$(shell pwd)
+DEPSEXISTS=$(shell test -f $(MAIN).deps; echo $?)
 
 TARGET=the$(MAIN)$(GRAMMAR)
 TARGET=$(GRAMMAR)$(MAIN)
@@ -53,12 +54,14 @@ JAVA_CLASSES=$(PJC) $(NJC)
 
 .PRECIOUS: $(JAVA_SRC)
 
-.PHONY: all unused compile jar tests test1 test clean backup-incremental backup-full backupi backupf
+.PHONY: all unused compile jar tests test1 test clean backup-incremental backup-full backupi backupf deps
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
+	-rm $(BLDCLS)/$(PKGDIR)/$*.class
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $(SRCDIR)/$(PKGDIR)/$*.java
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
+	-rm $(BLDCLS)/$(PKGDIR)/$*.class
 	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
 
 $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(TOPDIR)/1-scripts/test-xcd makefile
@@ -132,3 +135,12 @@ backup-full:
 backup-incremental:
 	@sh 1-scripts/files-outside-build -n
 
+deps:	$(NJS) $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4 makefile 1-scripts/file-dependencies-of
+	MAIN=$(MAIN) make clean \
+		$(BLDSRC)/$(PKGDIR)/XCDParser.java \
+		$(BLDCLS)/$(PKGDIR)/$(MAIN).class
+	1-scripts/file-dependencies-of $(MAIN) > $(MAIN).deps
+
+ifeq ($(DEPSEXISTS),0)
+  include $(MAIN).deps
+endif

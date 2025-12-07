@@ -1,0 +1,27 @@
+#! /bin/sh -
+
+MAIN=${1:-XCD2Promela}
+
+PKGDIR=uk/ac/citystgeorges/XCD2Promela
+BLDSRC=build/src
+BLDCLS=build/classes
+SRCDIR=src
+
+# MAIN=${MAIN} make clean\
+#         ${BLDSRC}/${PKGDIR}/XCDParser.java \
+#         ${BLDCLS}/${PKGDIR}/${MAIN}.class
+
+ls ${BLDCLS}/${PKGDIR}/*.class \
+| egrep -v '[$]' \
+| while read f ; do \
+        dir=`dirname $f` ; \
+        bas=`basename $f .class` ; \
+        if [ -f src/${PKGDIR}/${bas}.java ]; then \
+                echo '$(BLDCLS)/$(PKGDIR)/'${MAIN}'.class: $(SRCDIR)/$(PKGDIR)/'${bas}.java ; \
+        fi \
+done
+
+echo '$(BLDCLS)/$(PKGDIR)/'${MAIN}'.class: $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4'
+
+echo ${MAIN}'.deps: $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4 1-scripts/file-dependencies-of makefile $(NJS)'
+
