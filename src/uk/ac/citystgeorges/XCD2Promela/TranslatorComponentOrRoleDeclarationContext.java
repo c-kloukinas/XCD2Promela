@@ -141,7 +141,9 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
                         ("/resources/composite-component.pml.template"
                          , compName + "_COMPOSITE.h"
                          , (String confFileContents) -> {
-                            String typedefsOrEnums = all_typedefs + all_enums;
+                            // IMPORTANT - typedefs may be using some
+                            // enum, so must be defined after them!
+                            String enumsAndTypedefs = all_enums + all_typedefs;
                             String composite_subType_HeaderFileOutput
                                 = all_subcomponents + all_connectors;
                             String composite_channelList = "";
@@ -152,10 +154,10 @@ public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI 
 
                             // XXX
 
-                            if (!typedefsOrEnums.equals(""))
-                                typedefsOrEnums += "\n";
+                            if (!enumsAndTypedefs.equals(""))
+                                enumsAndTypedefs += "\n";
                             String out=confFileContents
-                                .replace("FOR$<typedefsOrEnums>", typedefsOrEnums)
+                                .replace("FOR$<enumsAndTypedefs>", enumsAndTypedefs)
                                 .replace("$<compName>", compName)
                                 .replace("$<composite_subType_HeaderFileOutput>"
                                          , composite_subType_HeaderFileOutput)
