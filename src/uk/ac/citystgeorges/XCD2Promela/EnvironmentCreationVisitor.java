@@ -546,17 +546,19 @@ class EnvironmentCreationVisitor
         // mywarning("visitEnumDeclaration called");
         SymbolTable framenow = symbolTableNow();
         Name enumName = new Name(ctx.id.getText());
-        if (framenow instanceof SymbolTableRoot)
-            ((SymbolTableRoot)framenow).commonConstructs.enums.add(""+enumName);
-        else if (framenow instanceof SymbolTableComposite)
-            ((SymbolTableComposite)framenow).
-                compConstructs.enums.add(""+enumName);
-        else if (framenow instanceof SymbolTableComponent)
-            ((SymbolTableComponent)framenow).
-                compConstructs.enums.add(""+enumName);
+        CommonConstructs theCommonConstructs = null;
+        if (framenow==rootContext)
+            theCommonConstructs = ((SymbolTableRoot)framenow).commonConstructs;
+        else if (framenow.type==XCD_type.compositet
+                 || framenow.type==XCD_type.connectort
+                 || framenow.type==XCD_type.componentt
+                 || framenow.type==XCD_type.rolet)
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
         else
             myassert(false
                      , "Event inside unsupported construct " + framenow.type);
+        theCommonConstructs.enums.add(""+enumName);
         Sig values = new Sig();
 
         var constants = ctx.constants;
@@ -635,17 +637,20 @@ class EnvironmentCreationVisitor
         SymbolTable framenow = symbolTableNow();
         String newtype = ctx.newtype.getText();
         String definition = ctx.existingtype.getText();
+        CommonConstructs theCommonConstructs = null;
         if (framenow==rootContext)
-            ((SymbolTableRoot)framenow).commonConstructs.typedefs.add(newtype);
+            theCommonConstructs
+                = ((SymbolTableRoot)framenow).commonConstructs;
         else if (framenow.type==XCD_type.compositet
                  || framenow.type==XCD_type.connectort
                  || framenow.type==XCD_type.componentt
                  || framenow.type==XCD_type.rolet)
-            ((SymbolTableComposite)framenow).compConstructs.typedefs.add(newtype);
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
         else
             myassert(false
                      , "Typedef inside unknown construct " + framenow.type);
-
+        theCommonConstructs.typedefs.add(newtype);
         IdInfo typedefIdInfo
             = addIdInfo(newtype
                         , XCD_type.typedeft
