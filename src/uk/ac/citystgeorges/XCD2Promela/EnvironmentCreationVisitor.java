@@ -774,8 +774,9 @@ class EnvironmentCreationVisitor
                               + " have primitive variables");
                 trans = ((tp==XCD_type.compositet)
                          ? Names.paramNameComponent(theEnv.compilationUnitID
-                                                  , varName)
-                         : varName);
+                                                    , varName)
+                         : Names.paramNameConnector(theEnv.compilationUnitID
+                                                    , varName));
             } else if (tp==XCD_type.componentt
                        || tp==XCD_type.rolet) {
                 var theEnv = (SymbolTableComponent)framenow;
@@ -786,10 +787,12 @@ class EnvironmentCreationVisitor
                             : Names.paramNameComponent(theEnv.compilationUnitID
                                                        , varName))
                          : (isVar
-                            ? Names.xVarName(theEnv.parent.compilationUnitID
-                                             , theEnv.compilationUnitID
-                                             , varName)
-                            : varName));
+                            ?Names.varNameRole(theEnv.parent.compilationUnitID
+                                               , theEnv.compilationUnitID
+                                               , varName)
+                            :Names.paramNameRole(theEnv.parent.compilationUnitID
+                                                 , theEnv.compilationUnitID
+                                                 , varName)));
             } else {
                 myassert(false
                          , (isVar?"Variable ":"Parameter ")

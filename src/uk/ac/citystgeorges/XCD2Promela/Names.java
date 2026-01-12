@@ -34,12 +34,19 @@ class Names {
             + comp
             + ",CompInstanceID, Instance)"; }
 
+    static String paramName( String comp, String param ) {
+        return "PARAM_" + param; }
     static String paramNameComponent( String comp, String param ) {
         return "Component_i_Param_N(CompositeName,CompositeID,"
             + comp + ",CompInstanceID,Instance," + param + ")"; }
     static String paramNamePort( String comp, String param ) {
         // return varNameComponent(comp, param); // STRANGE
-        return componentName(comp) + "_PARAM_" + param; }
+        return componentName(comp) + paramName(comp, param); }
+    static String paramNameAction( String comp, String port, String action, String param ) {
+        // return varNameComponent(comp, param); // STRANGE
+        return componentPortName(comp, port)
+            + "_" + actionName(action)
+            + "_PARAM_" + param; }
 
     static String varNameComponent( String comp, String var ) {
         return componentName(comp) + "_VAR_" + var; }
@@ -88,10 +95,14 @@ class Names {
     static String roleName( String x, String role ) {
         return connectorName(x)+"_ROLE_"+role; }
 
-    static String xVarName( String x, String role, String var ) {
+    static String paramNameConnector( String x, String var ) {
+        return connectorName(x) + "_PARAM_"+var; }
+    static String paramNameRole( String x, String role, String var ) {
+        return roleName(x, role) + "_PARAM_"+var; }
+    static String varNameRole( String x, String role, String var ) {
         return roleName(x, role) + "_VAR_"+var; }
-    static String xVarInstanceName(String x,String role,String var,String inst){
-        return xVarName(x,role,var)+inst; }
+    static String varInstanceNameRole(String x,String role,String var,String inst){
+        return varNameRole(x,role,var)+inst; }// really? Not "[" + inst + "]" ?
 
     static String portActionName( String comp, String port, String act) {
         // return  componentName(comp) + "_VAR_PORT_" + port + "_ACTION_" + act;

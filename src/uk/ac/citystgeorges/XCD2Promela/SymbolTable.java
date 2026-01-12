@@ -183,7 +183,9 @@ class SymbolTableComposite extends SymbolTable { // COMPOSITE or CONNECTOR
     }
 
     String getParamName(String param) {
-        return Names.paramNameComponent(compilationUnitID, param);
+        return (type==XCD_type.connectort)
+            ? Names.paramNameConnector(compilationUnitID, param)
+            : Names.paramNameComponent(compilationUnitID, param); // composite
     }
 }
 class ComponentConstructs extends CompositeConstructs {
@@ -209,7 +211,9 @@ class SymbolTableComponent extends SymbolTable { // COMPONENT or ROLE
     }
 
     String getParamName(String param) {
-        return Names.paramNameComponent(compilationUnitID, param);
+        return (type==XCD_type.rolet)
+            ? Names.paramNameRole(parent.compilationUnitID, compilationUnitID, param)
+            : Names.paramNameComponent(compilationUnitID, param); // component
     }
     LstStr getPortList(int tp) {
         return (tp==XCDParser.TK_EMITTER
@@ -352,97 +356,11 @@ class SymbolTablePort extends SymbolTable { // PORT or PORT VARIABLE
     }
 }
 
-// class SymbolTableConn extends SymbolTable {
-//     LstStr params = new LstStr();
-//     LstStr vars = new LstStr();
-//     CommonConstructs connConstructs = new CommonConstructs();
-//     LstStr roles = new LstStr();
-//     // LstStr rolesInParameters;
-//     LstStr subconnectors = new LstStr();
-//     @Override
-//     SymbolTableConn you() {// System.err.println("I'm a SymbolTableComp!");
-//         return this;}
-//     SymbolTableConn(String compUnitID
-//                     , ParserRuleContext me
-//                     , XCD_type tp
-//                     , boolean is_paramp
-//                     , SymbolTable myparent) {
-//         super(compUnitID, me, tp, is_paramp, myparent);
-//         EnvironmentCreationVisitor
-//             .myAssert(compUnitID!=null, "compUnitID is null");
-//         roles2portvarsInParams = new HashMap<String,LstStr>();
-//     }
-
-//     String getParamName(String param) {
-//         return Names.paramNameComponent(compilationUnitID, param);
-//     }
-// }
-
-// class SymbolTableConnRole extends SymbolTableConn {
-//     ComponentConstructs compConstructs = new ComponentConstructs();
-//     @Override
-//     SymbolTableConnRole you() {// System.err.println("I'm a SymbolTableComp!");
-//         return this;}
-//     SymbolTableConnRole(String compUnitID
-//                         , ParserRuleContext me
-//                         , XCD_type tp
-//                         , boolean is_paramp
-//                         , SymbolTable myparent) {
-//         super(compUnitID, me, tp, is_paramp, myparent);
-//         EnvironmentCreationVisitor
-//             .myAssert(compUnitID!=null, "compUnitID is null");
-//     }
-
-//     String getParamName(String param) {
-//         return Names.paramNameComponent(compilationUnitID, param);
-//     }
-// }
-// class RoleConstructs extends PortConstructs {
-//     RoleConstructs() {super();}
-// }
-// class SymbolTableConnRolePort extends SymbolTableConnRole {
-//     RoleConstructs roleConstructs = new RoleConstructs();
-
-//     SymbolTableConnRolePort(String portname
-//                             , ParserRuleContext me
-//                             , XCD_type portType
-//                             , boolean is_paramp
-//                             , SymbolTable parent) {
-//         super(portname, me, portType, is_paramp, parent);
-//     }
-
-//     String getParamName(String param) {
-//         return Names.paramNamePort(parent.compilationUnitID // port's component
-//                                    // port name is ignored?!?
-//                                    , param);
-//     }
-// }
-
 
 class EventConstructs {
     LstStr params = new LstStr();
     LstStr exceptions = new LstStr();
 }
-
-// class SymbolTableEvent extends SymbolTable {
-//     EventConstructs eventConstructs = new EventConstructs();
-
-//     @Override
-//     SymbolTableEvent you() {// System.err.println("I'm a SymbolTableComp!");
-//         return this;}
-//     SymbolTableEvent(String compUnitID
-//                      , ParserRuleContext me
-//                      , XCD_type tp
-//                      , SymbolTable myparent) {
-//         super(compUnitID, me, tp, false, myparent);
-//         EnvironmentCreationVisitor
-//             .myAssert(compUnitID!=null, "compUnitID is null");
-//     }
-
-//     String getParamName(String param) {
-//         return Names.paramNameComponent(compilationUnitID, param);
-//     }
-// }
 
 class MethodConstructs extends EventConstructs {
     String result = new String();
@@ -451,6 +369,9 @@ class MethodConstructs extends EventConstructs {
 class SymbolTableMethod extends SymbolTable { // METHOD or EVENT
     MethodConstructs methodConstructs = new MethodConstructs();
     EventStructure methodStructure = null;
+    String comp;                // or role
+    String port;                // or portvar
+    // String action; == compilationUnitID
     @Override
     SymbolTableMethod you() {// System.err.println("I'm a SymbolTableMethod!");
         return this;}
@@ -459,12 +380,18 @@ class SymbolTableMethod extends SymbolTable { // METHOD or EVENT
                       , XCD_type tp
                       , SymbolTable myparent) {
         super(compUnitID, me, tp, false, myparent);
+        port = parent.compilationUnitID;
+        comp = parent.parent.compilationUnitID;
         EnvironmentCreationVisitor
             .myAssert(compUnitID!=null, "compUnitID is null");
     }
 
     String getParamName(String param) {
-        return Names.paramNameComponent(compilationUnitID, param);
+        // The same parameter name can be used by different actions
+        // with different types and at a different position in the
+        // parameters list, so we need to be able to distinguish the
+        // parameter of one action from that of another.
+        return Names.paramNameAction(comp, port, compilationUnitID, param);
     }
 }
 
@@ -482,6 +409,6 @@ class SymbolTableFunction extends SymbolTableMethod {
     }
 
     String getParamName(String param) {
-        return Names.paramNameComponent(compilationUnitID, param);
+        return Names.paramName(compilationUnitID, param);
     }
 }
