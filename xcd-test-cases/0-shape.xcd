@@ -1,0 +1,69 @@
+// -*- mode: java -*-
+enum Amount := {None, Little, Average, Much};
+
+typedef byte ID;
+
+component comp1(){
+    enum Amount := {None, Little, Average, Much};
+
+    typedef byte ID;
+
+    bool requestMade := false;
+    Amount chosenAmount :=  Little;
+    emitter port emitter1 {
+        @functional{
+            when: true;
+            ensures:  requestMade := amount := chosenAmount;
+        }
+        emiOne(Amount amount);
+    }
+    consumer port consumer1{
+        @interaction{
+            waits: requestMade==true;
+        }
+        @functional{
+            requires: am == chosenAmount  ;
+            ensures: requestMade:=false;
+        }
+        reqOne(Amount am);
+    }
+}
+
+component comp2(){
+    bool requestMade := false;
+    Amount chosenAmount :=  Little;
+    emitter port emitter2 {
+        @functional{
+            when: true;
+            ensures:  amount := chosenAmount;
+        }
+        emiTwo(Amount amount);
+        @interaction{
+            waits: !requestMade;
+        }
+        @functional{
+            when: true;
+            ensures:  amount := chosenAmount;
+        }
+        emiThree(Amount amount);
+    }
+    consumer port consumer2{
+        @interaction{
+            waits: requestMade==true;
+        }
+        @functional{
+            requires: am == chosenAmount  ;
+            ensures: requestMade:=false;
+        }
+        reqTwo(Amount am);
+        @interaction{
+            waits: requestMade==true;
+        }
+        @functional{
+            requires: am == chosenAmount  ;
+            ensures: requestMade:=false;
+        }
+        reqThree(Amount am);
+    }
+}
+
