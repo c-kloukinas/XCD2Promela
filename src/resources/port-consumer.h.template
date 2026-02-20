@@ -1,0 +1,72 @@
+// should be $<compName>_$<instance>_PORT_$<portName>_BUFFER - see Component_i_port_buffer(compName, instance, portName)
+typedef PORT_$<portName>_BUFFER { // channel message structure
+  bool slotoccupied; // extra
+  mtype action;      // event/method name
+  // action args are of different types - we need to use the largest
+  // type (i.e., short) to be able to model all of them
+  FOR$<actionArgDeclarations> // short param_0; ... short param_N-1
+}
+
+#define TYPEOF_COMPONENT_$<compName>_VAR_VALUEEXIST             bool
+// For consumer ports, we also need to define an INDEX & a CONNECTIONINDEX
+#define TYPEOF_COMPONENT_$<compName>_VAR_PORT_$<portName>_INDEX byte
+#define TYPEOF_COMPONENT_$<compName>_VAR_PORT_$<portName>_CONNECTIONINDEX byte
+
+// waits ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_WAITS \
+ $<actionWaitsExpression>
+ */
+FOR$<waitsICs>
+
+// accepts ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_ACCEPTS \
+ $<actionAcceptsExpression>
+ */
+FOR$<acceptsICs>
+
+// rejects ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_REJECTS \
+ !(IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_ACCEPTS)
+ */
+FOR$<rejectsICs>
+
+// positive ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE \
+ ( (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_WAITS) &&
+   (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_ACCEPTS) )
+ */
+FOR$<positiveICs>
+
+// positive ICONTRACTs
+/*
+ #define ICONTRACT_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE \
+ (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE)
+ */
+FOR$<positiveICONTRACTs>
+// negative ICONTRACTs
+/*
+ #define ICONTRACT_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE_REJECT \
+ (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_REJECT)
+ */
+FOR$<positiveICONTRACTs>
+
+
+// functional requires conditions
+/*
+ #define FC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_REQUIRES \
+ COMPONENT_$<compName>_VAR_PORT_$<portName>_BUFFER[slot(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,COMPONENT_$<compName>_VAR_PORT$<portName>_INDEX, COMPONENT_$<compName>_VAR_PORT$<portName>_CONNECTIONINDEX)].
+  (expression of requires with param_i replacing arg i):
+  param_0 == COMPONENT_$<compName>_VAR_$<varName>[0]
+ */
+FOR$<actionRequiresConditions>
+
+// functional contract preconditions
+/*
+ #define FCONTRACT_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_REQUIRES \
+ (FC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_REQUIRES)
+ */
+

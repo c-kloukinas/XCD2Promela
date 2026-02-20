@@ -1,0 +1,23 @@
+
+      // conjoined (role/port) action ICs
+   :: atomic {
+     refined_contract2(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,$<actionName>)() ->
+
+       COMPONENT_$<compName>_VAR_requestMadeI[0] = true; // WHY?!?
+       COMPONENT_$<compName>_VAR_VALUEEXIST[0] = false; // expect no result
+       POST(COMPONENT_$<compName>_VAR_requestMadeI[0]) = COMPONENT_$<compName>_VAR_requestMadeI[0]; // WHY?!? Why do we even need PRE/POST versions of this?
+
+       // update role data - role ensures
+       component_i_roleDataUpdate(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,$<actionName>);
+
+       // update pre/post vars
+       //
+       // emit event name on channel (arguments?)
+       //
+       // reset arguments
+
+progress_$<compName>_$<portName>_$<actionName>:
+$<compName>_$<portName>_$<actionName>_label_req:
+       Component_i_channelName_action(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,$<actionName>); // Is this the action ensures? Where's the message sent? Can the message sending block (we're in an atomic)?
+
+      }

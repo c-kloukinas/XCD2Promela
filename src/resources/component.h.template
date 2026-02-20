@@ -1,0 +1,15 @@
+#ifndef COMPONENT_$<compName>
+#define COMPONENT_$<compName>
+
+FOR$<typesOfVariablesDefinitions>
+
+FOR$<typesOfArgumentsDefinitions>
+
+// #define INITIALVALUE_COMPONENT_$<compName>_VAR_$<varName> $<initialValue>
+FOR$<variableInitialValues>
+
+// loops over the ports and instantiates one of
+// port-emitter/consumer/etc.h.template per port.
+FOR$<portRelatedDefinitions>
+
+#endif

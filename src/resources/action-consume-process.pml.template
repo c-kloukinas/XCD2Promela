@@ -1,0 +1,27 @@
+
+      // conjoined (role/port) action ICs
+   :: atomic {
+
+     message_for_action_exists(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,$<actionName>)
+     && refined_contract2(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance,$<portName>,$<actionName>)() ->
+      if
+      // Pairs of Required -> Ensures cases, used to select how to
+      // update the local variables based on the Required condition
+      // expressed using the local variables and the message contents.
+      /*
+      :: FOR$<FCRequiredConstraint>
+         -> FOR$<FCEnsuresAssignments>
+       */
+      FOR$<FCRequiredConstraint_and_FCEnsuresAssignments>
+
+         // we have already accepted to consume the message according
+         // to our ICs, so we must process it. If no matching required
+         // clause, then we must fail.
+      :: else -> assert(false)
+      fi ;
+
+      FOR$<RoleDataUpdate>
+
+      $<MessageBufferUpdate>
+
+      }

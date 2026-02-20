@@ -1,0 +1,20 @@
+// waits ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_WAITS \
+ $<actionWaitsExpression>
+ */
+FOR$<waitsICs>
+
+// positive ICs
+/*
+ #define IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE \
+ (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_WAITS)
+ */
+FOR$<positiveICs>
+
+// positive ICONTRACTs
+/*
+ #define ICONTRACT_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE \
+ (IC0_COMPONENT_$<compName>_PORT_$<portName>_ACTION_$<actionName>_PRE)
+ */
+FOR$<positiveICONTRACTs>
