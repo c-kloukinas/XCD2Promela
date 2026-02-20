@@ -162,10 +162,12 @@ class EnvironmentCreationVisitor
         SymbolTableComposite newctx
             = framenow.makeSymbolTableComposite(ctx.id.getText(), ctx
                                                 , myType, false);
+        TranslatorI tr = new TranslatorCompositeOrConnectorDeclarationContext();
         var res = registerNewEnvironment(ctx.id.getText(), ctx
                                          , myType
-                                         , null // there's no size part
-                                         , newctx);
+                                         // there's no size part
+                                         , (ArraySizeContext) null
+                                         , newctx, tr);
 
         if (myType==XCD_type.connectort) {
             /* Check that the set of roles and the set of roles listed in
@@ -235,7 +237,11 @@ class EnvironmentCreationVisitor
                              + portVarsUsedMinusPortVarsDefined);
                 }
             }
+        } else {
+            myassert(myType==XCD_type.compositet
+                     , "Current declaration is not a composite.");
         }
+
         return res;
     }
 
@@ -262,8 +268,8 @@ class EnvironmentCreationVisitor
         TranslatorI tr = null;
         if (myType==XCD_type.rolet)
             ((SymbolTableComposite)framenow).subcomponents.add(myName);
-        if (myType==XCD_type.componentt)
-            tr = new TranslatorComponentOrRoleDeclarationContext();
+        // if (myType==XCD_type.componentt) // do this for roles as well.
+        tr = new TranslatorComponentOrRoleDeclarationContext();
         SymbolTable newctx
             = framenow.makeSymbolTableComponent(myName, ctx
                                                 , myType , false);
@@ -550,14 +556,16 @@ class EnvironmentCreationVisitor
         if (framenow==rootContext)
             theCommonConstructs = ((SymbolTableRoot)framenow).commonConstructs;
         else if (framenow.type==XCD_type.compositet
-                 || framenow.type==XCD_type.connectort
-                 || framenow.type==XCD_type.componentt
-                 || framenow.type==XCD_type.rolet)
+                 || framenow.type==XCD_type.connectort)
             theCommonConstructs
                 = ((SymbolTableComposite)framenow).compConstructs;
+        else if (framenow.type==XCD_type.componentt
+                 || framenow.type==XCD_type.rolet)
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
         else
             myassert(false
-                     , "Event inside unsupported construct " + framenow.type);
+                     , "Enum inside unsupported construct " + framenow.type);
         theCommonConstructs.enums.add(""+enumName);
         Sig values = new Sig();
 
@@ -596,20 +604,24 @@ class EnvironmentCreationVisitor
 
         IdInfo enumTypeInfo = addIdInfo(en
                                         , XCD_type.enumt
-                                        , ""
+                                        , "" // valuesAsAString - a hack...
                                         , false
                                         , null
                                         , null
                                         , framenow.compilationUnitID);
+
+        String enumFullName
+            = (globOrCompOrRole==0)
+            ? Names.enumGlobalTypeName(en)
+            : (globOrCompOrRole==1
+               ? Names.enumCompTypeName(myComp, en)
+               : Names.enumRoleTypeName(myConn, myRole, en));
         enumTypeInfo.translation
-            .add(globOrCompOrRole==0
-                 ? Names.enumGlobalTypeName(en)
-                 : (globOrCompOrRole==1
-                    ? Names.enumCompTypeName(myComp, en)
-                    : Names.enumRoleTypeName(myConn, myRole, en)));
+            .add(enumFullName);
         // mywarning("Added enum type \"" + enumName.toString()
         //           + "\" with values " + values.toString()
         //           + " and s is \n" + s);
+        LstStr translatedValues = new LstStr();
         for (var value : values) {
             String vl = value.toString();
             IdInfo valInfo = addIdInfo(vl
@@ -624,10 +636,24 @@ class EnvironmentCreationVisitor
                      : (globOrCompOrRole==1
                         ? Names.enumCompValueName(myComp, vl)
                         : Names.enumRoleValueName(myConn, myRole, vl)));
+            translatedValues.add(valInfo.translation.get(0));
             // mywarning("Added enum value \"" + value.toString()
             //        + "\" for enum type \"" + enumName.toString()
             //        + "\"");
         }
+        final String valuesAsAString
+            = translatedValues.stream().collect(Collectors.joining(", "));
+        enumTypeInfo.variableTypeName = valuesAsAString;
+
+        // produce translation
+        Utils.withInputAndFileToWrite
+                    ("/resources/enum.h.template"
+                     , "TYPE_" + enumFullName + ".h"
+                     , (String confFileContents) -> {
+                return confFileContents
+                    .replace("$<name>", enumFullName)
+                    .replace("FOR$<values>", valuesAsAString);
+                    });
         return defaultResult();
     }
 
@@ -642,31 +668,68 @@ class EnvironmentCreationVisitor
             theCommonConstructs
                 = ((SymbolTableRoot)framenow).commonConstructs;
         else if (framenow.type==XCD_type.compositet
-                 || framenow.type==XCD_type.connectort
-                 || framenow.type==XCD_type.componentt
-                 || framenow.type==XCD_type.rolet)
+                   || framenow.type==XCD_type.connectort)
             theCommonConstructs
                 = ((SymbolTableComposite)framenow).compConstructs;
+        else if (framenow.type==XCD_type.componentt
+                   || framenow.type==XCD_type.rolet)
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
         else
             myassert(false
                      , "Typedef inside unknown construct " + framenow.type);
         theCommonConstructs.typedefs.add(newtype);
+
+        // Are you global, inside a component, or inside a role?
+        int globOrCompOrRole = 0; // Global
+        String myComp = "";
+        String myConn = "";
+        String myRole = "";
+        if (framenow.type==XCD_type.roott && framenow==rootContext) {
+            globOrCompOrRole = 0;
+        } else if (framenow.type==XCD_type.compositet
+                   || framenow.type==XCD_type.componentt) {
+            globOrCompOrRole = 1; // Inside a composite/component
+            myComp = framenow.compilationUnitID;
+        } else if (framenow.type==XCD_type.connectort
+                   || framenow.type==XCD_type.rolet) {
+            globOrCompOrRole = 2; // Inside a connector/role
+            myRole = framenow.compilationUnitID;
+            myConn = framenow.parent.compilationUnitID;
+        }
+        String typedefFullName
+            = (globOrCompOrRole==0)
+            ? Names.typedefGlobalTypeName(newtype)
+            : (globOrCompOrRole==1
+               ? Names.typedefCompTypeName(myComp, newtype)
+               : Names.typedefRoleTypeName(myConn, myRole, newtype));
+
         IdInfo typedefIdInfo
             = addIdInfo(newtype
                         , XCD_type.typedeft
-                        , definition
+                        , typedefFullName // a hack
                         , false
                         , null
                         , null
                         , framenow.compilationUnitID);
-        mywarning("Added type \"" + newtype + "\" as a newname for \""
-                  + definition + "\"");
+        mywarning("Added type \"" + newtype + "\" (\"" + typedefFullName
+                  + "\") as a newname for \"" + definition + "\"");
         String basicTranslation
             = new TranslatorPrimaryContext()
             .translate_ID(this, definition);
         typedefIdInfo
             .translation
             .add(basicTranslation);
+
+        // produce translation
+        Utils.withInputAndFileToWrite
+                    ("/resources/typedef.h.template"
+                     , "TYPE_" + typedefFullName + ".h"
+                     , (String confFileContents) -> {
+                return confFileContents
+                    .replace("$<name>", typedefFullName)
+                    .replace("$<definition>", basicTranslation);
+                    });
         return defaultResult();
     }
 

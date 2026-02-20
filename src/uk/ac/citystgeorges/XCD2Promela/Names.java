@@ -122,13 +122,20 @@ class Names {
     static String enumGlobalValueName( String nm ) {
         return "ENUMV_" + nm; }
     static String enumCompTypeName( String comp, String nm ) {
-        return enumGlobalTypeName( componentName(nm) ); }
+        return componentName( comp + "_" + enumGlobalTypeName(nm) ); }
     static String enumCompValueName( String comp, String nm ) {
-        return enumGlobalValueName( componentName(nm) ); }
+        return componentName( comp + "_" + enumGlobalValueName(nm) ); }
     static String enumRoleTypeName( String conn, String role, String nm ) {
-        return enumGlobalTypeName( roleName(conn, role) + "_" + nm ); }
+        return roleName(conn, role) + "_" + enumGlobalTypeName(nm); }
     static String enumRoleValueName( String conn, String role, String nm ) {
-        return enumGlobalValueName( roleName(conn, role) + "_" + nm ); }
+        return roleName(conn, role) + "_" + enumGlobalTypeName(nm); }
+
+    static String typedefGlobalTypeName( String nm ) {
+        return "TYPEDEF_" + nm; }
+    static String typedefCompTypeName( String comp, String nm ) {
+        return componentName( comp + "_" + typedefGlobalTypeName(nm) ); }
+    static String typedefRoleTypeName( String conn, String role, String nm ) {
+        return roleName(conn, role) + "_" + typedefGlobalTypeName(nm); }
 
     static String exceptionName( String nm ) {
         return "EXCEPTION_" + nm; }

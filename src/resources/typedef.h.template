@@ -1,0 +1,3 @@
+#ifndef $<name>
+#define $<name>  $<definition>
+#endif
