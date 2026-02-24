@@ -579,26 +579,45 @@ class EnvironmentCreationVisitor
             String name = cnst.getText();
             values.add(new Type(name));
         }
-        // Are you global, inside a component, or inside a role?
-        int globOrCompOrRole = 0; // Global
-        String myComp = "";
-        String myConn = "";
+        String myCo__ = "";     // compo(site|nent) or connector name
         String myRole = "";
-        if (framenow.type==XCD_type.roott && framenow==rootContext) {
-            globOrCompOrRole = 0;
-        } else if (framenow.type==XCD_type.compositet
-                   || framenow.type==XCD_type.componentt) {
-            globOrCompOrRole = 1; // Inside a composite/component
-            myComp = framenow.compilationUnitID;
-        } else if (framenow.type==XCD_type.connectort
-                   || framenow.type==XCD_type.rolet) {
-            globOrCompOrRole = 2; // Inside a connector/role
+        Function <String
+            , Function<String
+            , Function<String, String>>> typeName = null;
+        Function <String
+            , Function<String
+            , Function<String, String>>> valueName = null;
+        switch (framenow.type) {
+        case XCD_type.roott:
+            typeName  = c -> r -> n -> Names.enumGlobalTypeName (n);
+            valueName = c -> r -> n -> Names.enumGlobalValueName(n);
+            break;
+        case XCD_type.compositet:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.enumCompTypeName (c, n);
+            valueName = c -> r -> n -> Names.enumCompValueName(c, n);
+            break;
+        case XCD_type.componentt:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.enumCompTypeName (c, n);
+            valueName = c -> r -> n -> Names.enumCompValueName(c, n);
+            break;
+        case XCD_type.connectort:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.enumConnTypeName (c, n);
+            valueName = c -> r -> n -> Names.enumConnValueName(c, n);
+            break;
+        case XCD_type.rolet:
             myRole = framenow.compilationUnitID;
-            myConn = framenow.parent.compilationUnitID;
-        } else
+            myCo__ = framenow.parent.compilationUnitID;
+            typeName  = c -> r -> n -> Names.enumRoleTypeName (c, r, n);
+            valueName = c -> r -> n -> Names.enumRoleValueName(c, r, n);
+            break;
+        default:
             myassert(false, "Enum " + enumName
                      + " is inside a construct " + framenow.type
-                     + " that doesn't support enums");
+                     + " that doesn't support enums"); break;
+        }
 
         String en = enumName.toString();
 
@@ -610,12 +629,7 @@ class EnvironmentCreationVisitor
                                         , null
                                         , framenow.compilationUnitID);
 
-        String enumFullName
-            = (globOrCompOrRole==0)
-            ? Names.enumGlobalTypeName(en)
-            : (globOrCompOrRole==1
-               ? Names.enumCompTypeName(myComp, en)
-               : Names.enumRoleTypeName(myConn, myRole, en));
+        String enumFullName = typeName.apply(myCo__).apply(myRole).apply(en);
         enumTypeInfo.translation
             .add(enumFullName);
         // mywarning("Added enum type \"" + enumName.toString()
@@ -631,11 +645,7 @@ class EnvironmentCreationVisitor
                                        , null
                                        , enumName.toString());
             valInfo.translation
-                .add(globOrCompOrRole==0
-                     ? Names.enumGlobalValueName(vl)
-                     : (globOrCompOrRole==1
-                        ? Names.enumCompValueName(myComp, vl)
-                        : Names.enumRoleValueName(myConn, myRole, vl)));
+                .add( valueName.apply(myCo__).apply(myRole).apply(vl) );
             translatedValues.add(valInfo.translation.get(0));
             // mywarning("Added enum value \"" + value.toString()
             //        + "\" for enum type \"" + enumName.toString()
@@ -680,29 +690,41 @@ class EnvironmentCreationVisitor
                      , "Typedef inside unknown construct " + framenow.type);
         theCommonConstructs.typedefs.add(newtype);
 
-        // Are you global, inside a component, or inside a role?
-        int globOrCompOrRole = 0; // Global
-        String myComp = "";
+        String myCo__ = "";     // compo(site|nent) or connector name
         String myConn = "";
         String myRole = "";
-        if (framenow.type==XCD_type.roott && framenow==rootContext) {
-            globOrCompOrRole = 0;
-        } else if (framenow.type==XCD_type.compositet
-                   || framenow.type==XCD_type.componentt) {
-            globOrCompOrRole = 1; // Inside a composite/component
-            myComp = framenow.compilationUnitID;
-        } else if (framenow.type==XCD_type.connectort
-                   || framenow.type==XCD_type.rolet) {
-            globOrCompOrRole = 2; // Inside a connector/role
+        Function <String
+            , Function<String
+            , Function<String, String>>> typeName = null;
+        switch (framenow.type) {
+        case XCD_type.roott:
+            typeName  = c -> r -> n -> Names.typedefGlobalTypeName (n);
+            break;
+        case XCD_type.compositet:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.typedefCompTypeName (c, n);
+            break;
+        case XCD_type.componentt:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.typedefCompTypeName (c, n);
+            break;
+        case XCD_type.connectort:
+            myCo__ = framenow.compilationUnitID;
+            typeName  = c -> r -> n -> Names.typedefConnTypeName (c, n);
+            break;
+        case XCD_type.rolet:
             myRole = framenow.compilationUnitID;
-            myConn = framenow.parent.compilationUnitID;
+            myCo__ = framenow.parent.compilationUnitID;
+            typeName  = c -> r -> n -> Names.typedefRoleTypeName (c, r, n);
+            break;
+        default:
+            myassert(false, "Typedef " + newtype
+                     + " is inside a construct " + framenow.type
+                     + " that doesn't support Typedefs"); break;
         }
+
         String typedefFullName
-            = (globOrCompOrRole==0)
-            ? Names.typedefGlobalTypeName(newtype)
-            : (globOrCompOrRole==1
-               ? Names.typedefCompTypeName(myComp, newtype)
-               : Names.typedefRoleTypeName(myConn, myRole, newtype));
+            = typeName.apply(myCo__).apply(myRole).apply(newtype);
 
         IdInfo typedefIdInfo
             = addIdInfo(newtype
