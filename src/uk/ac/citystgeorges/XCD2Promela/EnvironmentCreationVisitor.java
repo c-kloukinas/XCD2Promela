@@ -553,22 +553,7 @@ class EnvironmentCreationVisitor
         SymbolTable framenow = symbolTableNow();
         Name enumName = new Name(ctx.id.getText());
         CommonConstructs theCommonConstructs = null;
-        if (framenow==rootContext)
-            theCommonConstructs = ((SymbolTableRoot)framenow).commonConstructs;
-        else if (framenow.type==XCD_type.compositet
-                 || framenow.type==XCD_type.connectort)
-            theCommonConstructs
-                = ((SymbolTableComposite)framenow).compConstructs;
-        else if (framenow.type==XCD_type.componentt
-                 || framenow.type==XCD_type.rolet)
-            theCommonConstructs
-                = ((SymbolTableComponent)framenow).compConstructs;
-        else
-            myassert(false
-                     , "Enum inside unsupported construct " + framenow.type);
-        theCommonConstructs.enums.add(""+enumName);
         Sig values = new Sig();
-
         var constants = ctx.constants;
         int size = constants.size();
         myassert(constants!=null && size>0
@@ -589,25 +574,34 @@ class EnvironmentCreationVisitor
             , Function<String, String>>> valueName = null;
         switch (framenow.type) {
         case XCD_type.roott:
+            theCommonConstructs = ((SymbolTableRoot)framenow).commonConstructs;
             typeName  = c -> r -> n -> Names.enumGlobalTypeName (n);
             valueName = c -> r -> n -> Names.enumGlobalValueName(n);
             break;
         case XCD_type.compositet:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.enumCompTypeName (c, n);
             valueName = c -> r -> n -> Names.enumCompValueName(c, n);
             break;
         case XCD_type.componentt:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.enumCompTypeName (c, n);
             valueName = c -> r -> n -> Names.enumCompValueName(c, n);
             break;
         case XCD_type.connectort:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.enumConnTypeName (c, n);
             valueName = c -> r -> n -> Names.enumConnValueName(c, n);
             break;
         case XCD_type.rolet:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
             myRole = framenow.compilationUnitID;
             myCo__ = framenow.parent.compilationUnitID;
             typeName  = c -> r -> n -> Names.enumRoleTypeName (c, r, n);
@@ -618,6 +612,7 @@ class EnvironmentCreationVisitor
                      + " is inside a construct " + framenow.type
                      + " that doesn't support enums"); break;
         }
+        theCommonConstructs.enums.add(""+enumName);
 
         String en = enumName.toString();
 
@@ -674,22 +669,6 @@ class EnvironmentCreationVisitor
         String newtype = ctx.newtype.getText();
         String definition = ctx.existingtype.getText();
         CommonConstructs theCommonConstructs = null;
-        if (framenow==rootContext)
-            theCommonConstructs
-                = ((SymbolTableRoot)framenow).commonConstructs;
-        else if (framenow.type==XCD_type.compositet
-                   || framenow.type==XCD_type.connectort)
-            theCommonConstructs
-                = ((SymbolTableComposite)framenow).compConstructs;
-        else if (framenow.type==XCD_type.componentt
-                   || framenow.type==XCD_type.rolet)
-            theCommonConstructs
-                = ((SymbolTableComponent)framenow).compConstructs;
-        else
-            myassert(false
-                     , "Typedef inside unknown construct " + framenow.type);
-        theCommonConstructs.typedefs.add(newtype);
-
         String myCo__ = "";     // compo(site|nent) or connector name
         String myConn = "";
         String myRole = "";
@@ -698,21 +677,31 @@ class EnvironmentCreationVisitor
             , Function<String, String>>> typeName = null;
         switch (framenow.type) {
         case XCD_type.roott:
+            theCommonConstructs
+                = ((SymbolTableRoot)framenow).commonConstructs;
             typeName  = c -> r -> n -> Names.typedefGlobalTypeName (n);
             break;
         case XCD_type.compositet:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.typedefCompTypeName (c, n);
             break;
         case XCD_type.componentt:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.typedefCompTypeName (c, n);
             break;
         case XCD_type.connectort:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
             myCo__ = framenow.compilationUnitID;
             typeName  = c -> r -> n -> Names.typedefConnTypeName (c, n);
             break;
         case XCD_type.rolet:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
             myRole = framenow.compilationUnitID;
             myCo__ = framenow.parent.compilationUnitID;
             typeName  = c -> r -> n -> Names.typedefRoleTypeName (c, r, n);
@@ -722,6 +711,7 @@ class EnvironmentCreationVisitor
                      + " is inside a construct " + framenow.type
                      + " that doesn't support Typedefs"); break;
         }
+        theCommonConstructs.typedefs.add(newtype);
 
         String typedefFullName
             = typeName.apply(myCo__).apply(myRole).apply(newtype);
