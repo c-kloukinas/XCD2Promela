@@ -149,6 +149,18 @@ class Names {
     static String typedefRoleTypeName( String conn, String role, String nm ) {
         return roleName(conn, role + "_" + typedefGlobalTypeName(nm) ); }
 
+    static String functionGlobalTypeName( String nm ) {
+        return "FUNCTION_" + nm; }
+
+    static String functionCompTypeName( String comp, String nm ) {
+        return componentName( comp + "_" + functionGlobalTypeName(nm) ); }
+
+    static String functionConnTypeName( String conn, String nm ) {
+        return connectorName(conn + "_" + functionGlobalTypeName(nm) ); }
+
+    static String functionRoleTypeName( String conn, String role, String nm ) {
+        return roleName(conn, role + "_" + functionGlobalTypeName(nm) ); }
+
     static String exceptionName( String nm ) {
         return "EXCEPTION_" + nm; }
 
