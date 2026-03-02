@@ -1160,9 +1160,7 @@ class EnvironmentCreationVisitor
     public T visitDataType(XCDParser.DataTypeContext ctx) {
         updateln(ctx);
         var tr = new TranslatorDataTypeContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1170,9 +1168,7 @@ class EnvironmentCreationVisitor
     public T visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorConditionalExpressionContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1180,9 +1176,7 @@ class EnvironmentCreationVisitor
     public T visitRange(XCDParser.RangeContext ctx) {
         updateln(ctx);
         var tr = new TranslatorRangeContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1190,9 +1184,7 @@ class EnvironmentCreationVisitor
     public T visitSet(XCDParser.SetContext ctx) {
         updateln(ctx);
         var tr = new TranslatorSetContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1200,9 +1192,7 @@ class EnvironmentCreationVisitor
     public T visitEqualityExpression(XCDParser.EqualityExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorEqualityExpressionContext();
-        T res = //  visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1210,9 +1200,7 @@ class EnvironmentCreationVisitor
     public T visitRelationalExpression(XCDParser.RelationalExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorRelationalExpressionContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1220,9 +1208,7 @@ class EnvironmentCreationVisitor
     public T visitAdditiveExpression(XCDParser.AdditiveExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorAdditiveExpressionContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1230,9 +1216,7 @@ class EnvironmentCreationVisitor
     public T visitMultiplicativeExpression(XCDParser.MultiplicativeExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorMultiplicativeExpressionContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1240,9 +1224,7 @@ class EnvironmentCreationVisitor
     public T visitUnaryExpression(XCDParser.UnaryExpressionContext ctx) {
         updateln(ctx);
         var tr = new TranslatorUnaryExpressionContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1250,9 +1232,7 @@ class EnvironmentCreationVisitor
     public T visitUnaryExpressionNotPlusMinus(XCDParser.UnaryExpressionNotPlusMinusContext ctx) {
         updateln(ctx);
         var tr = new TranslatorUnaryExpressionNotPlusMinusContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1260,9 +1240,7 @@ class EnvironmentCreationVisitor
     public T visitPrimary(XCDParser.PrimaryContext ctx) {
         updateln(ctx);
         var tr = new TranslatorPrimaryContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1270,9 +1248,7 @@ class EnvironmentCreationVisitor
     public T visitALiteral(XCDParser.ALiteralContext ctx) {
         updateln(ctx);
         var tr = new TranslatorALiteralContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
@@ -1280,9 +1256,7 @@ class EnvironmentCreationVisitor
     public T visitArraySize(XCDParser.ArraySizeContext ctx) {
         updateln(ctx);
         var tr = new TranslatorArraySizeContext();
-        T res = // visitChildren(ctx);
-        // res =
-            tr.translate(this, ctx);
+        T res = tr.translate(this, ctx);
         return res;
     }
 
