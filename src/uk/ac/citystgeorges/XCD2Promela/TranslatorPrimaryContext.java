@@ -34,7 +34,8 @@ public class TranslatorPrimaryContext implements TranslatorI {
         } else if (ctx.theException != null) {
             s = bv.component_variable_exception("ACTIONNOTKNOWN");
         } else if (ctx.funcCall!= null) {
-            var args = bv.visit(ctx.funcCall);
+            s = bv.visit(ctx.funcCall).get(0);
+            // bv.mywarning("FUNCTION call: " + s);
         } else if (ctx.arrayAcc!=null) {
             s = bv.visit(ctx.arrayAcc).get(0);
         } else
