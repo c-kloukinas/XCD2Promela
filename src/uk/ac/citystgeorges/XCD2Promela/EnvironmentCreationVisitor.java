@@ -516,28 +516,79 @@ class EnvironmentCreationVisitor
 
     @Override public T visitInlineFunctionDeclaration(XCDParser.InlineFunctionDeclarationContext ctx) {
         SymbolTable framenow = symbolTableNow();
-        String functionName = ctx.id.getText();
-        mywarning("TODO: InlineFunctionDeclaration: MUST COMPLETE (root, composite, component can all declare inline functions!");
-        return defaultResult();
+        String shortFunctionName = ctx.id.getText();
 
-        // LstStr inlineFunctionDecls
-        //     = ((framenow.type==XCD_type.componentt)
-        //        ? ((SymbolTableComponent)framenow).compConstructs.inlineFunctionDecls
-        //        : ((framenow.type==XCD_type.rolet)
-        //           ?((SymbolTableComponent)framenow).compConstructs.inlineFunctionDecls
-        //           : null));
-        // myassert(inlineFunctionDecls!=null
-        //          , "visitInlineFunctionDeclaration: framenow ("
-        //          +  framenow.compilationUnitID
-        //          + ") is of unsupported type "
-        //          + framenow.type);
-        // inlineFunctionDecls.add(functionName);
-        // SymbolTableFunction newctx
-        //     = framenow.makeSymbolTableFunction(ctx.id.getText(), ctx);
-        // return registerNewEnvironment(ctx.id.getText(), ctx
-        //                               , XCD_type.functiont
-        //                               , null // there's no size part
-        //                               , newctx);
+                CommonConstructs theCommonConstructs = null;
+        String myCo__ = "";     // compo(site|nent) or connector name
+        String myConn = "";
+        String myRole = "";
+        Function <String
+            , Function<String
+            , Function<String, String>>> functionName = null;
+        switch (framenow.type) {
+        case XCD_type.roott:
+            theCommonConstructs
+                = ((SymbolTableRoot)framenow).commonConstructs;
+            functionName  = c -> r -> n -> Names.functionGlobalTypeName (n);
+            break;
+        case XCD_type.compositet:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
+            myCo__ = framenow.compilationUnitID;
+            functionName  = c -> r -> n -> Names.functionCompTypeName (c, n);
+            break;
+        case XCD_type.componentt:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
+            myCo__ = framenow.compilationUnitID;
+            functionName  = c -> r -> n -> Names.functionCompTypeName (c, n);
+            break;
+        case XCD_type.connectort:
+            theCommonConstructs
+                = ((SymbolTableComposite)framenow).compConstructs;
+            myCo__ = framenow.compilationUnitID;
+            functionName  = c -> r -> n -> Names.functionConnTypeName (c, n);
+            break;
+        case XCD_type.rolet:
+            theCommonConstructs
+                = ((SymbolTableComponent)framenow).compConstructs;
+            myRole = framenow.compilationUnitID;
+            myCo__ = framenow.parent.compilationUnitID;
+            functionName  = c -> r -> n -> Names.functionRoleTypeName (c, r, n);
+            break;
+        default:
+            myassert(false, "Function " + shortFunctionName
+                     + " is inside a construct " + framenow.type
+                     + " that doesn't support functions"); break;
+        }
+        theCommonConstructs.inlineFunctions.add(shortFunctionName);
+
+        String functionFullName
+            = functionName.apply(myCo__).apply(myRole).apply(shortFunctionName);
+        // mywarning("Adding function \"" + shortFunctionName + "\" (\""
+        //           + functionFullName + "\")");
+
+        SymbolTableFunction newctx
+            = framenow.makeSymbolTableFunction(shortFunctionName, ctx);
+        TranslatorI tr = new TranslatorInlineFunctionDeclarationContext();
+        T res1 = registerNewEnvironment(shortFunctionName, ctx
+                                        , XCD_type.functiont
+                                        , null // there's no size part
+                                        , newctx, tr);
+
+        // get function's IdInfo and add its functionFullName
+        IdInfo funcIdInfo = getIdInfo(shortFunctionName);
+        funcIdInfo.variableTypeName = functionFullName;
+
+        // mywarning("TODO: InlineFunctionDeclaration: MUST COMPLETE (root, composite, component can all declare inline functions!");
+        String s = "#define " + functionFullName
+            + "(" + res1.get(0) + ") " + res1.get(1);
+
+        funcIdInfo.translation.add(s);
+        // mywarning("DEFFUNCTION: " + s);
+        T res = new T(1);
+        res.add(s);
+        return res;
     }
 
 
@@ -1108,117 +1159,130 @@ class EnvironmentCreationVisitor
     @Override
     public T visitDataType(XCDParser.DataTypeContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorDataTypeContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitConditionalExpression(XCDParser.ConditionalExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorConditionalExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitRange(XCDParser.RangeContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorRangeContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitSet(XCDParser.SetContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorSetContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitEqualityExpression(XCDParser.EqualityExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorEqualityExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = //  visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitRelationalExpression(XCDParser.RelationalExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorRelationalExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitAdditiveExpression(XCDParser.AdditiveExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorAdditiveExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitMultiplicativeExpression(XCDParser.MultiplicativeExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorMultiplicativeExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitUnaryExpression(XCDParser.UnaryExpressionContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorUnaryExpressionContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitUnaryExpressionNotPlusMinus(XCDParser.UnaryExpressionNotPlusMinusContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorUnaryExpressionNotPlusMinusContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitPrimary(XCDParser.PrimaryContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorPrimaryContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitALiteral(XCDParser.ALiteralContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorALiteralContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
     @Override
     public T visitArraySize(XCDParser.ArraySizeContext ctx) {
         updateln(ctx);
-        T res = visitChildren(ctx);
         var tr = new TranslatorArraySizeContext();
-        res = tr.translate(this, ctx);
+        T res = // visitChildren(ctx);
+        // res =
+            tr.translate(this, ctx);
         return res;
     }
 
@@ -1306,7 +1370,22 @@ class EnvironmentCreationVisitor
 
     @Override public T visitArgumentList(XCDParser.ArgumentListContext ctx) { return visitChildren(ctx); }
 
-    @Override public T visitFunctionInvocation(XCDParser.FunctionInvocationContext ctx) { return visitChildren(ctx); }
+    @Override public T visitFunctionInvocation(XCDParser.FunctionInvocationContext ctx) {
+        T res = new T(1);
+        String s = getIdInfo(ctx.funcName.getText()).variableTypeName + "(";
+        if (ctx.args!=null) {
+            var args = visit(ctx.args);
+            if (args.size()!=0) {
+                s += args.get(0);
+                for (int i = 1; i<args.size(); ++i) {
+                    s += ", " + args.get(i);
+                }
+            }
+        }
+        s += "); ";
+        res.add(s);
+        return res;
+    }
 
 
     @Override public T visitStatement(XCDParser.StatementContext ctx) {
