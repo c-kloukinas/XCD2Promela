@@ -32,6 +32,11 @@ component comp1(){
 component comp2(){
     bool requestMade := false;
     Amount chosenAmount :=  Little;
+
+	isTrue (bool a) { return a; }
+	negate (bool a) { return !a; }
+	areEqual(Amount a, Amount b) { return a==b; }
+
     emitter port emitter2 {
         @functional{
             when: true;
@@ -39,7 +44,7 @@ component comp2(){
         }
         emiTwo(Amount amount);
         @interaction{
-            waits: !requestMade;
+            waits: negate(requestMade);
         }
         @functional{
             when: true;
@@ -49,10 +54,10 @@ component comp2(){
     }
     consumer port consumer2{
         @interaction{
-            waits: requestMade==true;
+            waits: isTrue(requestMade);
         }
         @functional{
-            requires: am == chosenAmount  ;
+            requires: areEqual(am, chosenAmount)  ;
             ensures: requestMade:=false;
         }
         reqTwo(Amount am);
