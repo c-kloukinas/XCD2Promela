@@ -1,0 +1,11 @@
+functor		mappable
+
+catamorphism	collapsable
+
+monad		chainable
+
+monoid		aggregatable
+
+currying	(apply one argument at a time)
+
+applicative	y

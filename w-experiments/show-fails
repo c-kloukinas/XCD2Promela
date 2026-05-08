@@ -1,0 +1,11 @@
+#! /bin/sh -
+
+failed=`/bin/ls build/test/*.failed` 2> /dev/null
+
+if [ "z${failed}z" != zz ] ; then
+  for f in ${failed} ; do
+    echo ' *** ' $f ' *** '
+    cat $f
+  done \
+  | less
+fi

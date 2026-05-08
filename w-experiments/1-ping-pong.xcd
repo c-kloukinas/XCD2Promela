@@ -1,0 +1,56 @@
+// -*- mode: java -*-
+enum Amount := {None, Little, Average, Much};
+
+typedef byte ID;
+
+component pingerC() {
+    bool requestMadeI := false;
+    Amount chosenAmountI :=  Little;
+    emitter port pingerEmitterP {
+        @interaction{
+            waits: !requestMadeI;
+        }
+        @functional{
+            promises: amountI := chosenAmountI;
+            ensures:  requestMadeI:=true;
+        }
+        ping(Amount amountI);
+    }
+}
+
+component pongerC(){
+    bool requestMadeO := false;
+    Amount chosenAmountO :=  Little;
+    consumer port pongerConsumerP {
+        @interaction{
+            waits: requestMadeO==true;
+        }
+        @functional{
+            requires: amountO == chosenAmountO;
+            ensures: requestMadeO:=false;
+        }
+        ping(Amount amountO);
+    }
+}
+
+connector linkEm(pingerR{pingerEmitterVarP}, pongerR{pongerConsumerVarP}) {
+    role pingerR {
+        emitter port_variable pingerEmitterVarP{
+            ping();
+        }
+    }
+    role pongerR {
+        consumer port_variable pongerConsumerVarP{
+            ping();
+        }
+    }
+    connector async link(pingerR{pingerEmitterVarP}, pongerR{pongerConsumerVarP});
+}
+
+component together() {
+    component pingerC pi();
+    component pongerC po();
+
+    connector linkEm link(pi{pingerEmitterP}, po{pongerConsumerP});
+}
+component together config();
