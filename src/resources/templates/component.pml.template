@@ -1,0 +1,22 @@
+#include "TYPE_Action.h"
+#include "TYPE_EXCEPTIONS.h"
+FOR$<enumsAndTypedefs>#include "XcD_PACKAGE.h"
+
+proctype instance_name(CompositeName,CompositeID,$<compName>,CompInstanceID,Instance)() {
+
+  // Declare the variables of all roles that this component has
+  // assumed.
+  Component_i_roleData($<compName>, CompInstanceID, Instance);
+
+  // Declare all variables that the component itself has.
+  FOR$<varDefinitions>
+
+  // Declare all variables needed to handle channels, along with the
+  // channels themselves (if any).
+  FOR$<channelVarDefinitions>
+
+  Start$<compName>:
+  do
+    FOR$<actionsOfPorts>
+  od
+}
