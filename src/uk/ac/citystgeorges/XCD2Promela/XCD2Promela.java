@@ -49,7 +49,7 @@ public class XCD2Promela {
 */
         // Read the XcD_PACKAGE.h file and write it in the output directory
         Utils.withInputAndFileToWrite
-            ("/resources/XcD_PACKAGE.h"
+            ("/resources/definitions/XcD_PACKAGE.h"
              , "XcD_PACKAGE.h"
              , (String inp) -> {
                 return inp;
