@@ -1,0 +1,85 @@
+/*
+ * A `proc` connector establishes a connection between a `required`
+ * and a `provided` port.
+ *
+ * Unlike an `async` connector, a `proc` connector connects two
+ * (`async`) ports on each side; one where the callee expects a call
+ * and the other where the caller expects the result.
+ *
+ * The methods/results themselves are of no importance, so we can
+ * represent their names with `*`.
+ *
+ * However, unlike an `async` connector, there _are_ interaction
+ * constraints:
+ *
+ * (a) the caller cannot make another call before having received a
+ * response to its previous call, and
+ *
+ * (b) the callee cannot send a response before having received a
+ * call first.
+ *
+ * Why is it a "sketch" instead of the actual implementation? Not
+ * because of using an `*` to represent events - it can be
+ * accommodated. Rather, it is because:
+ *
+ * (1/2) it allows callees to impose further interaction constraints
+ * on when they send a response, when the procedure call protocol
+ * requires them to send something (result/exception) whenever they
+ * have received a call - they cannot refuse/delay it.
+ *
+ * (2/2) Similarly, it allows callers to impose further interaction
+ * constraints on when they receive a response, when the procedure
+ * call protocol requires them to receive the response whenever they
+ * have made a call - they cannot refuse/delay it.
+ *
+ * (This `proc` sketch would also allow the components to send/receive
+ * other events between the call/result, which would simply increase
+ * the state-space, without offering any modelling advantage.)
+ *
+ * Note: the use of `*` shows that in some cases there is a need for
+ * some reflection mechanism in a protocol, so it can represent
+ * general constraints/actions on method names/arities/etc. Example:
+ * how can one represent a connector that logs any event exchanged?
+ * (cf. first-order vs higher-order logic)
+ */
+
+connector proc (caller{send_call,get_result}, callee{get_call,send_result}) {
+  role caller {
+    bool call_pending := false;
+    emitter  port_variable send_call {
+      @interaction {
+        allows: !call_pending;
+        ensures: call_pending := !call_pending;
+      }
+      *; // match any event representing a call
+    }
+    consumer port_variable get_result {
+      @interaction {
+        allows: call_pending;
+        ensures: call_pending := !call_pending;
+      }
+      *; // match any event representing a result
+    }
+  }
+
+  role callee {
+    bool call_pending := false;
+    consumer port_variable get_call {
+      @interaction {
+        allows: !call_pending;
+        ensures: call_pending := !call_pending;
+      }
+      *; // match any event representing a call
+    }
+    emitter  port_variable send_result {
+      @interaction {
+        allows: call_pending;
+        ensures: call_pending := !call_pending;
+      }
+      *; // match any event representing a result
+    }
+  }
+
+  connector async caller2callee( caller{send_call}  , callee{get_call}   );
+  connector async callee2caller( callee{send_result}, caller{get_result} );
+}

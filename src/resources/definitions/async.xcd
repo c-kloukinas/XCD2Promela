@@ -1,0 +1,19 @@
+/*
+ * An async connector is simply establishing a connection between an
+ * emitter and a consumer port.
+ *
+ * There are no constraints to be imposed on the events that are
+ * exchanged over this connection.
+ * Indeed, the names/parameters of the events themselves are of no
+ * interest.
+ */
+
+connector async (sender{sending}, recipient{receiving}) {
+  role sender {
+    emitter port_variable sending {}
+  }
+
+  role recipient {
+    consumer port_variable receiving {}
+  }
+}
