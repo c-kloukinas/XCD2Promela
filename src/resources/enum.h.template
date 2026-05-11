@@ -1,4 +1,0 @@
-#ifndef $<name>
-#define $<name>  mtype
-mtype = { FOR$<values> }
-#endif
