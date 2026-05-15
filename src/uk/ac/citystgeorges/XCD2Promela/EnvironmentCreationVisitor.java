@@ -703,7 +703,7 @@ class EnvironmentCreationVisitor
 
         // produce translation
         Utils.withInputAndFileToWrite
-                    ("/resources/enum.h.template"
+                    ("/resources/templates/enum.h.template"
                      , "TYPE_" + enumFullName + ".h"
                      , (String confFileContents) -> {
                 return confFileContents
@@ -786,7 +786,7 @@ class EnvironmentCreationVisitor
 
         // produce translation
         Utils.withInputAndFileToWrite
-                    ("/resources/typedef.h.template"
+                    ("/resources/templates/typedef.h.template"
                      , "TYPE_" + typedefFullName + ".h"
                      , (String confFileContents) -> {
                 return confFileContents
@@ -1062,7 +1062,7 @@ class EnvironmentCreationVisitor
         getSTbl().add(newctx);
         T res=visitChildren(ctx);
         Utils.withInputAndFileToWrite
-            ("/resources/configuration.pml.template"
+            ("/resources/templates/configuration.pml.template"
              , "configuration.pml"
              , (String confFileContents) -> {
                 if (newctx.map.size()!=2) {
