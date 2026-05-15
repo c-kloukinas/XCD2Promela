@@ -168,7 +168,7 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             }
             void close();
             @interaction{
-                allows: opened && clientIndex == @;
+                allows: opened ; // FIXME BUG - which array does this @ refer to? && clientIndex == @;
                 ensures: clientIndex \in [0, numOfClients-1];
             }
             byte request();
@@ -191,7 +191,7 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             }
             void close();
             @interaction{
-                allows: opened  && serverIndex == @;
+                allows: opened ; // FIXME BUG - which array does this @ refer to?  && serverIndex == @;
                 ensures: serverIndex \in [0, numOfServers-1];
             }
             byte request();
