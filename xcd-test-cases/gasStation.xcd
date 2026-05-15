@@ -43,11 +43,11 @@ component Cashier(ID N := 2){
 
     consumer port customer[N]{
         @interaction{
-            accepts: payment_amount[@] == None;
+            accepts: payment_amount[@] == None; // @ refers to customer[N]
         }
         @functional{
             requires: true;
-            ensures: payment_amount[@] := amount_arg;
+            ensures: payment_amount[@] := amount_arg; // @ refers to customer[N]
         }
         payF(Amount amount_arg);
     }
@@ -71,9 +71,9 @@ component Pump(ID N:=2){
     Amount payment_amount[N] := None;
     provided port oil[N]{
         @interaction{
-            waits: pumpReleased[@]==true;
+            waits: pumpReleased[@]==true; // @ refers to oil[N]
         }
-        @functional{
+        @functional{ // @ refers to oil[N]
             requires: payment_amount[@] != None;
             ensures: pumpReleased[@]:=false;
                       \result := payment_amount[@];
@@ -143,6 +143,7 @@ composite GasStation(ID N := 1){
     component Customer cust1[1]();
     component Cashier cash1(1);
     component Pump pump1(1);
+    // @ below refers to cust1[N] (should be N, not 1).
     connector Customer_Cashier conn1[1](cust1[@]{pay}, cash1{customer[@]});
     connector Customer_Pump conn2[1](cust1[@]{gas}, pump1{oil[@]});
     connector Cashier_Pump conn3(cash1{toPump}, pump1{fromCashier});

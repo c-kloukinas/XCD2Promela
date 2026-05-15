@@ -18,7 +18,7 @@ component initiator(int numOfParticipants, byte goodPrice){
         cfp(byte initAmount);
 
         @interaction{
-            waits: proposedAmount[@] <= maxAmount;
+            waits: proposedAmount[@] <= maxAmount; // @ refers to another array
         }
         @functional{
             when: true;
@@ -27,11 +27,11 @@ component initiator(int numOfParticipants, byte goodPrice){
         reject_proposal();
 
         @interaction{
-            waits:  proposedAmount[@] > maxAmount;
+            waits:  proposedAmount[@] > maxAmount; // @ refers to another array
         }
         @functional{
             when: true;
-            ensures: maxAmount := proposedAmount[@];
+            ensures: maxAmount := proposedAmount[@]; // @ refers to another array
         }
         accept_proposal();
     }
@@ -39,7 +39,7 @@ component initiator(int numOfParticipants, byte goodPrice){
     consumer port propose[numOfParticipants]{
         @functional{
             requires: true;
-            ensures:  proposedAmount[@] := propAmount;
+            ensures:  proposedAmount[@] := propAmount; // @ refers to another array
         }
         proposeAmount(byte propAmount);
     }

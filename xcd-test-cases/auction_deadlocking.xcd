@@ -19,6 +19,8 @@ component initiator(int numOfParticipants, byte goodPrice){
         cfp(byte initAmount);
 
         @interaction{
+            // this @ refers to the index/instance of the _auction_ array, NOT
+            // the _proposedAmount_ array.
             waits: proposedAmount[@] <= maxAmount;
         }
         @functional{
@@ -32,6 +34,8 @@ component initiator(int numOfParticipants, byte goodPrice){
         }
         @functional{
             when: true;
+            // this @ refers to the index/instance of the _auction_ array, NOT
+            // the _proposedAmount_ array.
             ensures: maxAmount := proposedAmount[@];
         }
         accept_proposal();
@@ -40,6 +44,8 @@ component initiator(int numOfParticipants, byte goodPrice){
     consumer port propose[numOfParticipants]{
         @functional{
             requires: true;
+            // this @ refers to the index/instance of the _propose_ array, NOT
+            // the _proposedAmount_ array.
             ensures:  proposedAmount[@] := propAmount;
         }
         proposeAmount(byte propAmount);
