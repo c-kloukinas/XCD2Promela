@@ -933,6 +933,7 @@ class EnvironmentCreationVisitor
         if (array_sz!=null) {
             T res = visit(array_sz);
             if (res.size()!=0) {
+                imInsideAnArrayInitialization = true;
                 idinfo.translation.add(res.get(0));
                 // mywarning("VarDecl: " + varName
                 //           + " has arraySz " + res.get(0));
@@ -964,6 +965,7 @@ class EnvironmentCreationVisitor
                 // mywarning("VarDecl: " + varName
                 //           + " has initVal null");
         }
+        imInsideAnArrayInitialization = false;
         return defaultResult();
     }
 
@@ -1239,6 +1241,19 @@ class EnvironmentCreationVisitor
     @Override
     public T visitPrimary(XCDParser.PrimaryContext ctx) {
         updateln(ctx);
+        /*
+         * A TK_AT should only appear inside a variableDefaultValue
+         * expression, and only when that is for an array (i.e., a
+         * varDecl whose arraySize exists) - set in method:
+          T visitVarOrParamDecl(String dtype
+                                , String varName
+                                , ArraySizeContext array_sz
+                                , VariableDefaultValueContext initVal
+                                , boolean isVar);
+         */
+        myassert(ctx.at==null
+                 || imInsideAnArrayInitialization
+                 , "An @ can only appear in the initialization of an array");
         var tr = new TranslatorPrimaryContext();
         T res = tr.translate(this, ctx);
         return res;
@@ -1753,4 +1768,7 @@ class EnvironmentCreationVisitor
         map.put(XCDParser.TK_REQUIRED, XCD_type.requiredvart);
         return map;
     }
+
+    // used to check if a TK_AT is acceptable in an expression.
+    boolean imInsideAnArrayInitialization = false;
 }
