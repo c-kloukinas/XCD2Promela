@@ -1,0 +1,30 @@
+/* include definitions of subconnectors */
+FOR$<connector_subconnectors>
+
+/* define macros for the following (variables, guards, conditional
+   actions), passing them as parameters the connector and role
+   parameters */
+FOR$<connector_role>(FOR$<connector_parameters>)
+
+  /* role variables should also contain the variables of any
+     sub-connector roles that this role has been associated with */
+  $<connector_role_variables>(FOR$<connector_role_parameters>)
+
+  FOR$<connector_role_ports>
+
+    FOR$<connector_role_port_events>
+
+      /* wait guards should be conjoined with the guards of any
+         sub-connector roles that this role has been associated with */
+      $<connector_role_port_event_wait>(FOR$<connector_parameters> FOR$<connector_role_parameters>)
+      /* conditional actions should be conjoined with the actions of
+         any sub-connector roles that this role has been associated
+         with */
+      $<connector_role_port_event_require_ensure>(FOR$<connector_parameters> FOR$<connector_role_parameters>)
+
+    FOR$<connector_role_port_methods>
+      /* same as with events */
+      $<connector_role_port_method_wait>(FOR$<connector_parameters> FOR$<connector_role_parameters>)
+      /* same as with events */
+      $<connector_role_port_method_require_ensure>(FOR$<connector_parameters> FOR$<connector_role_parameters>)
+
