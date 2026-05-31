@@ -266,8 +266,11 @@ class EnvironmentCreationVisitor
                       + " - parent is "
                       + printFrame(framenow));
         TranslatorI tr = null;
-        if (myType==XCD_type.rolet)
+        if (myType==XCD_type.rolet) {
             ((SymbolTableComposite)framenow).subcomponents.add(myName);
+            myassert(ctx.param==null
+                     , "Role \"" + myName + "\": roles cannot have parameters");
+        }
         // if (myType==XCD_type.componentt) // do this for roles as well.
         tr = new TranslatorComponentOrRoleDeclarationContext();
         SymbolTable newctx
