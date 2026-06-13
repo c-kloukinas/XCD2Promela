@@ -10,6 +10,11 @@ FOR$<connector_role>(FOR$<connector_parameters>)
      sub-connector roles that this role has been associated with */
   $<connector_role_variables>(FOR$<connector_parameters>)
 
+  /* role variable initialisation code - should also contain the
+     initialisation of any sub-connector role variables that this role
+     has been associated with */
+  $<connector_role_variable_initialisation>(FOR$<connector_parameters>)
+
   FOR$<connector_role_ports>
 
     FOR$<connector_role_port_events>

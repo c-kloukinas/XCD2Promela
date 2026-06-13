@@ -15,6 +15,10 @@ proctype instance_name(CompositeName,CompositeID,$<compName>,CompInstanceID,Inst
   // channels themselves (if any).
   FOR$<channelVarDefinitions>
 
+  /* Variable initialisation code - must contain role variable
+     initialisation too */
+  FOR$<varInitialisations>
+
   Start$<compName>:
   do
     FOR$<actionsOfPorts>
