@@ -18,19 +18,18 @@ connXroleYportZmethodQrequires
 
 connXroleYportZmethodQensures
 
-define(context,foo)
-
-define(`callWithParam', `
-  pushdef(`context',CAT(defn(`context'),bar))
-  define(`varName', CAT(context,$1))
-  define(`varName2', context`'$2`'$1) dnl or CAT(CAT(context,$2),$1))
-  define(`M', $1)
-  define(`mconnXroleYvars', `int m = M; bool ba[eval(M+1)] = 0;')
-  define(`mconnXroleYportZmethodQwaits', `m <= M && ba[m]')
-  define(`mconnXroleYportZmethodQrequires', `m > 0 || ! ba[m]')
-  define(`mconnXroleYportZmethodQensures', `m = (m+1)%M; ba[m]=1;')
-  popdef(`context')
-')
+define(context,foo)dnl
+define(`callWithParam', `dnl
+  pushdef(`context',CAT(defn(`context'),bar))dnl
+  define(`varName', CAT(context,$1))dnl
+  define(`varName2', context`'$2`'$1)dnl or CAT(CAT(context,$2),$1))
+  define(`M', $1)dnl
+  define(`mconnXroleYvars', `int m = M; bool ba[eval(M+1)] = 0;')dnl
+  define(`mconnXroleYportZmethodQwaits', `m <= M && ba[m]')dnl
+  define(`mconnXroleYportZmethodQrequires', `m > 0 || ! ba[m]')dnl
+  define(`mconnXroleYportZmethodQensures', `m = (m+1)%M; ba[m]=1;')dnl
+  popdef(`context')dnl
+')dnl
 
 context
 callWithParam(13,test)
