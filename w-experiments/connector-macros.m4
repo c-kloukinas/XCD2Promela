@@ -41,3 +41,30 @@ mconnXroleYportZmethodQwaits
 mconnXroleYportZmethodQrequires
 
 mconnXroleYportZmethodQensures
+
+divert(-1)dnl discard output - hash'ed comments don't copy over
+# https://share.google/aimode/GLgloHV60AFgpEv0l "In m4 can I recursively define a macro, so that it contains its previous definitions? And then pop the definitions?" -> "What if I need to implement conditional checks inside the recursion?"
+# Recursive macro that appends text until a limit is reached
+define(`countdown', `dnl
+ifelse(`$1', `0', `Blastoff!', `dnl
+$1... pushdef(`countdown', defn(`countdown'))dnl
+countdown(decr(`$1'))dnl
+')')
+divert(0)dnl
+countdown(3)
+
+divert(-1)
+define(`mystack', `Base Layer')
+pushdef(`mystack', `Middle Layer')
+pushdef(`mystack', `Top Layer')
+
+# Safely print and pop until the stack is empty
+define(`empty_stack', `dnl
+ifdef(`mystack', `dnl
+Current: mystack
+popdef(`mystack')dnl
+empty_stack()dnl
+', `Stack is fully cleared.
+')')
+divert(0)dnl
+empty_stack()
