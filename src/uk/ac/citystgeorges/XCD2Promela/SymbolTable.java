@@ -142,6 +142,12 @@ class CommonConstructs {
 
 class SymbolTableRoot extends SymbolTable {
     CommonConstructs commonConstructs = new CommonConstructs();
+    List<SymbolTableComposite> composites
+        = new ArrayList<SymbolTableComposite>();
+    List<SymbolTableComposite> connectors
+        = new ArrayList<SymbolTableComposite>();
+    List<SymbolTableComponent> components
+        = new ArrayList<SymbolTableComponent>();
     SymbolTableRoot() {
         super();
     }

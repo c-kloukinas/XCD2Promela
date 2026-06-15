@@ -162,6 +162,12 @@ class EnvironmentCreationVisitor
         SymbolTableComposite newctx
             = framenow.makeSymbolTableComposite(ctx.id.getText(), ctx
                                                 , myType, false);
+        // add to the list of composites/connectors
+        if (myType==XCD_type.connectort) {
+            rootContext.connectors.add(newctx);
+        } else {
+            rootContext.composites.add(newctx);
+        }
         TranslatorI tr = new TranslatorCompositeOrConnectorDeclarationContext();
         var res = registerNewEnvironment(ctx.id.getText(), ctx
                                          , myType
@@ -276,6 +282,9 @@ class EnvironmentCreationVisitor
         SymbolTable newctx
             = framenow.makeSymbolTableComponent(myName, ctx
                                                 , myType , false);
+        // add to the list of components (roles are not root-accessible)
+        if (myType==XCD_type.componentt)
+            rootContext.components.add((SymbolTableComponent)newctx);
         return registerNewEnvironment(myName, ctx
                                       , myType
                                       , (ArraySizeContext) null
