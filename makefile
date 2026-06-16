@@ -130,8 +130,7 @@ tests:	jar $(ALL_TESTS)
 
 test:  tests
 
-# cause a clean if the makefile changes
-clean:	makefile
+clean:
 	-rm -rf $(TARGETJAR) $(JBLDDIRFULL) $(BLDDIRFULL)
 
 backupf:	backup-full
