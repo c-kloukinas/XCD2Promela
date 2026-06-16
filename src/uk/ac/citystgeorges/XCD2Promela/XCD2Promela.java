@@ -22,6 +22,8 @@ public class XCD2Promela {
 
         // begin parsing at "compilationUnits" parse rule
         ParseTree tree = parser.compilationUnits();
+        int parsing_errors = parser.getNumberOfSyntaxErrors();
+        Utils.myAssert(0 == parsing_errors, "Encountered parsing errors - stopping");
 
         Utils.myWarning("***First parser pass***");
         // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
