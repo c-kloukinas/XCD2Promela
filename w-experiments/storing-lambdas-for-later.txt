@@ -1,0 +1,130 @@
+# In a perfect world, when there's a parsing error or a semantic check failure,
+# there should be no code produced. To achieve so, all the code-producing code
+# should be run at the end, so should be stored in a list.
+
+        List<Runnable> tasks = new ArrayList<>();
+
+        // Add lambdas to the list
+        tasks.add(() -> {System.out.println("Step 1: Initialising...");});
+        tasks.add(() -> {System.out.println("Step 2: Processing...");});
+        tasks.add(() -> {System.out.println("Step 3: Cleaning up...");});
+
+        // Execute all lambdas in order
+        for (Runnable task : tasks) {
+            task.run();
+        }
+
+# You said: can i store a java lambda in a variable or a list?
+
+Yes, you can store a Java lambda in both a variable and a list. [1, 2] 
+In Java, lambdas are treated as instances of Functional Interfaces (interfaces with exactly one abstract method). [3, 4, 5] 
+## Storing a Lambda in a Variable
+To store a lambda in a variable, the variable's type must be a functional interface. You can use standard built-in interfaces from the java.util.function package or create your own. [6, 7, 8] 
+
+import java.util.function.Consumer;
+public class Main {
+    public static void main(String[] args) {
+        // Store a lambda that prints a string in a Variable
+        Consumer<String> printer = message -> System.out.println(message);
+        
+        // Execute the lambda
+        printer.accept("Hello World!"); 
+    }
+}
+
+## Storing Lambdas in a List
+To store multiple lambdas in a list, declare the list using the specific functional interface type that matches the lambdas' signatures.
+
+import java.util.ArrayList;import java.util.List;import java.util.function.Function;
+public class Main {
+    public static void main(String[] args) {
+        // Create a list that holds functions taking an Integer and returning an Integer
+        List<Function<Integer, Integer>> operations = new ArrayList<>();
+
+        // Add different lambdas to the list
+        operations.add(x -> x + 2);
+        operations.add(x -> x * 3);
+        operations.add(x -> x - 1);
+
+        // Execute the lambdas sequentially on a starting value
+        int value = 5;
+        for (Function<Integer, Integer> op : operations) {
+            value = op.apply(value);
+        }
+
+        System.out.println(value); // Outputs 20 -> ((5 + 2) * 3) - 1
+    }
+}
+
+## Common Built-in Interfaces to Use
+
+* Predicate<T>: Takes one argument, returns a boolean.
+* Function<T, R>: Takes one argument of type T, returns a result of type R.
+* Consumer<T>: Takes one argument, returns nothing (void).
+* Supplier<T>: Takes no arguments, returns a result of type T.
+* Runnable: Takes no arguments, returns nothing (void). [9, 10, 11, 12, 13] 
+
+To help tailor a specific code example, tell me:
+
+* What inputs do your lambdas need?
+* What outputs should they return?
+* What is the overall goal of your program?
+
+
+[1] [https://stackoverflow.com](https://stackoverflow.com/questions/36333121/java-stream-api-storing-lambda-expression-as-variable)
+[2] [https://www.youtube.com](https://www.youtube.com/watch?v=az0U03wt1fo)
+[3] [https://www.oracle.com](https://www.oracle.com/technical-resources/articles/java/lambda.html)
+[4] [https://www.acte.in](https://www.acte.in/java-lambda-expression)
+[5] [https://intellipaat.com](https://intellipaat.com/blog/lambda-expression-in-java/)
+[6] [https://dev.java](https://dev.java/learn/writing-your-first-lambda-expression/)
+[7] [https://blog.nashtechglobal.com](https://blog.nashtechglobal.com/a-brief-introduction-of-lambda-expression-in-java-how-to-use-lambda-expression/)
+[8] [https://medium.com](https://medium.com/@basecs101/java-8-lambda-expression-the-feature-that-you-must-know-e0d9f8a8bc13)
+[9] [https://medium.com](https://medium.com/@kolheankita15/java-8-lambda-expressions-cheat-sheet-4dbd65276299)
+[10] [https://medium.com](https://medium.com/@kumar.atul.2122/java-8-lambda-functional-interface-method-reference-stream-api-and-optional-class-f685143635fb)
+[11] [https://medium.com](https://medium.com/@djobbiafeff/lambda-expression-and-functional-interface-in-java-8-efaf43d0b8ce)
+[12] [https://www.digitalocean.com](https://www.digitalocean.com/community/tutorials/how-to-use-lambdas-in-java)
+[13] [https://anilr9.medium.com](https://anilr9.medium.com/mastering-java-lambda-expressions-d84544991d74)
+
+# You said: what if my lambda doesn't take arguments and doesn't return a type?
+
+If your lambda takes no arguments and returns nothing, you should use the Runnable interface. [1] 
+Alternatively, if your code throws a checked exception, you can use the Callable<Void> interface and return null.
+## Storing in a Variable
+
+// Using Runnable for code that returns nothing
+Runnable task = () -> System.out.println("Task executed!");
+// Execute the lambda
+task.run();
+
+## Storing in a List
+
+import java.util.ArrayList;import java.util.List;
+public class Main {
+    public static void main(String[] args) {
+        List<Runnable> tasks = new ArrayList<>();
+
+        // Add lambdas to the list
+        tasks.add(() -> System.out.println("Step 1: Initialising..."));
+        tasks.add(() -> System.out.println("Step 2: Processing..."));
+        tasks.add(() -> System.out.println("Step 3: Cleaning up..."));
+
+        // Execute all lambdas in order
+        for (Runnable task : tasks) {
+            task.run();
+        }
+    }
+}
+
+## Which Interface to Choose?
+
+* Use java.lang.Runnable for standard logic, background threads, or sequential event execution.
+* Use java.util.concurrent.Callable<Void> if your lambda throws checked exceptions (requires a return null; at the end). [2] 
+
+If you want to build this out further, let me know:
+
+* Will these tasks run sequentially or concurrently (in parallel)?
+* Do your tasks need to throw exceptions that you catch later?
+
+
+[1] [https://medium.com](https://medium.com/@bubu.tripathy/effective-lambda-expressions-in-java-2d4061dde77a)
+[2] [https://www.baeldung.com](https://www.baeldung.com/java-passing-method-parameter)
