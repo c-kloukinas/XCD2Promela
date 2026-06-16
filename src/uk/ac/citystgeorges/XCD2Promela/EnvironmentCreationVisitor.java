@@ -282,7 +282,6 @@ class EnvironmentCreationVisitor
             myassert(ctx.param==null
                      , "Role \"" + myName + "\": roles cannot have parameters");
         }
-        // if (myType==XCD_type.componentt) // do this for roles as well.
         tr = new TranslatorComponentOrRoleDeclarationContext();
         SymbolTable newctx
             = framenow.makeSymbolTableComponent(myName, ctx
@@ -1042,8 +1041,6 @@ class EnvironmentCreationVisitor
                 // mywarning(framenow.compilationUnitID
                 //        + "'s subcomponent of type "
                 //           + instance_name);
-            } else if (framenow instanceof SymbolTableComposite) {
-                ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
             } else {
                 myassert(false
                          , "CONNECTOR:\nCompilationUnitID=\"" + framenow.compilationUnitID
