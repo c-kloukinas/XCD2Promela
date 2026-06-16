@@ -159,17 +159,18 @@ class EnvironmentCreationVisitor
                       , "A composite does not accept a list of roles"
                       + " and their port variables as parameters");
 
+        String myName = ctx.id.getText();
         SymbolTableComposite newctx
-            = framenow.makeSymbolTableComposite(ctx.id.getText(), ctx
+            = framenow.makeSymbolTableComposite(myName, ctx
                                                 , myType, false);
         // add to the list of composites/connectors
         if (myType==XCD_type.connectort) {
-            rootContext.connectors.add(newctx);
+            rootContext.connectors.put(myName, newctx);
         } else {
-            rootContext.composites.add(newctx);
+            rootContext.composites.put(myName, newctx);
         }
         TranslatorI tr = new TranslatorCompositeOrConnectorDeclarationContext();
-        var res = registerNewEnvironment(ctx.id.getText(), ctx
+        var res = registerNewEnvironment(myName, ctx
                                          , myType
                                          // there's no size part
                                          , (ArraySizeContext) null
@@ -284,7 +285,7 @@ class EnvironmentCreationVisitor
                                                 , myType , false);
         // add to the list of components (roles are not root-accessible)
         if (myType==XCD_type.componentt)
-            rootContext.components.add((SymbolTableComponent)newctx);
+            rootContext.components.put(myName,(SymbolTableComponent)newctx);
         return registerNewEnvironment(myName, ctx
                                       , myType
                                       , (ArraySizeContext) null

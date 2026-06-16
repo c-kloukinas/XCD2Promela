@@ -142,12 +142,12 @@ class CommonConstructs {
 
 class SymbolTableRoot extends SymbolTable {
     CommonConstructs commonConstructs = new CommonConstructs();
-    List<SymbolTableComposite> composites
-        = new ArrayList<SymbolTableComposite>();
-    List<SymbolTableComposite> connectors
-        = new ArrayList<SymbolTableComposite>();
-    List<SymbolTableComponent> components
-        = new ArrayList<SymbolTableComponent>();
+    Map<String,SymbolTableComposite> composites
+        = new HashMap<String,SymbolTableComposite>();
+    Map<String,SymbolTableComposite> connectors
+        = new HashMap<String,SymbolTableComposite>();
+    Map<String,SymbolTableComponent> components
+        = new HashMap<String,SymbolTableComponent>();
     SymbolTableRoot() {
         super();
     }
