@@ -119,10 +119,19 @@ test1:  $(TESTDIR)/aegis_deadlocking.passed
 tests:	jar $(ALL_TESTS)
 	-rm -f $(TESTDIR)/*.failed
 	MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
+	@if [ z"`ls $(TESTDIR)/*.failed 2> /dev/null`" != z ] ; then \
+	  echo FAILED: ; grep 'There were ' $(TESTDIR)/*.failed | grep -v ' 0 ' ; \
+	fi
+	@if [ z"`ls $(TESTDIR)/*.passed 2> /dev/null`" != z ] ; then \
+          echo PASSED: ; grep 'There were ' $(TESTDIR)/*.passed | grep -v ' 0 ' ; \
+	else \
+	  echo 'NONE PASSED!' ; \
+	fi
 
 test:  tests
 
-clean:
+# cause a clean if the makefile changes
+clean:	makefile
 	-rm -rf $(TARGETJAR) $(JBLDDIRFULL) $(BLDDIRFULL)
 
 backupf:	backup-full

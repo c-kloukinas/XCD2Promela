@@ -3,6 +3,7 @@ package uk.ac.citystgeorges.XCD2Promela;
 // import ANTLR's runtime libraries
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
+import java.util.List;
 import java.util.ArrayList;
 
 // import uk.ac.citystgeorges.XCD2Promela.XCDBaseVisitor;
@@ -22,12 +23,17 @@ public class XCD2Promela {
 
         // begin parsing at "compilationUnits" parse rule
         ParseTree tree = parser.compilationUnits();
-        int parsing_errors = parser.getNumberOfSyntaxErrors();
-        Utils.myAssert(0 == parsing_errors, "Encountered parsing errors - stopping");
+        int syntax_errors = parser.getNumberOfSyntaxErrors();
+        Utils.myAssert(0 == syntax_errors, "Encountered syntax errors");
 
         Utils.myWarning("***First parser pass***");
         // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
-        T res1 = new EnvironmentCreationVisitor().visit(tree);
+        EnvironmentCreationVisitor translator
+            = new EnvironmentCreationVisitor(syntax_errors);
+        List<Runnable> tasks = new ArrayList<Runnable>();
+        T res1 = translator.visit(tree);
+        int semantic_errors = translator.get_semantic_errors();
+        int warnings = translator.get_warnings();
         // if (res != null)
         //     for (String s : res) {
         //      System.err.println("RES: " + s);
@@ -50,11 +56,22 @@ public class XCD2Promela {
         System.out.println(); // print a \n after translation
 */
         // Read the XcD_PACKAGE.h file and write it in the output directory
-        Utils.withInputAndFileToWrite
-            ("/resources/definitions/XcD_PACKAGE.h"
-             , "XcD_PACKAGE.h"
-             , (String inp) -> {
-                return inp;
-            });
+        tasks.add(() -> Utils.withInputAndFileToWrite
+                  ("/resources/definitions/XcD_PACKAGE.h"
+                   , "XcD_PACKAGE.h"
+                   , (String inp) -> {
+                      return inp;
+                  }));
+        final var Err = System.err;
+        if (0 == syntax_errors && 0 == semantic_errors)
+            for (Runnable task : tasks)
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    Err.println(e);
+                }
+        Err.println("There were " + syntax_errors + " syntax errors");
+        Err.println("There were " + semantic_errors + " semantic errors");
+        Err.println("There were " + warnings + " warnings");
     }
 }

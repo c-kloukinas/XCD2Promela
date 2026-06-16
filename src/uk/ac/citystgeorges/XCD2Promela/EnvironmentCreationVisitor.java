@@ -19,8 +19,12 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
 class EnvironmentCreationVisitor
     extends BaseVisitor<uk.ac.citystgeorges.XCD2Promela.T> {
+    EnvironmentCreationVisitor() { this(0); }
+    EnvironmentCreationVisitor(int syntax_errors) {
+        super(syntax_errors);
+    }
 
-    /*
+   /*
       See:
       https://www.antlr.org/api/Java/org/antlr/v4/runtime/tree/AbstractParseTreeVisitor.html#defaultResult()
       https://www.antlr.org/api/Java/org/antlr/v4/runtime/tree/AbstractParseTreeVisitor.html#aggregateResult(T,T)

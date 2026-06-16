@@ -96,23 +96,35 @@ class Utils {
         } while (null!=pl && !(pl instanceof Token));
         return (Token)pl;
     }
+    // public static void myAssertHard(boolean cond, String msg) {
+    //     assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
+    // public void myassertHard(boolean cond, String msg) {
+    //     msg = "error(line " +ln + ", char " + atchar + "): " + msg;
+    //     Utils.myAssertHard(cond,msg); }
+    private static int errors = 0;
+    public void reset_errors() {errors=0;}
+    public int get_errors() {return errors;}
     public static void myAssert(boolean cond, String msg) {
-        assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
+        if (!cond) System.err.println(msg);
+        errors += cond ? 0 : 1; }
     public void myassert(boolean cond, String msg) {
         msg = "error(line " +ln + ", char " + atchar + "): " + msg;
-        Utils.myAssert(cond,msg); }
+        Utils.myAssert(cond, msg); }
+    private static int warnings = 0;
+    public void reset_warnings() {warnings=0;}
+    public int get_warnings() {return warnings;}
     public static void myWarning(String msg) {
-        System.err.println(msg); }
+        System.err.println(msg); ++warnings; }
     public void mywarning(String msg) {
         msg = "warning(line " +ln + ", char " + atchar + "): " + msg;
         Utils.myWarning(msg); }
-    public void mySyntaxCheck(boolean cond, String msg) {
-        msg = "Syntax error (line " +ln + ", char " + atchar + "): " + msg;
-        if (!cond) {
-            System.err.println(msg);
-            System.exit(1);
-        }
-    }
+    // public void mySyntaxCheckHard(boolean cond, String msg) {
+    //     msg = "Syntax error (line " +ln + ", char " + atchar + "): " + msg;
+    //     if (!cond) {
+    //         System.err.println(msg);
+    //         System.exit(1);
+    //     }
+    // }
 
     public static final Utils util = new Utils();
 }

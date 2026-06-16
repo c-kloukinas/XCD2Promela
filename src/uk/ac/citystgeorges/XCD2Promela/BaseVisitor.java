@@ -28,6 +28,19 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
      // extends AbstractParseTreeVisitor<T> implements XCDVisitor<T>
      extends XCDBaseVisitor<T>
 {
+    static protected int syntax_errors = 0;
+    BaseVisitor() { this(0); }
+    BaseVisitor(int syntax_errors) {
+        super();
+        BaseVisitor.syntax_errors = syntax_errors;
+        reset_semantic_errors();
+        reset_warnings();
+    }
+    public void reset_semantic_errors() {Utils.util.reset_errors();}
+    public int get_semantic_errors() {return Utils.util.get_errors();}
+    public void reset_warnings() {Utils.util.reset_warnings();}
+    public int get_warnings() {return Utils.util.get_warnings();}
+
     static String getTokenString(Token tk)
     { return getTokenString(tk.getType()); }
     static String getTokenString(int token) {
@@ -68,7 +81,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     static protected void myAssert(boolean cond, String msg) {
         Utils.myAssert(cond, msg); }
     protected void myassert(boolean cond, String msg) {
-        Utils.util.myassert(cond,msg); }
+        Utils.util.myassert(cond, msg); }
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
     protected void mySyntaxCheck(boolean cond, String msg)
