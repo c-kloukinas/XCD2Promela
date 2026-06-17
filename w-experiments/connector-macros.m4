@@ -68,3 +68,11 @@ empty_stack()dnl
 ')')
 divert(0)dnl
 empty_stack()
+
+divert(-1)dnl
+define(`includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) includeall(shift($@))')')')dnl
+divert(0)dnl
+e includeall
+e2 includeall()
+b includeall(foo)
+c includeall(foo,bar)
