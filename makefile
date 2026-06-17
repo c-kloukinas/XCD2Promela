@@ -117,15 +117,21 @@ $(TESTDIR):
 test1:  $(TESTDIR)/aegis_deadlocking.passed
 
 tests:	jar $(ALL_TESTS)
-	-rm -f $(TESTDIR)/*.failed
-	MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
-	@if [ z"`ls $(TESTDIR)/*.failed 2> /dev/null`" != z ] ; then \
-	  echo FAILED: ; grep 'There were ' $(TESTDIR)/*.failed | grep -v ' 0 ' ; \
-	fi
-	@if [ z"`ls $(TESTDIR)/*.passed 2> /dev/null`" != z ] ; then \
-          echo PASSED: ; grep 'There were ' $(TESTDIR)/*.passed | grep -v ' 0 ' ; \
+	-FAILURES=$(TESTDIR)/*.failed \
+	rm -f $${FAILURES}
+	-MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
+	@export SUCCESSES=$(TESTDIR)/*.passed ; \
+	if [ z"`ls $${SUCCESSES} 2> /dev/null`" != z ] ; then \
+          echo PASSED: `ls $${SUCCESSES} | wc -l` ; \
+	  egrep 'There were [^0]' $${SUCCESSES} ; \
 	else \
 	  echo 'NONE PASSED!' ; \
+	fi
+	@export FAILURES=$(TESTDIR)/*.failed ; \
+	if [ z"`ls $${FAILURES} 2> /dev/null`" != z ] ; then \
+	  echo FAILED: `ls $${FAILURES} | wc -l` ; \
+	  egrep 'There were [^0]' $${FAILURES} ; \
+	  exit 1 ; \
 	fi
 
 test:  tests
