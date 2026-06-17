@@ -74,5 +74,5 @@ define(`includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) inclu
 divert(0)dnl
 e includeall
 e2 includeall()
-b includeall(foo)
-c includeall(foo,bar)
+b includeall(y-ignore-me/foo)
+c includeall(y-ignore-me/foo,y-ignore-me/bar)
