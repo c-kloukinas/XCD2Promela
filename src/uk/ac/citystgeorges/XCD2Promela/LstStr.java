@@ -7,4 +7,5 @@ import java.util.ArrayList;
 class LstStr extends ArrayList<String> {
         LstStr() { super(); }
         LstStr(int sz) { super(sz); }
+        LstStr(LstStr other) { super(other); }
 };
