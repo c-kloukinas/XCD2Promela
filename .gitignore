@@ -29,6 +29,7 @@ replay_pid*
 # everything inside this folder, itself included
 y-ignore-me/
 jar-build/
+q-stage-on-onedrive
 
 # everything inside this folder but keep itself
 build/*
