@@ -132,6 +132,8 @@ tests:	jar $(ALL_TESTS)
 	  echo FAILED: `ls $${FAILURES} | wc -l` ; \
 	  egrep 'There were [^0]' $${FAILURES} ; \
 	  exit 1 ; \
+	else \
+	  echo FAILED: 0 ; \
 	fi
 
 test:  tests
