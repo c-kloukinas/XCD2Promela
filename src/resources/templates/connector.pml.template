@@ -1,35 +1,88 @@
-/* include definitions of subconnectors */
-FOR$<connector_subconnectors>
+dnl -*- mode: m4 -*-
+divert(-1)dnl discard output - hash'ed comments don't copy over
+define(`_CAT', `$1$2')dnl
+define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'_NAME(shift($@))')')')dnl
+define(`_EVALNAME', `_CAT(_NAME($@))')dnl
+# case 1: `includeall' (no parens) $#==0
+# case 2: `includeall()' $#==1, $1==`'
+# case 3: `includeall(foo)' $#==1, $1!=`'
+define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) includeall(shift($@))')')')dnl
+# include definitions of subconnectors
+_includeall($<connector_subconnectors>)
+dnl define(`drefine',`define($1,$2)')
+define(_$<connector_name>,dnl `...' evaluate code when the macro is used.
+`pushdef(`_context',defn(`_context'))'dnl
+`pushdef(`__prefixX',_NAME(_context,$<connector_name>,_varname))'dnl
+dnl  # use _ prefix to avoid name capture with user code
+dnl
+$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+dnl
+dnl  # define macros for the following (variables, guards, conditional
+dnl  # actions), [passing them the connector parameters (no need,
+     # parameters are pushed on the stack)]
+dnl
+dnl  # role variables should also contain the variables of any          TODO XXX
+dnl  # sub-connector roles that this role has been associated with
+$<connector_variables>dnl
+dnl
+dnl  # role variable initialisation code                                TODO XXX
+dnl
+dnl  # role variable initialisation code should also contain the        TODO XXX
+dnl  # initialisation of any sub-connector role variables that this
+dnl  # role has been associated with
+$<connector_variable_initialisations>dnl
+dnl  # Connector,Role,Port,Action guards (push/pop action prefix)       TODO XXX
+dnl
+dnl  # action guards should be CONJOINED with the guards of any         TODO XXX
+dnl  # sub-connector roles that this role has been associated with
+$<connector_role_port_action_guards>dnl
+dnl  # conditional updates for actions                                  TODO XXX
+dnl
+dnl  # conditional updates should be SEQUENCED with the updates of any  TODO XXX
+dnl  # sub-connector roles that this role has been associated
+dnl  # with. [SEQUENCED: first conditionally update your variables
+dnl  # if::fi, then update those of sub-connector roles.]
+$<connector_role_port_action_require_ensures>dnl
+dnl
+$<params_popdefs>dnl popdef(`$<param_name>')
+dnl
+`popdef(`__prefixX')'dnl
+dnl popdef(`_varname')'dnl
+`popdef(`_context')'dnl
+dnl # `define(hello,`goodbye')'dnl
+dnl # `define(zello$2,`goodbye')'dnl
+dnl # `define($2zello,`goodbye')'dnl
+dnl # `pushdef(`foo',`hi')'dnl
+dnl # `define(foo,`bye')'dnl
+)dnl
+# testing follows divert
+divert(0)dnl
+define(`_context',ROOT)
+define(`_varname',bar)
+dnl
+dnl hello, _CAT(zello,bar), _CAT(bar,zello) and hi
+dnl
+a0 _context
+b0 _varname
+dnl __$<connector_name>(_context,_varname)
+pushdef(`_context',defn(`_context')_foo)dnl
+pushdef(`_varname',bar)dnl
+a1 _context
+b1 _varname
+dnl _$<connector_name>(_context,_varname)$<connector_role_tests>
+_$<connector_name>$<params_fictional>$<connector_role_tests>
+popdef(`_context')dnl
+popdef(`_varname')dnl
+a2 _context
+b2 _varname $<connector_role_tests>
+dnl # c-start
+dnl # dumpdef(`__$<connector_name>')
+dnl # c-end dnl
 
-/* define macros for the following (variables, guards, conditional
-   actions), passing them as parameters the connector and role
-   parameters */
-FOR$<connector_role>(FOR$<connector_parameters>)
-
-  /* role variables should also contain the variables of any
-     sub-connector roles that this role has been associated with */
-  $<connector_role_variables>(FOR$<connector_parameters>)
-
-  /* role variable initialisation code - should also contain the
-     initialisation of any sub-connector role variables that this role
-     has been associated with */
-  $<connector_role_variable_initialisation>(FOR$<connector_parameters>)
-
-  FOR$<connector_role_ports>
-
-    FOR$<connector_role_port_events>
-
-      /* wait guards should be conjoined with the guards of any
-         sub-connector roles that this role has been associated with */
-      $<connector_role_port_event_wait>(FOR$<connector_parameters>)
-      /* conditional actions should be conjoined with the actions of
-         any sub-connector roles that this role has been associated
-         with */
-      $<connector_role_port_event_require_ensure>(FOR$<connector_parameters>)
-
-    FOR$<connector_role_port_methods>
-      /* same as with events */
-      $<connector_role_port_method_wait>(FOR$<connector_parameters>)
-      /* same as with events */
-      $<connector_role_port_method_require_ensure>(FOR$<connector_parameters>)
+pushdef(`_context',defn(`_context')_foo)dnl
+pushdef(`_varname',bar)$<connector_role_tests>
+popdef(`_context')dnl
+popdef(`_varname')dnl
+dnl
+dnl hello, _CAT(zello,bar), _CAT(bar,zello) and hi
 
