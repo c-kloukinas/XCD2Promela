@@ -39,6 +39,17 @@ class Utils {
         }
     }
 
+    public static String readInputFile(String fin) {
+        try (InputStream in
+             = XCD2Promela.class.getResourceAsStream(fin)
+             ; BufferedReader reader
+             = new BufferedReader(new InputStreamReader(in))) {
+            return reader.lines().collect(Collectors.joining("\n"))+"\n";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void withInputAndFileToWrite(String fin
                                                , String fout
                                                , Function<String,String> func) {
