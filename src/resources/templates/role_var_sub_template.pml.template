@@ -1,0 +1,4 @@
+`pushdef(`__prefixR',_NAME(__prefixX,$<role_name>))'dnl
+`define(__prefixR,dnl $<var_type> _NAME(_context,_varname,$<var_name>);
+$<connector_variables>)'dnl
+`popdef(`__prefixR')'dnl
