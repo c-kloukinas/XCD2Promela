@@ -141,7 +141,7 @@ public class TranslatorXComponent {
                 .visitVarOrParamDecl
                 ("bit"
                  , trVar
-                 , (ArraySizeContext)null
+                 , bv.sizeOne   // (ArraySizeContext)null
                  , (VariableDefaultValueContext)null
                  , true);
         }
@@ -151,7 +151,7 @@ public class TranslatorXComponent {
                 .visitVarOrParamDecl
                 ("byte"
                  , trVar
-                 , (ArraySizeContext)null
+                 , bv.sizeOne   // (ArraySizeContext)null
                  , (VariableDefaultValueContext)null
                  , true);
         }

@@ -141,9 +141,39 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         popLastSymbolTableReal();
     }
 
+    static private ArraySizeContext makeArraySize(int sz) {
+        if (sz==0 && sizeZero!=null)
+            return sizeZero;
+        if (sz==1 && sizeOne!=null)
+            return sizeOne;
+        org.antlr.v4.runtime.CharStream input
+            = org.antlr.v4.runtime.CharStreams.fromString("["+sz+"];");
+        // create a lexer that feeds off of input CharStream
+        XCDLexer lexer
+            = new XCDLexer(input);
+        // create a buffer of tokens pulled from the lexer
+        org.antlr.v4.runtime.CommonTokenStream tokens
+            = new org.antlr.v4.runtime.CommonTokenStream(lexer);
+        // create a parser that feeds off the tokens buffer
+        XCDParser parser
+            = new XCDParser(tokens);
+        // begin parsing at "arraySize" parse rule
+        ArraySizeContext tree
+            = (ArraySizeContext) parser.arraySize();
+        Utils.myWarning("---^^^ The size asked was " + sz
+                        + " & the one created is " + tree.constant.getText());
+        return tree;
+    }
+    final static public ArraySizeContext sizeOne
+        = makeArraySize(1);
+    final static public ArraySizeContext sizeZero
+        = makeArraySize(0);
+    final static public ArraySizeContext sizeOrOne(ArraySizeContext sz)
+    { return (sz!=null) ? sz : sizeOne; }
+
     final static public SymbolTableRoot rootContext = new SymbolTableRoot();
 
-    protected IdInfo addIdInfo(String symbol
+        protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, String varTypeName
                                , boolean is_paramp
                                , ArraySizeContext arraySize

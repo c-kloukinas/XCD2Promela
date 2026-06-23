@@ -42,7 +42,8 @@ class EnvironmentCreationVisitor
 
     @Override
     String component_variable_id(String var, ArraySizeContext index)
-    { return var
+    {   Utils.myAssertHard(index!=null, "Passed a null array size");
+        return var
             + "["
             + ((index==null)
                ? "1"
@@ -75,7 +76,7 @@ class EnvironmentCreationVisitor
                         , XCD_type.typet
                         , kword
                         , false
-                        , (ArraySizeContext)null
+                        , sizeZero // (ArraySizeContext)null
                         , (VariableDefaultValueContext)null
                         , compilationUnitID); }
 
@@ -89,7 +90,8 @@ class EnvironmentCreationVisitor
                                      , XCD_type tp
                                      , ArraySizeContext arraySize
                                      , SymbolTable newctx) {
-        return registerNewEnvironment(name, ctx, tp, arraySize, newctx, null);
+        return registerNewEnvironment(name, ctx, tp, arraySize, newctx
+                                      , (TranslatorI)null);
     }
     private T registerNewEnvironment(String name, ParserRuleContext ctx
                                      , XCD_type tp
@@ -120,7 +122,8 @@ class EnvironmentCreationVisitor
         globalIdInfo = addIdInfo(name, tp, false
                                  // roles,portvars,ports,sub-component/connector
                                  , arraySize
-                                 , null, framenow.compilationUnitID);
+                                 , (VariableDefaultValueContext)null
+                                 , framenow.compilationUnitID);
 
         // push new environment context
         pushSymbolTable(newctx);
@@ -177,7 +180,7 @@ class EnvironmentCreationVisitor
         var res = registerNewEnvironment(myName, ctx
                                          , myType
                                          // there's no size part
-                                         , (ArraySizeContext) null
+                                         , sizeZero // (ArraySizeContext) null
                                          , newctx, tr);
 
         if (myType==XCD_type.connectort) {
@@ -291,7 +294,7 @@ class EnvironmentCreationVisitor
             rootContext.components.put(myName,(SymbolTableComponent)newctx);
         return registerNewEnvironment(myName, ctx
                                       , myType
-                                      , (ArraySizeContext) null
+                                      , sizeZero // (ArraySizeContext) null
                                       , newctx, tr);
     }
 
@@ -316,7 +319,7 @@ class EnvironmentCreationVisitor
             ? portTypeToken2PortVarType.get(myTypeOfPort)
             : portTypeToken2PortType   .get(myTypeOfPort);
         String portName = ctx.id.getText();
-        XCDParser.ArraySizeContext thesz = ctx.size;
+        XCDParser.ArraySizeContext thesz = sizeOrOne(ctx.size);
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
 
@@ -398,7 +401,7 @@ class EnvironmentCreationVisitor
                                        , (imaMethod
                                           ? XCD_type.methodt
                                           : XCD_type.eventt)
-                                       , null // there's no size part
+                                       , sizeZero // there's no size part
                                        , newctx);
         /* registerNewEnvironment pops the context - re-push it so
          * that interaction/functional constraints will be processed
@@ -427,7 +430,7 @@ class EnvironmentCreationVisitor
                 IdInfo idinfo = addIdInfo(exc
                                           , XCD_type.exceptiont
                                           , false
-                                          , (ArraySizeContext)null
+                                          , sizeZero // (ArraySizeContext)null
                                           , (VariableDefaultValueContext)null
                                           , newctx.compilationUnitID);
                 idinfo.translation.add(Names.exceptionName(exc));
@@ -589,7 +592,7 @@ class EnvironmentCreationVisitor
         TranslatorI tr = new TranslatorInlineFunctionDeclarationContext();
         T res1 = registerNewEnvironment(shortFunctionName, ctx
                                         , XCD_type.functiont
-                                        , null // there's no size part
+                                        , sizeZero // there's no size part
                                         , newctx, tr);
 
         // get function's IdInfo and add its functionFullName
@@ -687,7 +690,7 @@ class EnvironmentCreationVisitor
                                         , XCD_type.enumt
                                         , "" // valuesAsAString - a hack...
                                         , false
-                                        , null
+                                        , sizeZero
                                         , null
                                         , framenow.compilationUnitID);
 
@@ -703,7 +706,7 @@ class EnvironmentCreationVisitor
             IdInfo valInfo = addIdInfo(vl
                                        , XCD_type.enumvalt
                                        , false
-                                       , null
+                                       , sizeZero
                                        , null
                                        , enumName.toString());
             valInfo.translation
@@ -788,7 +791,7 @@ class EnvironmentCreationVisitor
                         , XCD_type.typedeft
                         , typedefFullName // a hack
                         , false
-                        , null
+                        , sizeZero
                         , null
                         , framenow.compilationUnitID);
         mywarning("Added type \"" + newtype + "\" (\"" + typedefFullName
@@ -818,13 +821,8 @@ class EnvironmentCreationVisitor
         DataTypeContext dtypeCtx = ctx.type; // int, byte, bool, void, ID(long name)
         String dtype = visit(dtypeCtx).get(0);
         // always non-null for user-defined variables/parameters
-        ArraySizeContext array_sz
-            = // (ctx.size!=null)
-            // ? ctx.size
-            // : singleElementArraySize
-            ctx.size            // parameters: we don't want to add a
-                                // default size
-            ;
+        // Every instance is an array.
+        ArraySizeContext array_sz = sizeOrOne(ctx.size);
         VariableDefaultValueContext initVal = ctx.initval;
         T res = visitVarOrParamDecl(dtypeCtx
                                     , varName
@@ -991,7 +989,7 @@ class EnvironmentCreationVisitor
         String instance_name = ctx.id.getText();
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
-            ArraySizeContext sz = ctx.size;
+            ArraySizeContext sz = sizeOrOne(ctx.size);
             String component_def = ctx.userdefined.getText();
 
             if (ctx.params!=null)
@@ -1020,7 +1018,7 @@ class EnvironmentCreationVisitor
                 //           + instance_name);
             }
         } else if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
-            ArraySizeContext sz = ctx.connsize;
+            ArraySizeContext sz = sizeOrOne(ctx.connsize);
             String connector_def
                 = (ctx.userdefined!=null)
                 ? ctx.userdefined.getText()
@@ -1132,7 +1130,7 @@ class EnvironmentCreationVisitor
             return visitChildren(ctx);
 
         String roleName = ctx.role.getText();
-        ArraySizeContext sz = ctx.size;
+        ArraySizeContext sz = sizeOrOne(ctx.size);
         LstStr portParamNames = new LstStr();
         portParamNames.add(ctx.pv_pre.getText());
         for (var pv : ctx.pvs) {
@@ -1724,28 +1722,6 @@ class EnvironmentCreationVisitor
         return printFrameAndItsParent(fr, frP)
             + ", grandparent " + printFrame(frG);
     }
-
-    static private ArraySizeContext makeSingleElementArray() {
-        if (singleElementArraySize!=null)
-            return singleElementArraySize;
-        org.antlr.v4.runtime.CharStream input
-            = org.antlr.v4.runtime.CharStreams.fromString("byte foo [1];");
-        // create a lexer that feeds off of input CharStream
-        XCDLexer lexer
-            = new XCDLexer(input);
-        // create a buffer of tokens pulled from the lexer
-        org.antlr.v4.runtime.CommonTokenStream tokens
-            = new org.antlr.v4.runtime.CommonTokenStream(lexer);
-        // create a parser that feeds off the tokens buffer
-        XCDParser parser
-            = new XCDParser(tokens);
-        // begin parsing at "varDecl" parse rule
-        VarDeclContext tree
-            = (VarDeclContext) parser.varDecl();
-        return tree.size;
-    }
-    final static ArraySizeContext singleElementArraySize
-        = makeSingleElementArray();
 
     final static Map<Integer, XCD_type> portTypeToken2PortType
         = makePortTypeToken2PortType();

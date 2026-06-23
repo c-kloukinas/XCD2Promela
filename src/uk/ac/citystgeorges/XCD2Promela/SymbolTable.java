@@ -37,7 +37,7 @@ abstract class SymbolTable {
                 new IdInfo(tp
                            , is_paramp
                            // not an array, no array size
-                           , (ArraySizeContext)null
+                           , BaseVisitor.sizeZero // (ArraySizeContext)null
                            // no initial value
                            , (VariableDefaultValueContext)null
                            , ""     // parent (root)

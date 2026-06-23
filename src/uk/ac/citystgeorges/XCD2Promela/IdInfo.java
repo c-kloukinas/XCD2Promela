@@ -26,5 +26,8 @@ class IdInfo {
         // big_name = big;
         // var_prefix = prefix;
         parent = prnt;
+
+        Utils.myAssertHard(arraySize!=null // || BaseVisitor.sizeZero==null
+                           , "Array size is null");
     }
 }
