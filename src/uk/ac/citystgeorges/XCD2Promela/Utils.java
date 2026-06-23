@@ -107,11 +107,11 @@ class Utils {
         } while (null!=pl && !(pl instanceof Token));
         return (Token)pl;
     }
-    // public static void myAssertHard(boolean cond, String msg) {
-    //     assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
-    // public void myassertHard(boolean cond, String msg) {
-    //     msg = "error(line " +ln + ", char " + atchar + "): " + msg;
-    //     Utils.myAssertHard(cond,msg); }
+    public static void myAssertHard(boolean cond, String msg) {
+        assert cond : msg ; if (!cond) throw new RuntimeException(msg); }
+    public void myassertHard(boolean cond, String msg) {
+        msg = "error(line " +ln + ", char " + atchar + "): " + msg;
+        Utils.myAssertHard(cond,msg); }
     private static int errors = 0;
     public void reset_errors() {errors=0;}
     public int get_errors() {return errors;}
