@@ -116,9 +116,9 @@ $(TESTDIR):
 
 test1:  $(TESTDIR)/aegis_deadlocking.passed
 
+FAILURES0=$(TESTDIR)/*.failed
 tests:	jar $(ALL_TESTS)
-	-FAILURES=$(TESTDIR)/*.failed \
-	rm -f $${FAILURES}
+	-rm -f $(FAILURES0)
 	-MAIN=$(MAIN) make -k $(ALL_TESTS_PASSED)
 	@export SUCCESSES=$(TESTDIR)/*.passed ; \
 	if [ z"`ls $${SUCCESSES} 2> /dev/null`" != z ] ; then \
