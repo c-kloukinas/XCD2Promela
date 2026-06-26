@@ -9,6 +9,7 @@ dnl definition of the type for the role variables
   };dnl
  )dnl
  dnl add typedef to global type definitions
+ dnl the ifdef is really to avoid redefining the same type here
  define(`_GLOBAL_TYPEDEFS',dnl
  defn(`_GLOBAL_TYPEDEFS')dnl
   _NAME(__prefixX,$<role_name>,$<params_name_list>)dnl
