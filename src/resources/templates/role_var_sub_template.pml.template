@@ -1,6 +1,7 @@
 `pushdef(`__prefixR',dnl name of the type for the role variables
 _NAME(__prefixX,$<role_name>,$<params_name_list>))'dnl
 dnl definition of the type for the role variables
+dnl dnl The type should be independent of the context & var name TODO
 `ifdef(_NAME(__prefixX,$<role_name>,$<params_name_list>),,dnl
  define(_NAME(__prefixX,$<role_name>,$<params_name_list>),dnl
   typedef _NAME(TYPE,__prefixX,$<role_name>,$<params_name_list>) {dnl
