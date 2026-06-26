@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.function.Function;
 
 public class TranslatorXConnector {
 
@@ -138,24 +139,30 @@ public class TranslatorXConnector {
             final var X_subconnectors = _connector_subconnectors;
             final var X_variables = _connector_variables;
             final var X_role_tests = _connector_role_tests;
+            final Function<String, String> replace_template_arguments
+                = (String in) -> {
+                String res = in
+                .replace("$<connector_name>", _connector_name)
+                .replace("$<params_pushdefs>", pushdefs)
+                .replace("$<params_popdefs>", popdefs)
+                .replace("$<params_fictional>", fictionalparams)
+                .replace("$<connector_subconnectors>", X_subconnectors)
+                .replace("$<connector_variables>", X_variables)
+                .replace("$<connector_role_tests>", X_role_tests);
+                if (paramnameslist.equals(""))
+                    res = res.replace(",$<params_name_list>", "");
+                else
+                    res = res.replace("$<params_name_list>", paramnameslist);
+                return res;
+            };
             Utils.withInputAndFileToWrite
                 ("/resources/templates/connector.pml.template"
                  , "CONNECTOR_TYPE_" + _connector_name + ".pml.m4"
-                 , (String confFileContents) -> {
-                    String res = confFileContents
-                        .replace("$<connector_name>", _connector_name)
-                        .replace("$<params_pushdefs>", pushdefs)
-                        .replace("$<params_popdefs>", popdefs)
-                        .replace("$<params_fictional>", fictionalparams)
-                        .replace("$<connector_subconnectors>", X_subconnectors)
-                        .replace("$<connector_variables>", X_variables)
-                        .replace("$<connector_role_tests>", X_role_tests);
-                    if (paramnameslist.equals(""))
-                        res = res.replace(",$<params_name_list>", "");
-                    else
-                        res = res.replace("$<params_name_list>", paramnameslist);
-                    return res;
-                });
+                 , replace_template_arguments);
+            Utils.withInputAndFileToWrite
+                ("/resources/templates/z-testing-role.m4"
+                 , "z-testing-role.m4"
+                 , replace_template_arguments);
         }
 
         return new T();
