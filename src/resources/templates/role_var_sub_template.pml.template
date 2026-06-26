@@ -1,4 +1,20 @@
-`pushdef(`__prefixR',_NAME(__prefixX,$<role_name>))'dnl
-`define(__prefixR,dnl $<var_type> _NAME(_context,_varname,$<var_name>);
+`pushdef(`__prefixR',dnl name of the type for the role variables
+_NAME(__prefixX,$<role_name>,$<params_name_list>))'dnl
+dnl definition of the type for the role variables
+`ifdef(_NAME(__prefixX,$<role_name>,$<params_name_list>),,dnl
+ define(_NAME(__prefixX,$<role_name>,$<params_name_list>),dnl
+  typedef _NAME(TYPE,__prefixX,$<role_name>,$<params_name_list>) {dnl
+   $<connector_variables>dnl
+
+  };dnl
+ )dnl
+ dnl add typedef to global type definitions
+ define(`_GLOBAL_TYPEDEFS',dnl
+ defn(`_GLOBAL_TYPEDEFS')dnl
+  _NAME(__prefixX,$<role_name>,$<params_name_list>)dnl
+
+ )dnl
+)'dnl
+`define(__prefixR,dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
 $<connector_variables>)'dnl
 `popdef(`__prefixR')'dnl

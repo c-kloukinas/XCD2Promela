@@ -1,4 +1,6 @@
 dnl -*- mode: m4 -*-
+define(_GLOBAL_TYPEDEFS,dnl UNDEFINED
+)
 divert(-1)dnl discard output - hash'ed comments don't copy over
 define(`_CAT', `$1$2')dnl
 define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'_NAME(shift($@))')')')dnl
@@ -19,7 +21,7 @@ $<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
 dnl
 dnl  # define macros for the following (variables, guards, conditional
 dnl  # actions), [passing them the connector parameters (no need,
-     # parameters are pushed on the stack)]
+dnl  # parameters are pushed on the stack)]
 dnl
 dnl  # role variables should also contain the variables of any          TODO XXX
 dnl  # sub-connector roles that this role has been associated with
@@ -69,7 +71,8 @@ pushdef(`_context',defn(`_context')_foo)dnl
 pushdef(`_varname',bar)dnl
 a1 _context
 b1 _varname
-dnl _$<connector_name>(_context,_varname)$<connector_role_tests>
+c1 _GLOBAL_TYPEDEFS
+dnl _$<connector_name>(_context,_varname)$< connector_role_tests>
 _$<connector_name>$<params_fictional>$<connector_role_tests>
 popdef(`_context')dnl
 popdef(`_varname')dnl
@@ -86,3 +89,4 @@ popdef(`_varname')dnl
 dnl
 dnl hello, _CAT(zello,bar), _CAT(bar,zello) and hi
 
+cn _GLOBAL_TYPEDEFS

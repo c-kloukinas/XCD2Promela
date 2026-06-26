@@ -24,6 +24,9 @@ public class TranslatorXConnector {
         Map<String,Integer> params = new HashMap<String,Integer>();
         String _params_pushdefs = "";
         String _params_popdefs = "";
+        String _params_name_list = "";
+        // _params_fictional: param list with incremental int values
+        // for testing the macros
         String _params_fictional = "";
         for (int i = 0, sz = thisEnv.compConstructs.params.size(); i<sz; ) {
             String param = thisEnv.compConstructs.params.get(i);
@@ -33,10 +36,13 @@ public class TranslatorXConnector {
             _params_popdefs +=
                 "`popdef(`" + param + "')'dnl\n";
             _params_fictional += "," + i;
+            _params_name_list += "," + param;
         }
         // delete initial ',', if any
-        if (_params_fictional.length() != 0)
+        if (_params_fictional.length() != 0) {
             _params_fictional = _params_fictional.substring(1);
+            _params_name_list = _params_name_list.substring(1);
+        }
         _params_fictional = "(" + _params_fictional + ")";
         bv.myassert(thisEnv.compConstructs.vars==null
                     || thisEnv.compConstructs.vars.size()==0
@@ -104,7 +110,7 @@ public class TranslatorXConnector {
                 String variitype = variinfo.variableTypeName;
                 ArraySizeContext variszCtx = variinfo.arraySz;
                 _connector_role_variables +=
-                    "\t" + variitype
+                    "\n\t" + variitype
                     + ( " _NAME(__prefixR,"
                         + vari + ")" );
                 if (variszCtx!=null) {
@@ -128,6 +134,7 @@ public class TranslatorXConnector {
             final var pushdefs = _params_pushdefs;
             final var popdefs = _params_popdefs;
             final var fictionalparams = _params_fictional;
+            final var paramnameslist = _params_name_list;
             final var X_subconnectors = _connector_subconnectors;
             final var X_variables = _connector_variables;
             final var X_role_tests = _connector_role_tests;
@@ -135,7 +142,7 @@ public class TranslatorXConnector {
                 ("/resources/templates/connector.pml.template"
                  , "CONNECTOR_TYPE_" + _connector_name + ".pml.m4"
                  , (String confFileContents) -> {
-                    return confFileContents
+                    String res = confFileContents
                         .replace("$<connector_name>", _connector_name)
                         .replace("$<params_pushdefs>", pushdefs)
                         .replace("$<params_popdefs>", popdefs)
@@ -143,6 +150,11 @@ public class TranslatorXConnector {
                         .replace("$<connector_subconnectors>", X_subconnectors)
                         .replace("$<connector_variables>", X_variables)
                         .replace("$<connector_role_tests>", X_role_tests);
+                    if (paramnameslist.equals(""))
+                        res = res.replace(",$<params_name_list>", "");
+                    else
+                        res = res.replace("$<params_name_list>", paramnameslist);
+                    return res;
                 });
         }
 
