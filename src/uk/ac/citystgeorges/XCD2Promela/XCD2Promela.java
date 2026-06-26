@@ -55,10 +55,17 @@ public class XCD2Promela {
         walker.walk(new ShortToUnicodeString(), tree);
         System.out.println(); // print a \n after translation
 */
-        // Read the XcD_PACKAGE.h file and write it in the output directory
+        // // Read the XcD_PACKAGE.h file and write it in the output directory
+        // tasks.add(() -> Utils.withInputAndFileToWrite
+        //           ("/resources/definitions/XcD_PACKAGE.h"
+        //            , "XcD_PACKAGE.h"
+        //            , (String inp) -> {
+        //               return inp;
+        //           }));
+        // Add the M4 common definitions file.
         tasks.add(() -> Utils.withInputAndFileToWrite
-                  ("/resources/definitions/XcD_PACKAGE.h"
-                   , "XcD_PACKAGE.h"
+                  ("/resources/definitions/0-common-defs.m4"
+                   , "0-common-defs.m4"
                    , (String inp) -> {
                       return inp;
                   }));
