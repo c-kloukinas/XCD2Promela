@@ -120,12 +120,14 @@ public class TranslatorXConnector {
                 VariableDefaultValueContext varinitCtx = varinfo.initVal;
                 String rhs = "0";
                 if (varinitCtx!=null) { // rhs is an exp - translate it
-                    rhs = bv.visit(varinitCtx).get(0);
+                    // rhs = bv.visit(varinitCtx).get(0);
+                    rhs = new TranslatorAssignmentExpressionContext()
+                        .translate(bv,varinitCtx.assignExpr).get(0);
                 }
                 String varsz =
-                    // new TranslatorArraySizeContext()
-                    bv
-                    .visit(varszCtx).get(0);
+                    // bv.visit(varszCtx).get(0);
+                    new TranslatorArraySizeContext()
+                    .translate(bv,varszCtx).get(0);
                 if (varszCtx == bv.sizeOne) { // singleton
                     String lhseq = "  " + roleVarName + "[0] = ";
                     _connector_variable_initialisations

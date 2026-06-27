@@ -137,7 +137,7 @@ arraySize:
 ;
 // The following rule should be replaced by assignmentExpression
 variableDefaultValue:
-  assignmentExpression
+  assignExpr=assignmentExpression
   // icons=ID
   // | inum=NATURAL
   // | itrue=TK_TRUE
