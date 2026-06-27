@@ -24,7 +24,7 @@ dnl
 dnl  # role variable initialisation code should also contain the        TODO XXX
 dnl  # initialisation of any sub-connector role variables that this
 dnl  # role has been associated with
-$<connector_variable_initialisations>dnl
+dnl $<connector_variable_initialisations>dnl
 dnl  # Connector,Role,Port,Action guards (push/pop action prefix)       TODO XXX
 dnl
 dnl  # action guards should be CONJOINED with the guards of any         TODO XXX

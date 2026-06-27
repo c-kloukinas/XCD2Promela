@@ -81,6 +81,7 @@ public class TranslatorXConnector {
 
         String _connector_variables = "";
         String _connector_role_tests = "";
+        String _connector_variable_initialisations = "";
         String role_var_template = Utils.readInputFile
             ("/resources/templates/role_var_sub_template.pml.template");
         for (var _role_name : roles) {
@@ -106,19 +107,50 @@ public class TranslatorXConnector {
                         , "Cannot find symbol table of role " + _role_name);
             LstStr vars = roleST.compConstructs.vars;
 
-            for (String vari : vars) {
-                IdInfo variinfo = bv.getIdInfo(roleST, vari);
-                String variitype = variinfo.variableTypeName;
-                ArraySizeContext variszCtx = variinfo.arraySz;
+            for (String varn : vars) {
+                IdInfo varinfo = bv.getIdInfo(roleST, varn);
+                String vartype = varinfo.variableTypeName;
+                ArraySizeContext varszCtx = varinfo.arraySz;
+                String roleVarName = "_EVALNAME(__prefixR," + varn + ")";
                 _connector_role_variables +=
-                    "\n\t" + variitype
-                    + ( " _NAME(__prefixR,"
-                        + vari + ")" );
-                if (variszCtx!=null) {
-                    String varisz = new TranslatorArraySizeContext()
-                        .translate(bv, variszCtx).get(0);
-                    _connector_role_variables += "[" + varisz + "]";
+                    "\n\t" + vartype + " " + roleVarName;
+                Utils.myAssertHard(varszCtx!=null
+                                   , "Role var " + varn + " ("
+                                   + roleVarName + ") has no array size");
+                VariableDefaultValueContext varinitCtx = varinfo.initVal;
+                String rhs = "0";
+                if (varinitCtx!=null) { // rhs is an exp - translate it
+                    rhs = bv.visit(varinitCtx).get(0);
                 }
+                String varsz =
+                    // new TranslatorArraySizeContext()
+                    bv
+                    .visit(varszCtx).get(0);
+                if (varszCtx == bv.sizeOne) { // singleton
+                    String lhseq = "  " + roleVarName + "[0] = ";
+                    _connector_variable_initialisations
+                        += lhseq + rhs + ";\n";
+                } else { // proper array
+                    String loop_offset = bv.newgensym(compName);
+                    String init = "/* Loop to init sub-elements */\n"
+                        + "atomic_step {\n  int "
+                        + loop_offset
+                        + ";\n  "
+                        + loop_offset
+                        + " = 0;\n";
+                    init += "  do\n"
+                        + "   :: " + loop_offset + " < " + varsz
+                        + " -> \n       ";
+
+                    init += "      " + roleVarName + "[" + loop_offset + "] = ";
+                    init += rhs + ";\n";
+                    init += "   :: else -> break;\n  od;\n"
+                        + "  " + loop_offset + " = 0;\n";
+                    init += "}\n\n";
+                    _connector_variable_initialisations += init;
+                }
+
+                _connector_role_variables += "[" + varsz + "]";
                 _connector_role_variables += ";dnl\n";
             }
             _connector_variables += role_vars
@@ -139,6 +171,7 @@ public class TranslatorXConnector {
             final var X_subconnectors = _connector_subconnectors;
             final var X_variables = _connector_variables;
             final var X_role_tests = _connector_role_tests;
+            final var X_role_inits = _connector_variable_initialisations;
             final Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
@@ -148,7 +181,8 @@ public class TranslatorXConnector {
                 .replace("$<params_fictional>", fictionalparams)
                 .replace("$<connector_subconnectors>", X_subconnectors)
                 .replace("$<connector_variables>", X_variables)
-                .replace("$<connector_role_tests>", X_role_tests);
+                .replace("$<connector_role_tests>", X_role_tests)
+                .replace("$<connector_variable_initialisations>", X_role_inits);
                 if (paramnameslist.equals(""))
                     res = res.replace(",$<params_name_list>", "");
                 else

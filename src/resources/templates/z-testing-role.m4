@@ -28,4 +28,9 @@ popdef(`_varname')dnl
 dnl
 dnl hello, _CAT(zello,bar), _CAT(bar,zello) and hi
 
-cn _GLOBAL_TYPEDEFS
+ct _GLOBAL_TYPEDEFS
+
+cv _GLOBAL_VARDECLS
+
+ci _GLOBAL_INITS
+

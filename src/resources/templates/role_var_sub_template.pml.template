@@ -2,8 +2,8 @@
 _NAME(__prefixX,$<role_name>,$<params_name_list>))'dnl
 dnl definition of the type for the role variables
 dnl dnl The type should be independent of the context & var name TODO
-`ifdef(_NAME(__prefixX,$<role_name>,$<params_name_list>),,dnl
- define(_NAME(__prefixX,$<role_name>,$<params_name_list>),dnl
+`ifdef(_NAME(__prefixX,$<role_name>,$<params_name_list>,typedefs),,dnl
+ define(_NAME(__prefixX,$<role_name>,$<params_name_list>,typedefs),dnl
   typedef _NAME(TYPE,__prefixX,$<role_name>,$<params_name_list>) {dnl
    $<connector_variables>dnl
 
@@ -13,10 +13,14 @@ dnl dnl The type should be independent of the context & var name TODO
  dnl the ifdef is really to avoid redefining the same type here
  define(`_GLOBAL_TYPEDEFS',dnl
  defn(`_GLOBAL_TYPEDEFS')dnl
-  _NAME(__prefixX,$<role_name>,$<params_name_list>)dnl
+  _NAME(__prefixX,$<role_name>,$<params_name_list>,typedefs) dnl
 
  )dnl
 )'dnl
-`define(__prefixR,dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
+`define(_NAME(__prefixR,vardecls),dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
 $<connector_variables>)'dnl
+`define(`_GLOBAL_VARDECLS',defn(`_GLOBAL_VARDECLS') _NAME(__prefixR,vardecls))'
+`define(_NAME(__prefixR,inits),dnl
+  _CAT($<connector_variable_initialisations>))'dnl
+`define(`_GLOBAL_INITS',defn(`_GLOBAL_INITS') _NAME(__prefixR,inits))'
 `popdef(`__prefixR')'dnl
