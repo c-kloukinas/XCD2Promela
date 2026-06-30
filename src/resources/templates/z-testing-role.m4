@@ -12,17 +12,17 @@ a1 _context
 b1 _varname
 c1 _GLOBAL_TYPEDEFS
 dnl _$<connector_name>(_context,_varname)$< connector_role_tests>
-_$<connector_name>$<params_fictional>$<connector_role_tests>
+_$<connector_name>$<params_fictional>dnl $ <connector_role_tests>
 popdef(`_context')dnl
 popdef(`_varname')dnl
 a2 _context
-b2 _varname $<connector_role_tests>
+b2 _varname`'dnl $ <connector_role_tests>
 dnl # c-start
 dnl # dumpdef(`__$<connector_name>')
 dnl # c-end dnl
 
 pushdef(`_context',defn(`_context')_foo)dnl
-pushdef(`_varname',bar)$<connector_role_tests>
+pushdef(`_varname',bar)dnl $ <connector_role_tests>
 popdef(`_context')dnl
 popdef(`_varname')dnl
 dnl
