@@ -72,3 +72,52 @@ component comp2(){
     }
 }
 
+connector client2server_deadlock(byte numOfClients, byte numOfServers, client{service}, server{service}){
+    role client [numOfClients]{
+        bool opened := false;
+        byte clientIndex := @;
+
+        required port_variable service {
+            @interaction{
+                allows: !opened ;
+                ensures: opened := true;
+            }
+            void open();
+            @interaction{
+                allows: opened;
+                ensures: opened := false;
+            }
+            void close();
+            @interaction{
+                allows: opened && clientIndex == @;
+                ensures: clientIndex \in [0, numOfClients-1];
+            }
+            byte request();
+        }
+    }
+
+    role server [numOfServers] {
+        bool opened:=false;
+        byte serverIndex := @;
+
+        provided port_variable service{
+            @interaction{
+                allows: !opened;
+                ensures: opened:=true;
+            }
+            void open();
+            @interaction{
+                allows: opened ;
+                ensures: opened:= false;
+            }
+            void close();
+            @interaction{
+                allows: opened && serverIndex == @;
+                ensures: serverIndex \in [0, numOfServers-1];
+            }
+            byte request();
+        }
+    }
+
+    connector proc link(client{service}, server{service});
+}
