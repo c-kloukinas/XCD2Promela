@@ -2,6 +2,7 @@ dnl -*- mode: m4 -*-
 divert(-1)dnl discard output - hash'ed comments don't copy over
 dnl collect all typedefs that need to be done globally
 define(_GLOBAL_TYPEDEFS,dnl UNDEFINED
+
 )
 define(_GLOBAL_VARDECLS,dnl UNDEFINED
 )
@@ -20,3 +21,4 @@ define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) incl
 dnl define(`drefine',`define($1,$2)')
 
 divert(0)dnl
+
