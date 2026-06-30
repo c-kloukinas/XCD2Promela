@@ -28,7 +28,9 @@ compositeElement:
 ;
 
 componentOrRoleDeclaration:
-  struct=(TK_COMPONENT | TK_ROLE) id=ID (param=formalParameters)?
+  struct=(TK_COMPONENT | TK_ROLE) id=ID
+      (size=arraySize)?         // Roles can be an array - components NOT!
+      (param=formalParameters)?
   TK_LBRACE
     ( elements+=componentElement )+
   TK_RBRACE

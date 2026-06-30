@@ -279,6 +279,22 @@ class EnvironmentCreationVisitor
                       , "Role must be defined inside connectors"
                       + " - parent is "
                       + printFrame(framenow));
+        ArraySizeContext arSize
+            = (ctx.size==null)
+            ? ( (myType==XCD_type.rolet)
+                ? sizeOne
+                : sizeZero )
+            : ctx.size;
+        Utils.myAssertHard
+            ( myType!=XCD_type.rolet // role -> !sizeZero
+              || arSize!=sizeZero
+              , "A role cannot have a zero array size - internal error" );
+        mySyntaxCheck
+            ( myType==XCD_type.rolet // !role -> sizeZero
+              || arSize==sizeZero
+              , "Elemental component definitions, like for "
+              + myName + ", cannot have an array size.\n"
+              + "Only their instances inside composite components can." );
         TranslatorI tr = null;
         if (myType==XCD_type.rolet) {
             ((SymbolTableComposite)framenow).subcomponents.add(myName);
@@ -294,7 +310,7 @@ class EnvironmentCreationVisitor
             rootContext.components.put(myName,(SymbolTableComponent)newctx);
         return registerNewEnvironment(myName, ctx
                                       , myType
-                                      , sizeZero // (ArraySizeContext) null
+                                      , arSize
                                       , newctx, tr);
     }
 
