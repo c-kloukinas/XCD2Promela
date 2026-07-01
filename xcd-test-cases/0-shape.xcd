@@ -73,9 +73,9 @@ component comp2(){
 }
 
 connector client2server_deadlock(byte numOfClients, byte numOfServers, client{service}, server{service}){
-    role client [numOfClients]{
+    role client [@ic:numOfClients]{
         bool opened := false;
-        byte clientIndex := @;
+        byte clientIndex := @ic;
 
         required port_variable service {
             @interaction{
@@ -89,16 +89,16 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             }
             void close();
             @interaction{
-                allows: opened && clientIndex == @;
+                allows: opened && clientIndex == @ic;
                 ensures: clientIndex \in [0, numOfClients-1];
             }
             byte request();
         }
     }
 
-    role server [numOfServers] {
+    role server [@is:numOfServers] {
         bool opened:=false;
-        byte serverIndex := @;
+        byte serverIndex := @is;
 
         provided port_variable service{
             @interaction{
@@ -112,7 +112,7 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             }
             void close();
             @interaction{
-                allows: opened && serverIndex == @;
+                allows: opened && serverIndex == @is;
                 ensures: serverIndex \in [0, numOfServers-1];
             }
             byte request();

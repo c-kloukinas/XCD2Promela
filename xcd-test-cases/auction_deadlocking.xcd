@@ -4,7 +4,7 @@ component initiator(int numOfParticipants, byte goodPrice){
     byte proposedAmount[numOfParticipants] := 0;
     byte numOfRejections := 0;
 
-    emitter port auction[numOfParticipants]{
+    emitter port auction[@i:numOfParticipants]{
         startAuction();
 
         @interaction{
@@ -19,7 +19,7 @@ component initiator(int numOfParticipants, byte goodPrice){
         cfp(byte initAmount);
 
         @interaction{
-            waits: proposedAmount[@] <= maxAmount;
+            waits: proposedAmount[@i] <= maxAmount;
         }
         @functional{
             when: true;
@@ -28,19 +28,19 @@ component initiator(int numOfParticipants, byte goodPrice){
         reject_proposal();
 
         @interaction{
-            waits:  proposedAmount[@] > maxAmount;
+            waits:  proposedAmount[@i] > maxAmount;
         }
         @functional{
             when: true;
-            ensures: maxAmount := proposedAmount[@];
+            ensures: maxAmount := proposedAmount[@i];
         }
         accept_proposal();
     }
 
-    consumer port propose[numOfParticipants]{
+    consumer port propose[@j:numOfParticipants]{
         @functional{
             requires: true;
-            ensures:  proposedAmount[@] := propAmount;
+            ensures:  proposedAmount[@j] := propAmount;
         }
         proposeAmount(byte propAmount);
     }

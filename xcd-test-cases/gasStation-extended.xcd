@@ -48,13 +48,13 @@ component Cashier(ID N := 2){
         return payment_amount[i] != None;
     }
 
-    consumer port customer[N]{
+    consumer port customer[@i:N]{
         @interaction{
-            accepts: payment_amount[@] == None;
+            accepts: payment_amount[@i] == None;
         }
         @functional{
             requires: dummyVar10 == dummyVar10;
-            ensures: payment_amount[@] := amount_arg;
+            ensures: payment_amount[@i] := amount_arg;
         }
         payF(Amount amount_arg);
     }
@@ -77,19 +77,19 @@ component Pump(ID N:=2){
     bool dummyVar11 := true;
     bool pumpReleased[N] := false;
     Amount payment_amount[N] := None;
-    provided port oil[N]{
+    provided port oil[@i:N]{
         // @interaction{
         //   accepts: !false;
         // }
         @interaction{
             accepts: !false;
-            waits: pumpReleased[@]==true;
+            waits: pumpReleased[@i]==true;
         }
         @functional{
-            requires: payment_amount[@] != None;
-            ensures: pumpReleased[@]:=false;
-            \result := payment_amount[@];
-            requires: payment_amount[@] == None;
+            requires: payment_amount[@i] != None;
+            ensures: pumpReleased[@i]:=false;
+            \result := payment_amount[@i];
+            requires: payment_amount[@i] == None;
             ensures: \exception := MissingPaymentException;
         }
         Amount pump() throws MissingPaymentException;
@@ -186,12 +186,12 @@ connector Cashier_Pump(Cashier{toPump}, Pump{fromCashier}){
 
 // Add default value - represents Customer_MAX when this is the whole architecture.
 component GasStation(ID N := 1){
-    component Customer cust1[1]();
-    component Cashier cash1(1);
-    component Pump pump1(1);
+    component Customer cust1[@i:N]();
+    component Cashier cash1(N);
+    component Pump pump1(N);
 
-    connector Customer_Cashier conn1[1](cust1[@]{pay}, cash1{customer[@]});
-    connector Customer_Pump conn2[1](cust1[@]{gas}, pump1{oil[@]});
+    connector Customer_Cashier conn1[N](cust1[@i]{pay}, cash1{customer[@i]});
+    connector Customer_Pump conn2[N](cust1[@i]{gas}, pump1{oil[@i]});
     connector Cashier_Pump conn3(cash1{toPump}, pump1{fromCashier});
 }
 
