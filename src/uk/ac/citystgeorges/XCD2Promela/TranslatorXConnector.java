@@ -84,6 +84,24 @@ public class TranslatorXConnector {
         String role_var_template = Utils.readInputFile
             ("/resources/templates/role_var_sub_template.pml.template");
         for (var _role_name : roles) {
+            // find role's symbolTable and push it!!!
+            {                   // otherwise, id's will be missing.
+                SymbolTableComponent roleSTB = null;
+                int offset = 0;
+                int childrenSz = framenow.children.size();
+                while (roleSTB==null
+                       && offset<childrenSz) {
+                    SymbolTable child = framenow.children.get(offset);
+                    if (child.compilationUnitID.equals(_role_name))
+                        roleSTB = (SymbolTableComponent) child;
+                    else
+                        ++offset;
+                }
+                Utils.myAssertHard(roleSTB!=null
+                                   , "Couldn't find symbol table of role "
+                                   + _role_name);
+                bv.pushSymbolTable(roleSTB);
+            }
             String _role_variable_initialisations = "/** Initialising role "
                 + _role_name + " **/\n";
             IdInfo role = bv.getIdInfo(thisEnv, _role_name);
@@ -94,8 +112,10 @@ public class TranslatorXConnector {
             Utils.myAssertHard(roleArSz!=null && roleArSz!=bv.sizeZero
                                , "Role "+_role_name+" has a zero array size");
             String _roleArraySize =
-                new TranslatorArraySizeContext()
-                    .translate(bv,roleArSz).get(0);
+                // new TranslatorArraySizeContext()
+                //     .translate(bv,roleArSz).get(0)
+                bv.visit(roleArSz.arraySz).get(0);
+            // System.err.println("YYYYYY roleArSz: "+_roleArraySize+"\n");
             if (roleArSz!=bv.sizeOne) {
                 roleIndex = bv.newgensym(compName);
                 String init = "/* Loop to init role "
@@ -153,9 +173,11 @@ public class TranslatorXConnector {
                         .translate(bv,varinitCtx.assignExpr).get(0);
                 }
                 String varsz =
-                    // bv.visit(varszCtx).get(0);
-                    new TranslatorArraySizeContext()
-                    .translate(bv,varszCtx).get(0);
+                    // // bv.visit(varszCtx).get(0);
+                    // new TranslatorArraySizeContext()
+                    // .translate(bv,varszCtx).get(0)
+                    bv.visit(varszCtx.arraySz).get(0);
+                // System.err.println("ZZZZZZ varsz: "+varsz+"\n");
                 _role_variables +=
                     "\n\t" + vartype + " " + roleVarName
                     + "[" + varsz + "];dnl\n";
@@ -210,6 +232,10 @@ public class TranslatorXConnector {
                          , _role_variable_initialisations);
 
             // TODO
+
+
+            // Lastly (!!!) pop role's symbol table (roleSTB)
+            bv.popLastSymbolTable();
         }
         // _connector_variables = _connector_variables
         //     .replace("_context", "$1_" + _connector_name)

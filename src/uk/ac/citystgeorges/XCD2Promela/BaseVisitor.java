@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Deque; import java.util.ArrayDeque; // instead of Stack
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
@@ -161,7 +162,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         ArraySizeContext tree
             = (ArraySizeContext) parser.arraySize();
         Utils.myWarning("---^^^ The size asked was " + sz
-                        + " & the one created is " + tree.constant.getText());
+                        + " & the one created is " + tree.arraySz.getText());
         return tree;
     }
     final static public ArraySizeContext sizeOne
@@ -232,7 +233,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                 res=the_map.get(id);
             currEnv=currEnv.parent;
         }
-        myassert(res!=null, "getIdInfo: Symbol \"" + id + "\" not found");
+        myassert(res!=null, "getIdInfo: Symbol \"" + id + "\" not found inside "
+                 + symbolTableNow().compilationUnitID);
         return res;
     }
 
@@ -369,4 +371,6 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     }
 
     public int getTokenType( Token tk ) {return tk.getType();}
+
+    public Deque<String> stackOfArrays = new ArrayDeque<String>();
 }

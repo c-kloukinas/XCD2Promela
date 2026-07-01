@@ -134,7 +134,8 @@ varDecl:
 // The following rule should be replaced by arrayIndex
 arraySize:
   TK_LBRACKET
-    (constant = NATURAL |config_par = ID)
+    // (constant = NATURAL |config_par = ID)
+    (TK_AT atId=ID TK_COLON)? arraySz=expression
   TK_RBRACKET
 ;
 // The following rule should be replaced by assignmentExpression
@@ -163,7 +164,7 @@ connectorParameterList:
   TK_RPAR
 ;
 connectorParameter:
-  ( role= ID (size= arraySize)?
+  ( role= ID // (size= arraySize)?
     TK_LBRACE
       pv_pre= ID ( TK_COMMA pvs+= ID )*
     TK_RBRACE )
@@ -412,7 +413,7 @@ primary:
   lit=aLiteral
   | TK_LPAR parExpr=expression TK_RPAR
   | name=ID
-  | at=TK_AT                          // XXX: Extension - another form of ID
+  | TK_AT atId=ID                     // XXX: Extension - another form of ID
   | theResult=TK_RESULT               // XXX: Extension - another form of ID
   | theException=TK_EXCEPTION         // XXX: Extension - another form of ID
   | funcCall=functionInvocation

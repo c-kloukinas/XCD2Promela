@@ -16,12 +16,13 @@ public class TranslatorArraySizeContext
         return translate(bv, (ArraySizeContext)ctx); }
     public T translate(BaseVisitor<T> bv, ArraySizeContext ctx) {
         bv.updateln(ctx);
+        Utils.myAssertHard(false, "Should never be called!");
         T res = new T();
         String s = "";
-        if (ctx.constant!=null)
-            s = ctx.constant.getText();
-        else
-            s = translate_ID(bv, ctx.config_par.getText());
+        // if (ctx.constant!=null)
+        //     s = ctx.constant.getText();
+        // else
+        //     s = translate_ID(bv, ctx.config_par.getText());
         res.add(s);
         return res;
     }

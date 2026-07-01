@@ -285,6 +285,8 @@ class EnvironmentCreationVisitor
                 ? sizeOne
                 : sizeZero )
             : ctx.size;
+        if (ctx.size!=null)
+            stackOfArrays.addFirst(myName);
         Utils.myAssertHard
             ( myType!=XCD_type.rolet // role -> !sizeZero
               || arSize!=sizeZero
@@ -308,10 +310,11 @@ class EnvironmentCreationVisitor
         // add to the list of components (roles are not root-accessible)
         if (myType==XCD_type.componentt)
             rootContext.components.put(myName,(SymbolTableComponent)newctx);
-        return registerNewEnvironment(myName, ctx
-                                      , myType
-                                      , arSize
-                                      , newctx, tr);
+
+        var res=registerNewEnvironment(myName, ctx, myType, arSize, newctx, tr);
+        if (ctx.size!=null)
+            stackOfArrays.removeFirst();
+        return res;
     }
 
     @Override public T visitPortDeclaration(XCDParser.PortDeclarationContext ctx) {
@@ -336,6 +339,8 @@ class EnvironmentCreationVisitor
             : portTypeToken2PortType   .get(myTypeOfPort);
         String portName = ctx.id.getText();
         XCDParser.ArraySizeContext thesz = sizeOrOne(ctx.size);
+        if (ctx.size!=null)
+            stackOfArrays.addFirst(portName);
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
 
@@ -353,7 +358,10 @@ class EnvironmentCreationVisitor
 
         SymbolTablePort newctx
             = framenow.makeSymbolTablePort(portName, ctx, myType, false);
-        return registerNewEnvironment(portName, ctx, myType, thesz, newctx);
+        var res = registerNewEnvironment(portName, ctx, myType, thesz, newctx);
+        if (ctx.size!=null)
+            stackOfArrays.removeFirst();
+        return res;
     }
 
     @Override public T visitMethodContract(XCDParser.MethodContractContext ctx) {
@@ -839,6 +847,8 @@ class EnvironmentCreationVisitor
         // always non-null for user-defined variables/parameters
         // Every instance is an array.
         ArraySizeContext array_sz = sizeOrOne(ctx.size);
+        if (ctx.size!=null)
+            stackOfArrays.addFirst(varName);
         VariableDefaultValueContext initVal = ctx.initval;
         T res = visitVarOrParamDecl(dtypeCtx
                                     , varName
@@ -854,6 +864,8 @@ class EnvironmentCreationVisitor
             else
                 idinfo.type=XCD_type.mparamt;
         }
+        if (ctx.size!=null)
+            stackOfArrays.removeFirst();
         return res;
     }
 
@@ -1003,6 +1015,9 @@ class EnvironmentCreationVisitor
         var framenow = symbolTableNow().you();
         String compUnitId = framenow.compilationUnitID;
         String instance_name = ctx.id.getText();
+        if (ctx.size!=null || ctx.connsize!=null)
+            stackOfArrays.addFirst(instance_name);
+
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
             ArraySizeContext sz = sizeOrOne(ctx.size);
@@ -1066,6 +1081,9 @@ class EnvironmentCreationVisitor
                          + "\" of type \"" + connector_def + "\"\n");
             }
         } else {myassert(false, "Unknown element type inside component");}
+
+        if (ctx.size!=null || ctx.connsize!=null)
+            stackOfArrays.removeFirst();
 
         return defaultResult();
     }
@@ -1146,7 +1164,7 @@ class EnvironmentCreationVisitor
             return visitChildren(ctx);
 
         String roleName = ctx.role.getText();
-        ArraySizeContext sz = sizeOrOne(ctx.size);
+        // ArraySizeContext sz = sizeOrOne(ctx.size);
         LstStr portParamNames = new LstStr();
         portParamNames.add(ctx.pv_pre.getText());
         for (var pv : ctx.pvs) {
@@ -1283,8 +1301,23 @@ class EnvironmentCreationVisitor
     @Override
     public T visitArraySize(XCDParser.ArraySizeContext ctx) {
         updateln(ctx);
-        var tr = new TranslatorArraySizeContext();
-        T res = tr.translate(this, ctx);
+        // var tr = new TranslatorArraySizeContext();
+        if (ctx.atId!=null) {
+            String myName = ctx.atId.getText();
+            String myArrayIs = stackOfArrays.peekFirst();
+            Utils.myAssertHard(myArrayIs!=null
+                               , "Cannot assign @"+myName+" to an array");
+            // register @atId in the symbol table
+            IdInfo idinfo = addIdInfo(myName
+                                      , XCD_type.att
+                                      , // dtype (String)
+                                        myArrayIs
+                                      , false // is_paramp
+                                      , sizeZero
+                                      , (VariableDefaultValueContext)null
+                                      , symbolTableNow().compilationUnitID);
+        }
+        T res = visit(ctx.arraySz);
         return res;
     }
 

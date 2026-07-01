@@ -25,10 +25,13 @@ public class TranslatorPrimaryContext implements TranslatorI {
             String varid = ctx.name.getText();
             String trans = translate_ID(bv, varid);
             s = trans;
-        } else if (ctx.at != null) {
-            var framenow = bv.symbolTableNow();
-            var compTypeid = framenow.compilationUnitID;
-            s += "@UNKNOWNAT";
+        } else if (ctx.atId != null) {
+            // var framenow = bv.symbolTableNow();
+            // var compTypeid = framenow.compilationUnitID;
+            // s += "@UNKNOWNAT";
+            String varid = ctx.atId.getText();
+            String trans = translate_ID(bv, varid);
+            s = "@" + trans;
         } else if (ctx.theResult != null) {
             s = bv.component_variable_result("ACTIONNOTKNOWN");
         } else if (ctx.theException != null) {
@@ -49,6 +52,12 @@ public class TranslatorPrimaryContext implements TranslatorI {
         bv.myassert(id!=null && !id.equals("")
                     , "empty name for a variable");
         IdInfo idinfo = bv.getIdInfo(id);
+        Utils.myAssertHard(idinfo!=null
+                           , "Id \""+id+"\" has a null IdInfo");
+        Utils.myAssertHard(idinfo.type!=null
+                           , "Id \""+id+"\" has a null Idinfo.type");
+        if (idinfo.type==XCD_type.att) // variableTypeName is @id's array
+            return "@"+idinfo.variableTypeName+"@"+id;
         if (idinfo.type==XCD_type.typet
             || idinfo.type==XCD_type.typedeft) {
             if (idinfo.translation.size()!=0)
