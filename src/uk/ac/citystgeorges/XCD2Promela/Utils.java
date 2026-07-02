@@ -17,6 +17,10 @@ import java.util.function.Supplier;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.Tree;
 
+import java.util.Collection;            import java.util.Map;
+import java.util.function.Predicate;    import java.util.function.BiPredicate;
+import java.util.AbstractMap.SimpleImmutableEntry;
+
 class Utils {
     static public FileWriter myNewOutput(String fname) throws IOException {
         Files.createDirectories(Path.of(XCD2Promela.outputdir));
@@ -138,4 +142,46 @@ class Utils {
     // }
 
     public static final Utils util = new Utils();
+
+static public <E> SimpleImmutableEntry<E,Boolean> findIf(Collection<E> container, Predicate<E> p) {
+    for (E item : container)
+        if (p.test(item)) return new SimpleImmutableEntry<>(item,true);
+    return new SimpleImmutableEntry<>(null,false);
+}
+
+static public <E> SimpleImmutableEntry<E,Boolean> findIf(E[] container, Predicate<E> p) {
+    for (E item : container)
+        if (p.test(item)) return new SimpleImmutableEntry<>(item,true);
+    return new SimpleImmutableEntry<>(null,false);
+}
+
+static public <K,V> SimpleImmutableEntry<SimpleImmutableEntry<K,V>,Boolean> findIf(Map<K,V> container, BiPredicate<K,V> p) {
+    for (Map.Entry<K, V> entry : container.entrySet()) {
+        K key = entry.getKey(); V value = entry.getValue();
+        if (p.test(key, value))
+            return new SimpleImmutableEntry<>
+                (new SimpleImmutableEntry<>(key, value) , true);
+    }
+    return new SimpleImmutableEntry<>(null,false);
+}
+
+static public <E> boolean containsIf(Collection<E> container, Predicate<E> p) {
+    for (E item : container) if (p.test(item)) return true;
+    return false;
+}
+
+static public <E> boolean containsIf(E[] container, Predicate<E> p) {
+    for (E item : container) if (p.test(item)) return true;
+    return false;
+}
+
+static public <K,V> boolean containsIf(Map<K,V> container, BiPredicate<K,V> p) {
+    for (Map.Entry<K, V> entry : container.entrySet()) {
+        K key = entry.getKey(); V value = entry.getValue();
+        if (p.test(key, value))
+            return true;
+    }
+    return false;
+}
+
 }
