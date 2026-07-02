@@ -20,5 +20,14 @@ define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) incl
 
 dnl define(`drefine',`define($1,$2)')
 
+## _forloop(index,startValue,endValue,body) - body expanded while index<endValue
+#
+# _forloop(i, 3, 5,i*2 ) -> space needed after i*2, to separate results
+#
+# _forloop(i, 0, 5,`eval(i*2) ') -> eval (quoted!!!) needed to compute with i
+define(`_forloop',dnl
+`ifelse(eval($2 < $3), 1,dnl
+`pushdef(`$1', `$2')$4`'popdef(`$1')`'_forloop(`$1', incr($2), $3, `$4')',)')dnl
+
 divert(0)dnl
 
