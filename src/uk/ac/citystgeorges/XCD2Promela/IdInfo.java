@@ -3,11 +3,22 @@ package uk.ac.citystgeorges.XCD2Promela;
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
 class IdInfo {
+    private String getStackTrace() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String res = "";
+        for (StackTraceElement el : stackTrace) {
+            res += "Class: " + el.getClassName()
+                + " -> Method: " + el.getMethodName() + "\n";
+        }
+        return res;
+    }
+    String traceAtRegistration;
     XCD_type type;
     String  variableTypeName = null;
     boolean is_param;
     boolean has_post = false;
     ArraySizeContext arraySz;
+    String arrayIterator = "_i"; // name of iterator (@id) used on the array
     VariableDefaultValueContext initVal;
     LstStr translation = new LstStr();
     // String big_name;
@@ -19,6 +30,7 @@ class IdInfo {
            , VariableDefaultValueContext theInitVal
            // , String big, String prefix
            , String prnt){
+        traceAtRegistration = getStackTrace();
         type = tp;
         is_param = is_paramp;
         arraySz = arraySize;
