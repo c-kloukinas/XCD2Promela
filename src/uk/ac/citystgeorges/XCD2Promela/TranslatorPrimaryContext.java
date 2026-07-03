@@ -31,7 +31,8 @@ public class TranslatorPrimaryContext implements TranslatorI {
             // s += "@UNKNOWNAT";
             String varid = ctx.atId.getText();
             String trans = translate_ID(bv, varid);
-            s = "@" + trans;
+            s = // "@" +
+                trans;
         } else if (ctx.theResult != null) {
             s = bv.component_variable_result("ACTIONNOTKNOWN");
         } else if (ctx.theException != null) {
@@ -57,7 +58,8 @@ public class TranslatorPrimaryContext implements TranslatorI {
         Utils.myAssertHard(idinfo.type!=null
                            , "Id \""+id+"\" has a null Idinfo.type");
         if (idinfo.type==XCD_type.att) // variableTypeName is @id's array
-            return "@"+idinfo.variableTypeName+"@"+id;
+            return // "@"+idinfo.variableTypeName+"@"+id;
+                "_NAME(__prefixR," + id + ")";
         if (idinfo.type==XCD_type.typet
             || idinfo.type==XCD_type.typedeft) {
             if (idinfo.translation.size()!=0)
