@@ -1316,6 +1316,17 @@ class EnvironmentCreationVisitor
                                       , sizeZero
                                       , (VariableDefaultValueContext)null
                                       , symbolTableNow().compilationUnitID);
+            {
+                IdInfo arrayOfIterator = getIdInfo(myArrayIs);
+                String oldIterator = arrayOfIterator.arrayIterator;
+                myassert(oldIterator != null
+                         && oldIterator.equals("_i")
+                         , "An iterator (@"
+                         + oldIterator
+                         + ") has already been associated with array "
+                         + myName);
+                arrayOfIterator.arrayIterator = myName;
+            }
         }
         T res = visit(ctx.arraySz);
         return res;
