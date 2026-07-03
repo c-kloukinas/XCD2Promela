@@ -33,15 +33,6 @@ abstract class SymbolTable {
         parent = myparent;
         children = new ArrayList<SymbolTable>();
         map = new HashMap<String,IdInfo>();
-        map.put(compilationUnitID,
-                new IdInfo(tp
-                           , is_paramp
-                           // not an array, no array size
-                           , BaseVisitor.sizeZero // (ArraySizeContext)null
-                           // no initial value
-                           , (VariableDefaultValueContext)null
-                           , ""     // parent (root)
-                           ));
     }
     SymbolTable you() {// System.err.println("I'm a SymbolTable");
         return this;}
