@@ -26,23 +26,27 @@ public class TranslatorXConnector {
         String _params_pushdefs = "";
         String _params_popdefs = "";
         String _params_name_list = "";
+        String _params_name_real_list = "";
         // _params_fictional: param list with incremental int values
         // for testing the macros
         String _params_fictional = "";
         for (int i = 0, sz = thisEnv.compConstructs.params.size(); i<sz; ) {
             String param = thisEnv.compConstructs.params.get(i);
+            param = Names.paramNameConnector(_connector_name,param);
             params.put(param, ++i);
             _params_pushdefs +=
-                "`pushdef(`" + param + "',$" + i + ")'dnl\n";
+                "`pushdef(" + param + ",$" + i + ")'dnl\n";
             _params_popdefs +=
-                "`popdef(`" + param + "')'dnl\n";
+                "`popdef(" + param + ")'dnl\n";
             _params_fictional += "," + i;
             _params_name_list += "," + param;
+            _params_name_real_list += ",$" + i;
         }
         // delete initial ',', if any
         if (_params_fictional.length() != 0) {
             _params_fictional = _params_fictional.substring(1);
             _params_name_list = _params_name_list.substring(1);
+            _params_name_real_list = _params_name_real_list.substring(1);
         }
         _params_fictional = "(" + _params_fictional + ")";
         bv.myassert(thisEnv.compConstructs.vars==null
@@ -79,13 +83,16 @@ public class TranslatorXConnector {
             _connector_subconnectors = _connector_subconnectors.substring(1);
         // Err.println("Getting " + _connector_subconnectors);
 
+        // framenow.dumpSymbolsRec();
         String _connector_variables = "";
         // String _connector_role_tests = "";
         String role_var_template = Utils.readInputFile
             ("/resources/templates/role_var_sub_template.pml.template");
         for (var _role_name : roles) {
+            IdInfo role = bv.getIdInfo(thisEnv, _role_name);
+            String roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
             // find role's symbolTable and push it!!!
-            {                   // otherwise, id's will be missing.
+            {                   // otherwise, its id's will be missing.
                 SymbolTableComponent roleSTB = null;
                 int offset = 0;
                 int childrenSz = framenow.children.size();
@@ -102,12 +109,10 @@ public class TranslatorXConnector {
                                    + _role_name);
                 bv.pushSymbolTable(roleSTB);
             }
-            String _role_variable_initialisations = "/** Initialising role "
-                + _role_name + " **/\n";
-            IdInfo role = bv.getIdInfo(thisEnv, _role_name);
+            System.err.println
+                ("YYYYY Role "
+                 + _role_name + "'s iterator is " + roleIterator + "\n");
             String roleIndex = "1"; // when roleArSz == bv.sizeOne
-            String _role_variable_initialisations_suffix = ""; // when sizeOne
-
             ArraySizeContext roleArSz = role.arraySz;
             Utils.myAssertHard(roleArSz!=null && roleArSz!=bv.sizeZero
                                , "Role "+_role_name+" has a zero array size");
@@ -116,35 +121,21 @@ public class TranslatorXConnector {
                 //     .translate(bv,roleArSz).get(0)
                 bv.visit(roleArSz.arraySz).get(0);
             // System.err.println("YYYYYY roleArSz: "+_roleArraySize+"\n");
-            if (roleArSz!=bv.sizeOne) {
-                roleIndex = bv.newgensym(compName);
-                String init = "/* Loop to init role "
-                    + _role_name + " instances */\n"
-                    + "atomic_step {\n  byte "
-                    + roleIndex
-                    + ";\n  "
-                    + roleIndex
-                    + " = 0;\n";
-                init += "  do\n"
-                    + "   :: " + roleIndex + " < " + _roleArraySize
-                    + " -> \n       ";
-                _role_variable_initialisations += init;
-                _role_variable_initialisations_suffix
-                    = "   :: else -> break;\n  od;\n  "
-                    + roleIndex + " = 0;\n}\n\n";
-            }
+
+            String roleVarInitialisationsUnrolled
+                = "/** Initialising role "
+                + _role_name + " **/\n"
+
+                + "/* Unrolling initialisations using iterator @"
+                + roleIterator + " */\n"
+                + "d_step {\n"
+                + "_forloop(" + roleIterator
+                + ",0," + _roleArraySize + ",dnl\n\n";
+
             String role_vars = role_var_template
                 .replace("$<role_name>", _role_name)
                 .replace("$<roleArraySize>",_roleArraySize);
             String _role_variables = "";
-            {
-                String cxvr // Context Connector Var Role
-                    = "_context," + _connector_name
-                    + ",_varname," + _role_name + ",$<params_name_list>";
-                // _connector_role_tests
-                //     += "\n `_EVALNAME('" + cxvr
-                //     + "`)': _EVALNAME(" + cxvr + ")";
-            }
             SymbolTableComponent roleST
                 = (SymbolTableComponent)
                 thisEnv.children.stream()
@@ -159,7 +150,13 @@ public class TranslatorXConnector {
                 IdInfo varinfo = bv.getIdInfo(roleST, varn);
                 String vartype = varinfo.variableTypeName;
                 ArraySizeContext varszCtx = varinfo.arraySz;
-                String roleVarName =
+                String varIterator =
+                    "_NAME(__prefixR,"
+                    + varn + "," + varinfo.arrayIterator + ")";
+            System.err.println
+                ("ZZZZZ Variable "
+                 + varn + "'s iterator is " + varIterator + "\n");
+               String roleVarName =
                     //"_EVALNAME(__prefixR," + varn + ")";
                     varn;
                 Utils.myAssertHard(varszCtx!=null
@@ -185,51 +182,36 @@ public class TranslatorXConnector {
                     _role_variables +=
                         "\n\t" + vartype + " _post_" + roleVarName
                         + "[" + varsz + "];dnl\n" ;
-                if (varszCtx == bv.sizeOne) { // singleton
-                    String lhseq = "  __prefixR[" + roleIndex + "]."
-                        + roleVarName + "[0] = ";
-                    _role_variable_initialisations
-                        += lhseq + rhs + ";\n";
+                roleVarInitialisationsUnrolled
+                    += "_forloop(" + varIterator
+                    + ",0," + varsz + ",dnl\n\n";
+                {
+                    roleVarInitialisationsUnrolled
+                        += "        "
+                        + "__prefixR[" + roleIterator + "]."
+                        + roleVarName + "[" + varIterator + "] = "
+                        + rhs + ";\n";
                     if (varinfo.has_post) {
-                        lhseq = "  __prefixR[" + roleIndex + "]._post_"
-                            + roleVarName + "[0] = ";
-                        _role_variable_initialisations
-                            += lhseq + rhs + ";\n";
+                        roleVarInitialisationsUnrolled
+                            += "        "
+                            + "__prefixR[" + roleIterator + "]._post_"
+                            + roleVarName + "[" + varIterator + "] = "
+                            + rhs + ";\n";
                     }
-                } else { // proper array
-                    String loop_offset = bv.newgensym(compName);
-                    String init =
-                        ( "/* Loop to init sub-elements of var "
-                          + varn + " of role " + _role_name + " */\n" )
-                        + "  atomic_step {\n  byte "
-                        + loop_offset
-                        + ";\n    "
-                        + loop_offset
-                        + " = 0;\n";
-                    init += "    do\n"
-                        + "     :: " + loop_offset + " < " + varsz
-                        + " -> \n       ";
-                    init += "        __prefixR[" + roleIndex + "]."
-                            + roleVarName + "[" + loop_offset + "] = ";
-                    init += rhs + ";\n";
-                    if (varinfo.has_post) {
-                        init += "               __prefixR[" + roleIndex + "]._post_"
-                            + roleVarName + "[" + loop_offset + "] = ";
-                        init += rhs + ";\n";
-                    }
-                    init += "     :: else -> break;\n    od;\n"
-                        + "    " + loop_offset + " = 0;\n";
-                    init += "  }\n\n";
-                    _role_variable_initialisations += init;
                 }
+                // add the ending parenthesis of var's _forloop
+                roleVarInitialisationsUnrolled
+                    += ")\n";
             }
-            _role_variable_initialisations
-                += _role_variable_initialisations_suffix;
+            { // + ending parenthesis of role's _forloop & bracket of d_step
+                roleVarInitialisationsUnrolled
+                    += ")\n}\n";
+            }
             _connector_variables += role_vars
                 .replace("$<role_variables>",
                          _role_variables)
                 .replace("$<role_variable_initialisations>"
-                         , _role_variable_initialisations);
+                         , roleVarInitialisationsUnrolled);
 
             // TODO
 
@@ -247,10 +229,9 @@ public class TranslatorXConnector {
             final var popdefs = _params_popdefs;
             final var fictionalparams = _params_fictional;
             final var paramnameslist = _params_name_list;
+            final var paramnamesreallist = _params_name_real_list;
             final var X_subconnectors = _connector_subconnectors;
             final var X_variables = _connector_variables;
-            // final var X_role_tests = _connector_role_tests;
-            // final var X_role_inits = _connector_variable_initialisations;
             final Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
@@ -260,13 +241,15 @@ public class TranslatorXConnector {
                 .replace("$<params_fictional>", fictionalparams)
                 .replace("$<connector_subconnectors>", X_subconnectors)
                 .replace("$<connector_variables>", X_variables)
-                // .replace("$<connector_role_tests>", X_role_tests)
-                // .replace("$<connector_variable_initialisations>", X_role_inits)
                 ;
                 if (paramnameslist.equals(""))
-                    res = res.replace(",$<params_name_list>", "");
+                    res =res
+                        .replace(",$<params_name_list>", "")
+                        .replace(",$<params_name_real_list>", "");
                 else
-                    res = res.replace("$<params_name_list>", paramnameslist);
+                    res = res
+                        .replace("$<params_name_list>", paramnameslist)
+                        .replace("$<params_name_real_list>", paramnamesreallist);
                 return res;
             };
             Utils.withInputAndFileToWrite
