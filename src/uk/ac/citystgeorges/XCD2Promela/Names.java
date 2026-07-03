@@ -87,16 +87,16 @@ class Names {
             + ")"; }
 
     static String connectorName(String x) {
-        return "CONNECTOR_" + x; }
+        return "_NAME(" + x + ",_varname)"; }
     static String connProcedural() {
         return "CONNECTOR_PROCEDURAL"; }
     static String connAsynchronous() {
         return "CONNECTOR_ASYNCHRONOUS"; }
     static String roleName( String x, String role ) {
-        return connectorName(x)+"_ROLE_"+role; }
+        return "`_NAME("+connectorName(x)+","+role+",$<params_name_real_list>)'"; }
 
     static String paramNameConnector( String x, String var ) {
-        return connectorName(x) + "_PARAM_"+var; }
+        return "_EVALNAME(__prefixX,$<params_name_real_list>,_PARAM_"+var+")";}
     static String paramNameRole( String x, String role, String var ) {
         return roleName(x, role) + "_PARAM_"+var; }
     static String varNameRole( String x, String role, String var ) {
