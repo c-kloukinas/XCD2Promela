@@ -19,6 +19,25 @@ abstract class SymbolTable {
     Set<String> allExceptions = new TreeSet<String>();
     SymbolTable parent = null;
     List<SymbolTable> children;
+    public void dumpSymbols() {
+        System.err.println
+            ("#### SymbolTable of " + compilationUnitID
+             + " contains:\n");
+        for (Map.Entry<String,IdInfo> entry : map.entrySet()) {
+            String symbol = entry.getKey();
+            IdInfo info = entry.getValue();
+            System.err.println
+                ("### Symbol " + symbol
+                 + " has an array iterator " + info.arrayIterator
+                 + " Created by: " + info.traceAtRegistration
+                 + "\n");
+        }
+    }
+    public void dumpSymbolsRec() {
+        dumpSymbols();
+        for (SymbolTable child : children)
+            child.dumpSymbols();
+    }
     SymbolTable() {
         this("@root", null, XCD_type.roott, false, null); // call next one
     }
