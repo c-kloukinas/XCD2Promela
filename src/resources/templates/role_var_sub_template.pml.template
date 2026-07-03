@@ -1,5 +1,5 @@
 `pushdef(`__prefixR',dnl name of the role variable
-_NAME(__prefixX,$<role_name>,$<params_name_list>))'dnl
+_NAME(__prefixX,$<role_name>,$<params_name_real_list>))'dnl
 `pushdef(`__prefixRType',dnl name of the type of the role variables
 _NAME(TYPE,__prefixR))'dnl
 dnl definition of the type for the role variables
