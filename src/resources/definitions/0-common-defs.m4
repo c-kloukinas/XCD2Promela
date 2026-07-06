@@ -12,6 +12,10 @@ define(_GLOBAL_INITS,dnl UNDEFINED
 define(`_CAT', `$1$2')dnl
 define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'_NAME(shift($@))')')')dnl
 define(`_EVALNAME', `_CAT(_NAME($@))')dnl
+define(`_ite', `ifelse(eval($1),0,`$3',`$2')')dnl
+define(`_ilog2r',`ifelse($1,1,$2,`_log2r(eval($1/2),incr($2))')')dnl
+define(`_ilog2',`ifelse(eval($1>0),0,`errprint(log2 is only defined on positive integers
+)',`_log2r($1,0)')')dnl
 
 # case 1: `includeall' (no parens) $#==0
 # case 2: `includeall()' $#==1, $1==`'
