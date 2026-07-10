@@ -35,9 +35,9 @@ public class TranslatorXConnector {
             param = Names.paramNameConnector(_connector_name,param);
             params.put(param, ++i);
             _params_pushdefs +=
-                "`pushdef(" + param + ",$" + i + ")'dnl\n";
+                "pushdef(" + param + ",$" + i + ")dnl\n";
             _params_popdefs +=
-                "`popdef(" + param + ")'dnl\n";
+                "popdef(" + param + ")dnl\n";
             _params_fictional += "," + i;
             _params_name_list += "," + param;
             _params_name_real_list += ",$" + i;
@@ -130,11 +130,11 @@ public class TranslatorXConnector {
                 + roleIterator + " */\n"
                 + "d_step {\n"
                 + "_forloop(" + roleIterator
-                + ",0," + _roleArraySize + ",dnl\n\n";
+                + ",0,_CAT(" + _roleArraySize + "),dnl\n\n";
 
             String role_vars = role_var_template
                 .replace("$<role_name>", _role_name)
-                .replace("$<roleArraySize>",_roleArraySize);
+                .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
             String _role_variables = "";
             SymbolTableComponent roleST
                 = (SymbolTableComponent)
@@ -184,17 +184,17 @@ public class TranslatorXConnector {
                         + "[" + varsz + "];dnl\n" ;
                 roleVarInitialisationsUnrolled
                     += "_forloop(" + varIterator
-                    + ",0," + varsz + ",dnl\n\n";
+                    + ",0,_CAT(" + varsz + "),dnl\n\n";
                 {
                     roleVarInitialisationsUnrolled
                         += "        "
-                        + "__prefixR[" + roleIterator + "]."
+                        + "__prefixRP[" + roleIterator + "]."
                         + roleVarName + "[" + varIterator + "] = "
                         + rhs + ";\n";
                     if (varinfo.has_post) {
                         roleVarInitialisationsUnrolled
                             += "        "
-                            + "__prefixR[" + roleIterator + "]._post_"
+                            + "__prefixRP[" + roleIterator + "]._post_"
                             + roleVarName + "[" + varIterator + "] = "
                             + rhs + ";\n";
                     }
@@ -225,25 +225,33 @@ public class TranslatorXConnector {
 
         // produce translation
         {
-            final var pushdefs = _params_pushdefs;
-            final var popdefs = _params_popdefs;
-            final var fictionalparams = _params_fictional;
             final var paramnameslist = _params_name_list;
             final var paramnamesreallist = _params_name_real_list;
             final var X_subconnectors = _connector_subconnectors;
             final var X_variables = _connector_variables;
+            final var pushdefs = _params_pushdefs;
+            final var popdefs = _params_popdefs;
+            final var fictionalparams = _params_fictional;
             final Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
                 .replace("$<connector_name>", _connector_name)
+                .replace("$<connector_subconnectors>", X_subconnectors)
+                .replace("$<connector_variables>", X_variables)
+                ;
+                // do the following last! (they appear inside X_variables)
+                res = res
                 .replace("$<params_pushdefs>", pushdefs)
                 .replace("$<params_popdefs>", popdefs)
                 .replace("$<params_fictional>", fictionalparams)
+                ;
+                res = res       // once more, with extra feeling!
+                .replace("$<connector_name>", _connector_name)
                 .replace("$<connector_subconnectors>", X_subconnectors)
                 .replace("$<connector_variables>", X_variables)
                 ;
                 if (paramnameslist.equals(""))
-                    res =res
+                    res = res
                         .replace(",$<params_name_list>", "")
                         .replace(",$<params_name_real_list>", "");
                 else

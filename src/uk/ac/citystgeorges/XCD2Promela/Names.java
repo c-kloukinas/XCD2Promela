@@ -93,10 +93,10 @@ class Names {
     static String connAsynchronous() {
         return "CONNECTOR_ASYNCHRONOUS"; }
     static String roleName( String x, String role ) {
-        return "`_NAME("+connectorName(x)+","+role+",$<params_name_real_list>)'"; }
+        return "`_NAME("+connectorName(x)+","+role+")'"; }
 
     static String paramNameConnector( String x, String var ) {
-        return "_EVALNAME(__prefixX,$<params_name_real_list>,_PARAM_"+var+")";}
+        return "_NAME(__prefixX,PARAM_"+var+")";}
     static String paramNameRole( String x, String role, String var ) {
         return roleName(x, role) + "_PARAM_"+var; }
     static String varNameRole( String x, String role, String var ) {
