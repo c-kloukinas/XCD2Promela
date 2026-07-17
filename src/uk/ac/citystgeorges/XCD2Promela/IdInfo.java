@@ -25,6 +25,7 @@ class IdInfo {
     // String var_prefix;
     String parent;
     EventStructure methodStructure=null; // used by events/methods only
+    SymbolTable symbolTable=null;
     IdInfo(XCD_type tp, boolean is_paramp
            , ArraySizeContext arraySize
            , VariableDefaultValueContext theInitVal
@@ -41,5 +42,11 @@ class IdInfo {
 
         Utils.myAssertHard(arraySize!=null // || BaseVisitor.sizeZero==null
                            , "Array size is null");
+    }
+    SymbolTable getSB() {
+        Utils.myAssertHard(symbolTable!=null
+                           , "Couldn't find " + type.name()
+                           + "'s symbol table");
+        return symbolTable;
     }
 }

@@ -124,7 +124,8 @@ class EnvironmentCreationVisitor
                                  , arraySize
                                  , (VariableDefaultValueContext)null
                                  , framenow.compilationUnitID);
-
+        // add symbol's Symbol Table to its ID Info
+        globalIdInfo.symbolTable = newctx;
         // push new environment context
         pushSymbolTable(newctx);
 
