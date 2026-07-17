@@ -91,24 +91,11 @@ public class TranslatorXConnector {
         for (var _role_name : roles) {
             IdInfo role = bv.getIdInfo(thisEnv, _role_name);
             String roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
-            // find role's symbolTable and push it!!!
-            {                   // otherwise, its id's will be missing.
-                SymbolTableComponent roleSTB = null;
-                int offset = 0;
-                int childrenSz = framenow.children.size();
-                while (roleSTB==null
-                       && offset<childrenSz) {
-                    SymbolTable child = framenow.children.get(offset);
-                    if (child.compilationUnitID.equals(_role_name))
-                        roleSTB = (SymbolTableComponent) child;
-                    else
-                        ++offset;
-                }
-                Utils.myAssertHard(roleSTB!=null
-                                   , "Couldn't find symbol table of role "
-                                   + _role_name);
-                bv.pushSymbolTable(roleSTB);
-            }
+            // Find role's symbolTable and push it!!! Otherwise, its
+            // IDs will be missing.
+            SymbolTableComponent roleST
+                = (SymbolTableComponent) role.getSB(); {
+                bv.pushSymbolTable(roleST); }
             System.err.println
                 ("YYYYY Role "
                  + _role_name + "'s iterator is " + roleIterator + "\n");
@@ -136,14 +123,6 @@ public class TranslatorXConnector {
                 .replace("$<role_name>", _role_name)
                 .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
             String _role_variables = "";
-            SymbolTableComponent roleST
-                = (SymbolTableComponent)
-                thisEnv.children.stream()
-                .filter(ch -> ch.compilationUnitID.equals(_role_name))
-                .findFirst()
-                .orElse(null);
-            bv.myassert(roleST!=null
-                        , "Cannot find symbol table of role " + _role_name);
             LstStr vars = roleST.compConstructs.vars;
 
             for (String varn : vars) {
@@ -212,12 +191,91 @@ public class TranslatorXConnector {
                          _role_variables)
                 .replace("$<role_variable_initialisations>"
                          , roleVarInitialisationsUnrolled);
+            //
+            // port/action guards & port/action require/ensures pairs
+            //
+            final LstStr all_ports = roleST.all_element_ports();
+            for (String port : all_ports) {
+                // find port's symbol table
+                IdInfo portInfo = bv.getIdInfo(port);
+                SymbolTablePort portST
+                    = (SymbolTablePort) portInfo.getSB(); {
+                    bv.pushSymbolTable(portST); }
+                final LstStr all_actions = portST.all_port_actions();
+                for (String action : all_actions) {
+                    IdInfo actionInfo = bv.getIdInfo(action);
+                    SymbolTableMethod actionST
+                        = (SymbolTableMethod) actionInfo.getSB();
+                    // role action constraints
+                    LstStr x_constrsAllows
+                        = actionST.methodStructure.x_constraintsAllows;
+                    LstStr x_constrsEnsures
+                        = actionST.methodStructure.x_constraintsEnsures;
+                    // non-role action constraints
+                    LstStr x_constrsAccepts
+                        = actionST.methodStructure.x_constraintsAccepts;
+                    LstStr x_constrsWaits
+                        = actionST.methodStructure.x_constraintsWaits;
+                    //
+                    LstStr f_constrsWhen
+                        = actionST.methodStructure.f_constraintsWhen;
+                    LstStr f_constrsWEnsures
+                        = actionST.methodStructure.f_constraintsWEnsures;
+                    LstStr f_constrsRequires
+                        = actionST.methodStructure.f_constraintsRequires;
+                    LstStr f_constrsREnsures
+                        = actionST.methodStructure.f_constraintsREnsures;
+                    Utils.myAssertHard
+                        (x_constrsAccepts==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action + " has Accepts constraints");                      Utils.myAssertHard
+                        (x_constrsWaits==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has Waits constraints");
+                    Utils.myAssertHard
+                        (f_constrsWhen==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has When functional constraints");
+                    Utils.myAssertHard
+                        (f_constrsWEnsures==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has When/Ensures functional constraints");
+                    Utils.myAssertHard
+                        (f_constrsRequires==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has Requires functional constraints");
+                    Utils.myAssertHard
+                        (f_constrsREnsures==null
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has Requires/Ensures functional constraints");
 
-            // TODO
-
-
-            // Lastly (!!!) pop role's symbol table (roleSTB)
-            bv.popLastSymbolTable();
+                    // Not necessarily, some role port actions are
+                    // just listed to allow inter-role port binding
+                    // // Should have some...
+                    // Utils.myAssertHard
+                    //     (x_constrsAllows!=null
+                    //      || x_constrsEnsures!=null
+                    //      , "Role " + _role_name
+                    //      + ", port " + port
+                    //      + ", action " + action
+                    //   + " has no Allows/Ensures constraints");
+                }
+                // Lastly (!!!) pop port's symbol table (portST)
+                { bv.popLastSymbolTable(portST); }
+            }
+            // Lastly (!!!) pop role's symbol table (roleST)
+            { bv.popLastSymbolTable(roleST); }
         }
         // _connector_variables = _connector_variables
         //     .replace("_context", "$1_" + _connector_name)
