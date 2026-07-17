@@ -242,6 +242,13 @@ class SymbolTableComponent extends SymbolTable { // COMPONENT or ROLE
                          ? compConstructs.requiredprts
                          : null))));
     }
+    LstStr all_element_ports() {
+        LstStr all_ports = new LstStr(compConstructs.providedprts);
+        all_ports.addAll(compConstructs.consumerprts);
+        all_ports.addAll(compConstructs.requiredprts);
+        all_ports.addAll(compConstructs.emitterprts);
+        return all_ports;
+    }
 }
 
 final class Name {final private String value;
@@ -369,6 +376,11 @@ class SymbolTablePort extends SymbolTable { // PORT or PORT VARIABLE
         return Names.paramNamePort(parent.compilationUnitID // port's component
                                    // port name is ignored?!?
                                    , param);
+    }
+    LstStr all_port_actions() {
+        LstStr all_actions = new LstStr(portConstructs.basicEventNames);
+        all_actions.addAll(portConstructs.basicMethodNames);
+        return all_actions;
     }
 }
 
