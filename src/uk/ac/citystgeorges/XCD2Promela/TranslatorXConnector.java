@@ -211,57 +211,23 @@ public class TranslatorXConnector {
                         = actionST.methodStructure.x_constraintsAllows;
                     LstStr x_constrsEnsures
                         = actionST.methodStructure.x_constraintsEnsures;
-                    // non-role action constraints
-                    LstStr x_constrsAccepts
-                        = actionST.methodStructure.x_constraintsAccepts;
-                    LstStr x_constrsWaits
-                        = actionST.methodStructure.x_constraintsWaits;
-                    //
-                    LstStr f_constrsWhen
-                        = actionST.methodStructure.f_constraintsWhen;
-                    LstStr f_constrsWEnsures
-                        = actionST.methodStructure.f_constraintsWEnsures;
-                    LstStr f_constrsRequires
-                        = actionST.methodStructure.f_constraintsRequires;
-                    LstStr f_constrsREnsures
-                        = actionST.methodStructure.f_constraintsREnsures;
-                    Utils.myAssertHard
-                        (x_constrsAccepts==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action + " has Accepts constraints");                      Utils.myAssertHard
-                        (x_constrsWaits==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action
-                         + " has Waits constraints");
-                    Utils.myAssertHard
-                        (f_constrsWhen==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action
-                         + " has When functional constraints");
-                    Utils.myAssertHard
-                        (f_constrsWEnsures==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action
-                         + " has When/Ensures functional constraints");
-                    Utils.myAssertHard
-                        (f_constrsRequires==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action
-                         + " has Requires functional constraints");
-                    Utils.myAssertHard
-                        (f_constrsREnsures==null
-                         , "Role " + _role_name
-                         + ", port " + port
-                         + ", action " + action
-                         + " has Requires/Ensures functional constraints");
-
-                    // Not necessarily, some role port actions are
-                    // just listed to allow inter-role port binding
+                    /* non-role action constraints - all checked to be
+                       null during AST visiting */
+                    // LstStr x_constrsAccepts
+                    //     = actionST.methodStructure.x_constraintsAccepts;
+                    // LstStr x_constrsWaits
+                    //     = actionST.methodStructure.x_constraintsWaits;
+                    // //
+                    // LstStr f_constrsWhen
+                    //     = actionST.methodStructure.f_constraintsWhen;
+                    // LstStr f_constrsWEnsures
+                    //     = actionST.methodStructure.f_constraintsWEnsures;
+                    // LstStr f_constrsRequires
+                    //     = actionST.methodStructure.f_constraintsRequires;
+                    // LstStr f_constrsREnsures
+                    //     = actionST.methodStructure.f_constraintsREnsures;
+                    /* Not necessarily true, some role port actions
+                       only listed to allow inter-role port binding */
                     // // Should have some...
                     // Utils.myAssertHard
                     //     (x_constrsAllows!=null
@@ -270,7 +236,11 @@ public class TranslatorXConnector {
                     //      + ", port " + port
                     //      + ", action " + action
                     //   + " has no Allows/Ensures constraints");
+
+
                 }
+
+
                 // Lastly (!!!) pop port's symbol table (portST)
                 { bv.popLastSymbolTable(portST); }
             }
