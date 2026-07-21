@@ -208,9 +208,13 @@ public class TranslatorXConnector {
                         = (SymbolTableMethod) actionInfo.getSB();
                     // role action constraints
                     LstStr x_constrsAllows
-                        = actionST.methodStructure.x_constraintsAllows;
+                        = Utils.nonNullCopy(actionST.methodStructure
+                                            .x_constraintsAllows
+                                            , LstStr.class);
                     LstStr x_constrsEnsures
-                        = actionST.methodStructure.x_constraintsEnsures;
+                        = Utils.nonNullCopy(actionST.methodStructure
+                                            .x_constraintsEnsures
+                                            , LstStr.class);
                     /* non-role action constraints - all checked to be
                        null during AST visiting */
                     // LstStr x_constrsAccepts
@@ -236,7 +240,6 @@ public class TranslatorXConnector {
                     //      + ", port " + port
                     //      + ", action " + action
                     //   + " has no Allows/Ensures constraints");
-
 
                 }
 
