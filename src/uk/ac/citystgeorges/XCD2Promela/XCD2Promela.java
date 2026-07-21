@@ -15,6 +15,8 @@ public class XCD2Promela {
         // create a CharStream that reads from standard input
         CharStream input = CharStreams.fromStream(System.in);
         // create a lexer that feeds off of input CharStream
+        Utils.util.reset_errors(); // ensure errors == 0 at this point.
+        Utils.util.reset_warnings(); // ensure warnings == 0 at this point.
         XCDLexer lexer = new XCDLexer(input);
         // create a buffer of tokens pulled from the lexer
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -80,5 +82,6 @@ public class XCD2Promela {
         Err.println("There were " + syntax_errors + " syntax errors");
         Err.println("There were " + semantic_errors + " semantic errors");
         Err.println("There were " + warnings + " warnings");
+        if (0 != syntax_errors || 0 != semantic_errors) System.exit(1);
     }
 }

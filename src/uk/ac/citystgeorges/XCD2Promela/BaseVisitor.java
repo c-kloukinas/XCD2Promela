@@ -34,12 +34,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     BaseVisitor(int syntax_errors) {
         super();
         BaseVisitor.syntax_errors = syntax_errors;
-        reset_semantic_errors();
-        reset_warnings();
     }
-    public void reset_semantic_errors() {Utils.util.reset_errors();}
     public int get_semantic_errors() {return Utils.util.get_errors();}
-    public void reset_warnings() {Utils.util.reset_warnings();}
     public int get_warnings() {return Utils.util.get_warnings();}
 
     static String getTokenString(Token tk)
