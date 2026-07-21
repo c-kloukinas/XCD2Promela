@@ -8,6 +8,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 import java.util.stream.Collectors;
 // import java.util.function.Consumer;
@@ -142,6 +145,40 @@ class Utils {
     // }
 
     public static final Utils util = new Utils();
+
+    static public <T> T nonNullCopy(T obj, Class<T> cl) {
+        try {
+            return (obj!=null)
+                ? obj
+                : cl.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException nsme) {
+            myAssertHard(false
+                         , "Class " + cl.getName()
+                         + " has no default constructor\n"
+                         + nsme);
+        } catch (InstantiationException ie) {
+            myAssertHard(false
+                         , "Failed to call class " + cl.getName()
+                         + "'s default constructor: InstantiationException\n"
+                         + ie);
+        } catch (IllegalAccessException iae) {
+            myAssertHard(false
+                         , "Failed to call class " + cl.getName()
+                         + "'s default constructor: IllegalAccessException\n"
+                         + iae);
+        } catch (InvocationTargetException ite) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            Throwable cause = ite.getCause();
+            if (cause!=null)
+                cause.printStackTrace(pw);
+            myAssertHard(false
+                         , "Failed to call class " + cl.getName()
+                         + "'s default constructor: InvocationTargetException (wrapper for exception in constructor)\n"
+                         + sw.toString());
+        }
+        return null;            // never happens - myAssertHard exits.
+    }
 
 static public <E> SimpleImmutableEntry<E,Boolean> findIf(Collection<E> container, Predicate<E> p) {
     for (E item : container)
