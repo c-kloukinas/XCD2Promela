@@ -184,10 +184,10 @@ class EnvironmentCreationVisitor
                                          , sizeZero // (ArraySizeContext) null
                                          , newctx, tr);
 
+        /* Check that the set of roles and the set of roles listed in
+         * the parameters are the same.
+         */
         if (myType==XCD_type.connectort) {
-            /* Check that the set of roles and the set of roles listed in
-             * the parameters are the same.
-             */
             // mywarning("There are " + newctx.roles.size() + " roles defined "
             //           + "and "
             //           + newctx.roles2portvarsInParams.keySet().size()
@@ -252,10 +252,59 @@ class EnvironmentCreationVisitor
                              + portVarsUsedMinusPortVarsDefined);
                 }
             }
-        } else {
-            myassert(myType==XCD_type.compositet
-                     , "Current declaration is not a composite.");
         }
+
+        // TODO:
+        mywarning("Sub-connector instance check missing.");
+        /*
+         * The composite(/connector) has some sub-connector instances.
+         * These need to be bound with the sub-components(/roles) of
+         * it.
+         *
+         * These bindings are essentially function calls - we call
+         * each sub-connector's role "function" passing it a
+         * component/role argument. Then, for each of the
+         * sub-connector role's ports, we call a role-port "function",
+         * passing it the component/role and its respective port
+         * argument.
+         *
+         * For each of them, we need to check that the "type" matches.
+         *
+         * What's the "type"?
+         *
+         * - that the component/role (array) arguments passed match in
+             number the sub-connector role (array) parameters expected
+             (i.e., number of arguments and parameters match).
+         *
+         * - that each sub-connector role has the same size as the
+             sub-component(/role) that is bound to it. [1]
+         *
+         * - that the port arrays passed as arguments are as many as
+             the sub-connector role port arrays expected (i.e., number
+             of arguments and parameters match).
+         *
+         * - that each port *array* passed has the same *size* as the
+             port *array* of the sub-connector's role (i.e., size of
+             each argument and parameter matches). [1]
+         *
+         * - that each port (array) passed is of the same kind as the
+             parameter port (array) of the sub-connector's role:
+             provided, required, emitter, consumer.
+         *
+         * - that each port (array) passed has a superset of actions
+             compared to the port (array) parameter of the
+             sub-connector's role.
+         *
+         * [1] the size comparisons can be evaluated statically when
+         * they are both numeric constants but cannot be evaluated
+         * statically when they are IDs or more general expressions
+         * (e.g., "N+1" vs "1+M", where "N" & "M" may eventually be
+         * the same number). In the latter case, they have to be
+         * evaluated dynamically by the macro pre-processor during
+         * pre-processing time.  Given this, we leave all cases to be
+         * checked at pre-processing time.
+         *
+         */
 
         return res;
     }
