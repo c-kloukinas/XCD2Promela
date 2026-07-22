@@ -321,7 +321,7 @@ class EnvironmentCreationVisitor
                       || framenow.type==XCD_type.roott
                       , "Component "
                       + myName
-                      + " must be defined at the global context"
+                      + " must be defined int the global context"
                       + " - parent is "
                       + printFrame(framenow));
         mySyntaxCheck(myType!=XCD_type.rolet
@@ -1151,7 +1151,15 @@ class EnvironmentCreationVisitor
         return res;
     }
     private T visitTheConfiguration(XCDParser.CompilationUnitContext ctx) {
-        SymbolTable framenow = symbolTableNow(); // root
+        // mywarning("visitTheConfiguration called");
+        SymbolTable framenow = symbolTableNow(); // must be root.
+        myassert(framenow.type == XCD_type.roott
+                 , "Configuration must be defined in the global context");
+        // Ensure there was no other configuration declaration before this one.
+        for (var stbl : framenow.children) {
+            myassert(stbl.type!=XCD_type.configt
+                     , "A configuration has been defined already");
+        }
         SymbolTableComposite newctx
             = framenow.makeSymbolTableComposite("@configuration", ctx
                                                 , XCD_type.configt, false);
@@ -1161,10 +1169,10 @@ class EnvironmentCreationVisitor
             ("/resources/templates/configuration.pml.template"
              , "configuration.pml"
              , (String confFileContents) -> {
-                if (newctx.map.size()!=2) {
+                if (newctx.map.size()!=1) {
                     mywarning("Configuration should have exactly one"
                               + " component instance, but instead, it has "
-                              + (newctx.map.size()-1));
+                              + (newctx.map.size()));
                     for (var key : newctx.map.keySet()) {
                         var val=newctx.map.get(key);
                         System.err.println("Instance \"" + key
