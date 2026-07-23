@@ -50,6 +50,10 @@ $<params_popdefs>dnl popdef(`$<param_name>')
 dnl
 define(`_GLOBAL_INITS',defn(`_GLOBAL_INITS') _NAME(__prefixRP,inits))
 )'dnl
+dnl
+dnl Role port action guards and guard-ensures pairs
+dnl
+$<connector_role_port_action_guards>dnl
 dnl `__prefixX'
 dnl `__prefixR'
 dnl `__prefixRP'

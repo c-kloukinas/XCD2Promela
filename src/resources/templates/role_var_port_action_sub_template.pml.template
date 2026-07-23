@@ -1,0 +1,13 @@
+`pushdef(`__prefixRA',dnl name of the role
+_NAME(__prefixR,$<portName>,$<actionName>))'dnl
+`define(_NAME(__prefixRA,guards),dnl
+$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+_CAT(_CAT($<port_action_guard>))dnl
+$<params_popdefs>dnl popdef(`$<param_name>')
+)'dnl
+`define(_NAME(__prefixRA,ensures),dnl
+$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+_CAT(_CAT($<port_action_ensures>))dnl
+$<params_popdefs>dnl popdef(`$<param_name>')
+)'dnl
+`popdef(`__prefixRA')'dnl

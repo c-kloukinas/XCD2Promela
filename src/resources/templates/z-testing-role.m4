@@ -14,10 +14,46 @@ c1 _GLOBAL_TYPEDEFS
 dnl _$<connector_name>(_context,_varname)$< connector_role_tests>
 
 dnl _$<connector_name>$<params_fictional>dnl $ <connector_role_tests>
-
+# params_fictional: $<params_fictional> _CAT(_CAT(eval(_NAME$<params_fictional>)))
 _$<connector_name>_client$<params_fictional>dnl $ <connector_role_tests>
 
+_NAME(_context,$<connector_name>,_varname,client_service_open_guards)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_open_guards)
+
+_NAME(_context,$<connector_name>,_varname,client_service_open_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_open_ensures)
+
+_NAME(_context,$<connector_name>,_varname,client_service_close_guards)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_close_guards)
+
+_NAME(_context,$<connector_name>,_varname,client_service_close_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_close_ensures)
+
+_NAME(_context,$<connector_name>,_varname,client_service_request_guards)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_request_guards)
+
+_NAME(_context,$<connector_name>,_varname,client_service_request_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,client_service_request_ensures)
+
 _$<connector_name>_server$<params_fictional>dnl $ <connector_role_tests>
+
+_NAME(_context,$<connector_name>,_varname,server_service_open_guards)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_open_guards)
+
+_NAME(_context,$<connector_name>,_varname,server_service_open_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_open_ensures)
+
+_NAME(_context,$<connector_name>,_varname,server_service_close_guards)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_close_guards)
+
+_NAME(_context,$<connector_name>,_varname,server_service_close_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_close_ensures)
+
+_NAME(_context,$<connector_name>,_varname,server_service_request_guards)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_request_guards)
+
+_NAME(_context,$<connector_name>,_varname,server_service_request_ensures)
+_EVALNAME(_context,$<connector_name>,_varname,server_service_request_ensures)
 
 popdef(`_context')dnl
 popdef(`_varname')dnl

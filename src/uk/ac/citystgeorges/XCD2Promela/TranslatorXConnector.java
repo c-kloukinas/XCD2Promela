@@ -86,8 +86,11 @@ public class TranslatorXConnector {
         // framenow.dumpSymbolsRec();
         String _connector_variables = "";
         // String _connector_role_tests = "";
-        String role_var_template = Utils.readInputFile
+        final String role_var_template = Utils.readInputFile
             ("/resources/templates/role_var_sub_template.pml.template");
+        final String role_var_port_action_template = Utils.readInputFile
+            ("/resources/templates/role_var_port_action_sub_template.pml.template");
+        String _connector_role_port_action_guards = "";
         for (var _role_name : roles) {
             IdInfo role = bv.getIdInfo(thisEnv, _role_name);
             String roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
@@ -194,6 +197,7 @@ public class TranslatorXConnector {
             //
             // port/action guards & port/action require/ensures pairs
             //
+            _connector_role_port_action_guards = ""; // reset guards
             final LstStr all_ports = roleST.all_element_ports();
             for (String port : all_ports) {
                 // find port's symbol table
@@ -206,11 +210,16 @@ public class TranslatorXConnector {
                     IdInfo actionInfo = bv.getIdInfo(action);
                     SymbolTableMethod actionST
                         = (SymbolTableMethod) actionInfo.getSB();
+                    /* _port_action_guard is the DISJUNCTION of all
+                       x_constrsAllows guard cases. It'll be CONJOINED
+                       with the other interaction constraints. */
+                    String _port_action_guard = "";
                     // role action constraints
                     LstStr x_constrsAllows
                         = Utils.nonNullCopy(actionST.methodStructure
                                             .x_constraintsAllows
                                             , LstStr.class);
+                    String _port_action_ensures = "";
                     LstStr x_constrsEnsures
                         = Utils.nonNullCopy(actionST.methodStructure
                                             .x_constraintsEnsures
@@ -241,12 +250,65 @@ public class TranslatorXConnector {
                     //      + ", action " + action
                     //   + " has no Allows/Ensures constraints");
 
+                    Utils.myAssertHard
+                        (x_constrsAllows.size() == x_constrsEnsures.size()
+                         , "Role " + _role_name
+                         + ", port " + port
+                         + ", action " + action
+                         + " has " + x_constrsAllows.size() + " constructs but "
+                         + x_constrsEnsures.size() + " constructs");
+                    if (0 < x_constrsAllows.size()) {
+                        String prefix[] = { "(", " || (" };
+                        for (int sz=x_constrsAllows.size(), prfxi=0, i=0;
+                             i<sz;
+                             prfxi = 1, ++i) {
+                            var x_allows = x_constrsAllows.get(i);
+                            _port_action_guard +=
+                                prefix[prfxi] + x_allows + ")";
+                            var x_ensures = x_constrsEnsures.get(i);
+                            _port_action_ensures +=
+                                " :: (" + x_allows + ") -> " + x_ensures + "; ";
+                        }
+                        _port_action_guard
+                            = "(" + _port_action_guard + ")";
+                        _port_action_ensures
+                            = "if" + _port_action_ensures
+                            + (
+                               " :: else -> "
+                               + "assert(false); "
+                               +  "/* incomplete action guards: r/p/a = "
+                               + _role_name + "/" + port + "/" + action
+                               + " */ fi; "
+                               );
+                    } else {
+                        _port_action_guard = "true";
+                    }
+
+                    _connector_role_port_action_guards +=
+                        role_var_port_action_template
+                        .replace("$<portName>", port)
+                        .replace("$<actionName>", action)
+                        .replace("$<port_action_guard>",_port_action_guard)
+                        .replace("$<port_action_ensures>",_port_action_ensures);
+
+                    // {
+                    //     bv.mywarning("action " + action
+                    //                  + "\n\tguards are "
+                    //                  + _port_action_guard
+                    //                  + "\n\tguard-ensure pairs are "
+                    //                  + _port_action_ensures
+                    //                  );
+                    // }
+                    //
                 }
 
 
                 // Lastly (!!!) pop port's symbol table (portST)
                 { bv.popLastSymbolTable(portST); }
             }
+            _connector_variables = _connector_variables
+                .replace("$<connector_role_port_action_guards>"
+                         , _connector_role_port_action_guards);
             // Lastly (!!!) pop role's symbol table (roleST)
             { bv.popLastSymbolTable(roleST); }
         }

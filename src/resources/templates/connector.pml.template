@@ -20,6 +20,7 @@ dnl  # role has been associated with
 dnl $<connector _variable_initialisations>dnl
 define(_$<connector_name>,dnl `...' evaluate code when the macro is used.
 `pushdef(`__prefixX',_NAME(_context,$<connector_name>,_varname))'dnl
+$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index) # not needed now but in general the params should be defined here, when the connector instance is "constructed"
 dnl  # use _ prefix to avoid name capture with user code
 dnl
 dnl $<params _pushdefs>dnl pushdef(`$<param _name>',$<param _index)
@@ -28,15 +29,16 @@ dnl  # Connector,Role,Port,Action guards (push/pop action prefix)       TODO XXX
 dnl
 dnl  # action guards should be CONJOINED with the guards of any         TODO XXX
 dnl  # sub-connector roles that this role has been associated with
-$<connector_role_port_action_guards>dnl
+dnl $<connector _role_port_action_guards>dnl
 dnl  # conditional updates for actions                                  TODO XXX
 dnl
 dnl  # conditional updates should be SEQUENCED with the updates of any  TODO XXX
 dnl  # sub-connector roles that this role has been associated
 dnl  # with. [SEQUENCED: first conditionally update your variables
 dnl  # if::fi, then update those of sub-connector roles.]
-$<connector_role_port_action_require_ensures>dnl
+dnl $<connector _role_port_action_require_ensures>dnl
 dnl
+$<params_popdefs>dnl popdef(`$<param_name>')
 `popdef(`__prefixX')'dnl
 dnl ## some old expressions used in testing
 dnl # `define(hello,`goodbye')'dnl
