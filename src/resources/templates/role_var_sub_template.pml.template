@@ -1,64 +1,82 @@
-define(_$<connector_name>_$<role_name>,dnl
-`pushdef(`__prefixX',_NAME(_context,$<connector_name>,_varname))'dnl
-`pushdef(`__prefixR',dnl name of the role
-_NAME(__prefixX,$<role_name>))'dnl
-`pushdef(`__prefixRP',dnl name of the role with the actual parameters
-_NAME(__prefixR,$<params_name_real_list>))'dnl
-`pushdef(`__prefixRPType',dnl name of the type of the role variables
-_NAME(TYPE,__prefixRP))'dnl
+dnl##### Start of role $<role_name> definitions
+dnl
+dnl Name of role#$<rlIndex>
+dnl XXXR __prefixX
+define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
+dnl
+dnl Prefix of role#$<rlIndex>
+pushdef(`__prefixR',_NAME(__prefixX,Rl$<rlIndex>))dnl
+pushdef(`__prefixRP',__prefixR)dnl
+dnl RRR foo _EVALNAME(__prefixX,RlNm$<rlIndex>) is __prefixR & __prefixRP
+dnl Size checker of role#$<rlIndex>
+define(_NAME(__prefixR,size),`dnl
+pushdef(`__mySizeIs','eval($<roleArraySize>)`)dnl
+pushdef(`__mySizeShouldBe',eval($'`1))dnl
+dnl I was passed __mySizeShouldBe and my size is $<roleArraySize>, i.e., __mySizeIs dnl
+ifelse(__mySizeShouldBe,__mySizeIs,,dnl
+`errprint(Role array size ($<roleArraySize> = __mySizeIs) is different to size passed (__mySizeShouldBe))')dnl
+popdef(`__mySizeShouldBe')dnl
+popdef(`__mySizeIs')dnl
+')dnl
+dnl
+dnl Typedefs of role#$<rlIndex>
+dnl
+pushdef(`__prefixRType',dnl name of the type of the role variables
+_NAME(__prefixR,Type))dnl
 dnl
 dnl Type definition for the structure containing the role variables.
 dnl
-dnl dnl The type should be independent of the context & var name TODO
-`ifdef(_NAME(__prefixRP,typedefs),,dnl
+dnl # role variables should also contain the variables of any          TODO XXX
+dnl # sub-connector roles that this role has been associated with
+ifdef(_NAME(__prefixR,typedefs),,dnl
 dnl
-define(_NAME(__prefixRP,typedefs),dnl
-$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
-  typedef __prefixRPType {dnl
-   $<role_variables>dnl
+define(_NAME(__prefixR,typedefs),dnl
+dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+  typedef __prefixRType {dnl
+   $<role_variables>`'dnl
 
   };dnl
-$<params_popdefs>dnl popdef(`$<param_name>')
+dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 dnl
 dnl add typedef to global type definitions
 dnl the ifdef is really to avoid redefining the same type here
-define(`_GLOBAL_TYPEDEFS',dnl
-defn(`_GLOBAL_TYPEDEFS')dnl
-_NAME(__prefixRP,typedefs) dnl
+define(`__GLOBAL_TYPEDEFS',dnl
+defn(`__GLOBAL_TYPEDEFS')dnl
+_NAME(__prefixR,typedefs) dnl
 
 )dnl
 )dnl
-)'dnl
+)dnl
 dnl
 dnl Role variable (structure) declaration
 dnl
-`define(_NAME(__prefixRP,vardecls),dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
-__prefixRPType __prefixRP[$<roleArraySize>];`'dnl $< connector_variables>
-$<params_popdefs>dnl popdef(`$<param_name>')
+define(_NAME(__prefixR,vardecls),dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
+dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+__prefixRType __prefixR[$<roleArraySize>];`'dnl $< connector_variables>
+dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 dnl
-define(`_GLOBAL_VARDECLS',defn(`_GLOBAL_VARDECLS')
-  _NAME(__prefixRP,vardecls))
-)'dnl
+define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')
+  _NAME(__prefixR,vardecls))
+)dnl
 dnl
 dnl Role variable initialisations
 dnl
-`define(_NAME(__prefixRP,inits),dnl
-$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
+dnl # role variable initialisation code should also contain the        TODO XXX
+dnl # initialisation of any sub-connector role variables that this
+dnl # role has been associated with
+define(_NAME(__prefixR,inits),dnl
+dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
   _CAT($<role_variable_initialisations>)dnl
-$<params_popdefs>dnl popdef(`$<param_name>')
+dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 dnl
-define(`_GLOBAL_INITS',defn(`_GLOBAL_INITS') _NAME(__prefixRP,inits))
-)'dnl
+define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))
+)dnl
 dnl
 dnl Role port action guards and guard-ensures pairs
 dnl
-$<connector_role_port_action_guards>dnl
-dnl `__prefixX'
-dnl `__prefixR'
-dnl `__prefixRP'
-dnl `__prefixRPType'
-`popdef(`__prefixRPType')'dnl
-`popdef(`__prefixRP')'dnl
-`popdef(`__prefixR')'dnl
-)
+$<connector_role_port_action_guards>`'dnl
+popdef(`__prefixRType')dnl
+popdef(`__prefixRP')dnl
+popdef(`__prefixR')dnl
+dnl##### End of role $<role_name> definitions
+

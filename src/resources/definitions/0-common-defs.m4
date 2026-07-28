@@ -1,12 +1,12 @@
 dnl -*- mode: m4 -*-
 divert(-1)dnl discard output - hash'ed comments don't copy over
 dnl collect all typedefs that need to be done globally
-define(_GLOBAL_TYPEDEFS,dnl UNDEFINED
+define(__GLOBAL_TYPEDEFS,dnl UNDEFINED
 
 )
-define(_GLOBAL_VARDECLS,dnl UNDEFINED
+define(__GLOBAL_VARDECLS,dnl UNDEFINED
 )
-define(_GLOBAL_INITS,dnl UNDEFINED
+define(__GLOBAL_INITS,dnl UNDEFINED
 )
 
 define(`_CAT', `$1$2')dnl

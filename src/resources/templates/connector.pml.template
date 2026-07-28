@@ -3,50 +3,24 @@ include(0-common-defs.m4)dnl
 divert(-1)dnl
 # include definitions of subconnectors
 _includeall($<connector_subconnectors>)
+#
+define(`_$<connector_name>',`dnl
+dnl### Start of connector $<connector_name> definition
+pushdef(`_context',`$1')dnl
+pushdef(`_varname',`$2')dnl
+pushdef(`_params',`shift(shift($@))')dnl
 dnl
-dnl  # define macros for the following (variables, guards, conditional
-dnl  # actions), [passing them the connector parameters (no need,
-dnl  # parameters are pushed on the stack)]
-dnl
-dnl  # role variables should also contain the variables of any          TODO XXX
-dnl  # sub-connector roles that this role has been associated with
-$<connector_variables>dnl
-dnl
-dnl  # role variable initialisation code                                TODO XXX
-dnl
-dnl  # role variable initialisation code should also contain the        TODO XXX
-dnl  # initialisation of any sub-connector role variables that this
-dnl  # role has been associated with
-dnl $<connector _variable_initialisations>dnl
-define(_$<connector_name>,dnl `...' evaluate code when the macro is used.
-`pushdef(`__prefixX',_NAME(_context,$<connector_name>,_varname))'dnl
-$<params_pushdefs>dnl pushdef(`$<param_name>',$<param_index) # not needed now but in general the params should be defined here, when the connector instance is "constructed"
-dnl  # use _ prefix to avoid name capture with user code
-dnl
-dnl $<params _pushdefs>dnl pushdef(`$<param _name>',$<param _index)
-dnl
-dnl  # Connector,Role,Port,Action guards (push/pop action prefix)       TODO XXX
-dnl
-dnl  # action guards should be CONJOINED with the guards of any         TODO XXX
-dnl  # sub-connector roles that this role has been associated with
-dnl $<connector _role_port_action_guards>dnl
-dnl  # conditional updates for actions                                  TODO XXX
-dnl
-dnl  # conditional updates should be SEQUENCED with the updates of any  TODO XXX
-dnl  # sub-connector roles that this role has been associated
-dnl  # with. [SEQUENCED: first conditionally update your variables
-dnl  # if::fi, then update those of sub-connector roles.]
-dnl $<connector _role_port_action_require_ensures>dnl
-dnl
-$<params_popdefs>dnl popdef(`$<param_name>')
-`popdef(`__prefixX')'dnl
-dnl ## some old expressions used in testing
-dnl # `define(hello,`goodbye')'dnl
-dnl # `define(zello$2,`goodbye')'dnl
-dnl # `define($2zello,`goodbye')'dnl
-dnl # `pushdef(`foo',`hi')'dnl
-dnl # `define(foo,`bye')'dnl
-)dnl
-# testing follows divert
+dnl Same context & varname cannot have different params, so params not in name
+dnl (first comma in _NAME is to get an initial _).
+pushdef(`__prefixX',_NAME(,_context,X$<connector_name>,V`'_varname))dnl
+$<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
+$<connector_variables>`'dnl
+$<params_popdefs>`'dnl popdef(`$<param_name>')
+popdef(`__prefixX')dnl
+popdef(`_params')dnl
+popdef(`_varname')dnl
+popdef(`_context')dnl
+dnl### End of connector $<connector_name> definition
+')dnl
 divert(0)dnl
 
