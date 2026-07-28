@@ -183,6 +183,7 @@ class SymbolTableComposite extends SymbolTable { // COMPOSITE or CONNECTOR
     LstStr subcomponents = new LstStr();
     LstStr subconnectors = new LstStr();
     CompositeConstructs compConstructs = new CompositeConstructs();
+    LstStr rolesAsOrderedInParams = new LstStr();
     Map<String, LstStr> roles2portvarsInParams = new HashMap<String, LstStr>();
 
     @Override

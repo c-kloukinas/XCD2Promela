@@ -35,7 +35,9 @@ public class TranslatorXConnector {
             param = Names.paramNameConnector(_connector_name,param);
             params.put(param, ++i);
             _params_pushdefs +=
-                "pushdef(" + param + ",$" + i + ")dnl\n";
+                // "+2": first two connector macro args are the
+                // context & instance name
+                "pushdef(" + param + ",`$" + (i+2) + "')dnl name_is_" + param +"\n";
             _params_popdefs +=
                 "popdef(" + param + ")dnl\n";
             _params_fictional += "," + i;
@@ -48,7 +50,6 @@ public class TranslatorXConnector {
             _params_name_list = _params_name_list.substring(1);
             _params_name_real_list = _params_name_real_list.substring(1);
         }
-        _params_fictional = "(" + _params_fictional + ")";
         bv.myassert(thisEnv.compConstructs.vars==null
                     || thisEnv.compConstructs.vars.size()==0
                     , "Connector " + _connector_name
@@ -58,7 +59,7 @@ public class TranslatorXConnector {
         // thisEnv.subcomponents holds the role names
         //
         // thisEnv.subconnectors holds the subconnector names
-        LstStr roles = thisEnv.subcomponents;
+        LstStr roles = thisEnv.rolesAsOrderedInParams;
         LstStr subconnectors = thisEnv.subconnectors;
         Map<String, LstStr> roles2portvarsInParams
             = thisEnv.roles2portvarsInParams;
@@ -91,7 +92,9 @@ public class TranslatorXConnector {
         final String role_var_port_action_template = Utils.readInputFile
             ("/resources/templates/role_var_port_action_sub_template.pml.template");
         String _connector_role_port_action_guards = "";
+        int _rlIndex = 0;
         for (var _role_name : roles) {
+            ++_rlIndex;         // m4 arguments start at $1
             IdInfo role = bv.getIdInfo(thisEnv, _role_name);
             String roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
             // Find role's symbolTable and push it!!! Otherwise, its
@@ -124,6 +127,7 @@ public class TranslatorXConnector {
 
             String role_vars = role_var_template
                 .replace("$<role_name>", _role_name)
+                .replace("$<rlIndex>", ""+_rlIndex)
                 .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
             String _role_variables = "";
             LstStr vars = roleST.compConstructs.vars;
@@ -308,7 +312,8 @@ public class TranslatorXConnector {
             }
             _connector_variables = _connector_variables
                 .replace("$<connector_role_port_action_guards>"
-                         , _connector_role_port_action_guards);
+                         , _connector_role_port_action_guards)
+                .replace("$<role_name>", _role_name);
             // Lastly (!!!) pop role's symbol table (roleST)
             { bv.popLastSymbolTable(roleST); }
         }

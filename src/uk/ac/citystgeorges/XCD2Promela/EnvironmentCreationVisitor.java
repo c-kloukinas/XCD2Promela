@@ -1238,6 +1238,8 @@ class EnvironmentCreationVisitor
         // Why are we forcing people to define the role/portVars
         // twice? [cause we're mean!]
         SymbolTableComposite framenow = (SymbolTableComposite) symbolTableNow();
+        // need roles in parameter order
+        framenow.rolesAsOrderedInParams.add(roleName);
         framenow.roles2portvarsInParams.put(roleName, portParamNames);
         return defaultResult();
     }
