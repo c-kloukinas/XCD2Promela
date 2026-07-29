@@ -6,10 +6,9 @@ define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
 dnl
 dnl Prefix of role#$<rlIndex>
 pushdef(`__prefixR',_NAME(__prefixX,Rl$<rlIndex>))dnl
-pushdef(`__prefixRP',__prefixR)dnl
-dnl RRR foo _EVALNAME(__prefixX,RlNm$<rlIndex>) is __prefixR & __prefixRP
+dnl RRR foo _EVALNAME(__prefixX,RlNm$<rlIndex>) is __prefixR
 dnl Size checker of role#$<rlIndex>
-define(_NAME(__prefixR,size),`dnl
+define(_NAME(__prefixR,checkSize),`dnl
 pushdef(`__mySizeIs','eval($<roleArraySize>)`)dnl
 pushdef(`__mySizeShouldBe',eval($'`1))dnl
 dnl I was passed __mySizeShouldBe and my size is $<roleArraySize>, i.e., __mySizeIs dnl
@@ -76,7 +75,6 @@ dnl Role port action guards and guard-ensures pairs
 dnl
 $<connector_role_port_action_guards>`'dnl
 popdef(`__prefixRType')dnl
-popdef(`__prefixRP')dnl
 popdef(`__prefixR')dnl
 dnl##### End of role $<role_name> definitions
 

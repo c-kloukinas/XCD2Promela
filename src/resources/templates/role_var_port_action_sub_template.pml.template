@@ -1,11 +1,14 @@
 dnl##### Start of role $<role_name>, port $<portName>, action $<actionName> definitions
+dnl # Connector,Role,Port
+pushdef(`__prefixRP',dnl name of the role port
+_NAME(__prefixR,$<portName>))dnl
 dnl # Connector,Role,Port,Action guards
 dnl #
 dnl # action guards should be CONJOINED with the guards of any         TODO XXX
 dnl # sub-connector roles that this role has been associated with
-pushdef(`__prefixRA',dnl name of the role action
-_NAME(__prefixR,$<portName>,$<actionName>))dnl
-define(_NAME(__prefixRA,guards),dnl
+pushdef(`__prefixRPA',dnl name of the role action
+_NAME(__prefixRP,$<actionName>))dnl
+define(_NAME(__prefixRPA,guards),dnl
 dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
 _CAT(_CAT($<port_action_guard>))`'dnl
 dnl $ <params_popdefs>dnl popdef(`$<param_name>')
@@ -16,11 +19,12 @@ dnl # conditional updates should be SEQUENCED with the updates of any  TODO XXX
 dnl # sub-connector roles that this role has been associated
 dnl # with. [SEQUENCED: first conditionally update your variables
 dnl # if::fi, then update those of sub-connector roles.]
-define(_NAME(__prefixRA,ensures),`dnl
+define(_NAME(__prefixRPA,ensures),`dnl
 dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
 _CAT(_CAT($<port_action_ensures>))`'dnl
 dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 ')dnl
-popdef(`__prefixRA')dnl
+popdef(`__prefixRPA')dnl
+popdef(`__prefixRP')dnl
 dnl##### End of role $<role_name>, port $<portName>, action $<actionName> definitions
 

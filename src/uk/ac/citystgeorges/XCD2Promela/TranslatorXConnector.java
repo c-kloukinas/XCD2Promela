@@ -174,13 +174,13 @@ public class TranslatorXConnector {
                 {
                     roleVarInitialisationsUnrolled
                         += "        "
-                        + "__prefixRP[" + roleIterator + "]."
+                        + "__prefixR[" + roleIterator + "]."
                         + roleVarName + "[" + varIterator + "] = "
                         + rhs + ";\n";
                     if (varinfo.has_post) {
                         roleVarInitialisationsUnrolled
                             += "        "
-                            + "__prefixRP[" + roleIterator + "]._post_"
+                            + "__prefixR[" + roleIterator + "]._post_"
                             + roleVarName + "[" + varIterator + "] = "
                             + rhs + ";\n";
                     }

@@ -86,10 +86,10 @@ AA _$<connector_name>(_context,_varname,1,2)
 dnl (first comma in _NAME below is to get an initial _).
 define(`thename',_NAME(,_context,X$<connector_name>,_CAT(V,_varname)))
 BB _EVALNAME(thename,RlNm1)
-CC Correct role size? _CAT(_NAME(thename,Rl1_size)(1*1))
+CC Correct role size? _CAT(_NAME(thename,Rl1_checkSize)(1*1))
 
 DD _EVALNAME(thename,RlNm2)
-EE Correct role size? _CAT(_NAME(thename,Rl2_size)(3-1))
+EE Correct role size? _CAT(_NAME(thename,Rl2_checkSize)(3-1))
 
 ct __GLOBAL_TYPEDEFS
 
