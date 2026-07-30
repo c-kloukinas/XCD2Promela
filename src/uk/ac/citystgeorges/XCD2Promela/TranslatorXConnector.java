@@ -30,14 +30,19 @@ public class TranslatorXConnector {
         // _params_fictional: param list with incremental int values
         // for testing the macros
         String _params_fictional = "";
+        final int argShift = 2;
         for (int i = 0, sz = thisEnv.compConstructs.params.size(); i<sz; ) {
             String param = thisEnv.compConstructs.params.get(i);
             param = Names.paramNameConnector(_connector_name,param);
             params.put(param, ++i);
+            // "+ argShift": first two connector macro args are the
+            // context & instance name - skip them.
+            final int argNo = i + argShift;
             _params_pushdefs +=
-                // "+2": first two connector macro args are the
-                // context & instance name
-                "pushdef(" + param + ",`$" + (i+2) + "')dnl name_is_" + param +"\n";
+                // Evaluate connector parameters, so they're values
+                // instead of expressions.
+                "pushdef(" + param + ",`eval($" + argNo + ")')dnl name_is_"
+                + param + "\n";
             _params_popdefs +=
                 "popdef(" + param + ")dnl\n";
             _params_fictional += "," + i;
@@ -61,7 +66,7 @@ public class TranslatorXConnector {
         // thisEnv.subconnectors holds the subconnector names
         LstStr roles = thisEnv.rolesAsOrderedInParams;
         LstStr subconnectors = thisEnv.subconnectors;
-        Map<String, LstStr> roles2portvarsInParams
+        final Map<String, LstStr> roles2portvarsInParams
             = thisEnv.roles2portvarsInParams;
         Set<String> subconnector_types = new TreeSet<String>();
         for (var subX : subconnectors) {
@@ -202,10 +207,34 @@ public class TranslatorXConnector {
             // port/action guards & port/action require/ensures pairs
             //
             _connector_role_port_action_guards = ""; // reset guards
-            final LstStr all_ports = roleST.all_element_ports();
+            // IMPORTANT - get ports in the order used in the parameters!
+            final LstStr all_ports
+                = roles2portvarsInParams.get(_role_name);
+            int _portIndex = 0;
             for (String port : all_ports) {
+                ++_portIndex;   // m4 arguments start at $1
                 // find port's symbol table
                 IdInfo portInfo = bv.getIdInfo(port);
+                ArraySizeContext portArSz = portInfo.arraySz;
+                String _portArraySize = bv.visit(portArSz.arraySz).get(0);
+                String _portKind = "UNKNOWN";
+                {
+                    XCD_type portKind = portInfo.type;
+                    switch (portKind) {
+                    case XCD_type.emittert, XCD_type.emittervart ->
+                        _portKind = "emitter";
+                    case XCD_type.consumert, XCD_type.consumervart ->
+                        _portKind = "consumer";
+                    case XCD_type.requiredt, XCD_type.requiredvart ->
+                        _portKind = "required";
+                    case XCD_type.providedt, XCD_type.providedvart ->
+                        _portKind = "provided";
+                    default ->
+                        Utils.myAssertHard(false
+                                           , "Unknown port type for role/port "
+                                           + _role_name + "/" + port);
+                    }
+                }
                 SymbolTablePort portST
                     = (SymbolTablePort) portInfo.getSB(); {
                     bv.pushSymbolTable(portST); }
@@ -291,6 +320,9 @@ public class TranslatorXConnector {
                     _connector_role_port_action_guards +=
                         role_var_port_action_template
                         .replace("$<portName>", port)
+                        .replace("$<portIndex>", ""+_portIndex)
+                        .replace("$<portArraySize>", _portArraySize)
+                        .replace("$<portKind>", _portKind)
                         .replace("$<actionName>", action)
                         .replace("$<port_action_guard>",_port_action_guard)
                         .replace("$<port_action_ensures>",_port_action_ensures);

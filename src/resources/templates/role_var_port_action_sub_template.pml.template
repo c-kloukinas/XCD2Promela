@@ -1,7 +1,53 @@
 dnl##### Start of role $<role_name>, port $<portName>, action $<actionName> definitions
 dnl # Connector,Role,Port
-pushdef(`__prefixRP',dnl name of the role port
-_NAME(__prefixR,$<portName>))dnl
+dnl #
+dnl # Name of port#$<portIndex>
+dnl #
+define(_NAME(__prefixR,PrtNm$<portIndex>),`$<portName>')dnl
+dnl #
+dnl # Prefix of port#$<portIndex>
+dnl #
+pushdef(`__prefixRP',_NAME(__prefixR,Prt$<portIndex>))dnl
+dnl DEBUG: Port _NAME(__prefixR,PrtNm$<portIndex>) _EVALNAME(__prefixR,PrtNm$<portIndex>) is __prefixRP
+dnl #
+dnl # Size expr, size, and kind of the port
+dnl #
+define(_NAME(__prefixRP,sizeExpr),`$<portArraySize>')dnl
+define(_NAME(__prefixRP,size),`eval(_EVALNAME(__prefixRP,sizeExpr))')dnl
+define(_NAME(__prefixRP,kind),`$<portKind>')dnl
+dnl #
+dnl # Size checker of port#$<portIndex>
+dnl #
+define(_NAME(__prefixRP,checkSize),`dnl
+dnl Delay evaluation of $1 below, so it is the $1 of checkSize, and _NOT_
+dnl that of the connector macro (within which checkSize is defined).
+pushdef(`__mySizeShouldBeExpr',$'`1)dnl
+pushdef(`__mySizeShouldBe',eval(__mySizeShouldBeExpr))dnl
+ifelse(__mySizeShouldBe,'_EVALNAME(__prefixRP,size)`,,dnl
+dnl Below we use two quotes because we are inside the quoted errprint,
+dnl which is inside the quoted macro definition body
+`errprint(Port array size ("''_NAME(__prefixRP,sizeExpr)" = _EVALNAME(__prefixRP,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
+)')dnl
+popdef(`__mySizeShouldBe')dnl
+popdef(`__mySizeShouldBeExpr')dnl
+')dnl
+dnl #
+dnl # Check that the port if of the right kind
+dnl #
+define(_NAME(__prefixRP,checkKind),`dnl
+pushdef(`__myKindShouldBe',$'`1)dnl
+ifelse(__myKindShouldBe,'_NAME(__prefixRP,kind)`,,dnl
+`errprint(Port kind (''_NAME(__prefixRP,kind)``) is different to kind passed (__myKindShouldBe).
+)')dnl
+popdef(`__myKindShouldBe')dnl
+')dnl
+dnl #
+dnl # Check both the port size and kind
+dnl #
+define(_NAME(__prefixRP,check),`dnl
+_CAT(_NAME('__prefixRP`,checkSize)('$`1))dnl
+_CAT(_NAME('__prefixRP`,checkKind)('$`2))dnl
+')dnl
 dnl # Connector,Role,Port,Action guards
 dnl #
 dnl # action guards should be CONJOINED with the guards of any         TODO XXX
@@ -9,22 +55,17 @@ dnl # sub-connector roles that this role has been associated with
 pushdef(`__prefixRPA',dnl name of the role action
 _NAME(__prefixRP,$<actionName>))dnl
 define(_NAME(__prefixRPA,guards),dnl
-dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
 _CAT(_CAT($<port_action_guard>))`'dnl
-dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 )dnl
-dnl # conditional updates for actions
+dnl # Conditional updates for actions
 dnl
-dnl # conditional updates should be SEQUENCED with the updates of any  TODO XXX
+dnl # Conditional updates should be SEQUENCED with the updates of any  TODO XXX
 dnl # sub-connector roles that this role has been associated
 dnl # with. [SEQUENCED: first conditionally update your variables
 dnl # if::fi, then update those of sub-connector roles.]
 define(_NAME(__prefixRPA,ensures),`dnl
-dnl $ <params_pushdefs>dnl pushdef(`$<param_name>',$<param_index)
 _CAT(_CAT($<port_action_ensures>))`'dnl
-dnl $ <params_popdefs>dnl popdef(`$<param_name>')
 ')dnl
 popdef(`__prefixRPA')dnl
 popdef(`__prefixRP')dnl
 dnl##### End of role $<role_name>, port $<portName>, action $<actionName> definitions
-

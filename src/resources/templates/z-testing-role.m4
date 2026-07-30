@@ -81,15 +81,23 @@ divert(0)dnl start of v2 macros checking.
 XCXC
 define(`_context',`NONE')
 define(`_varname',`foobar')
-AA _$<connector_name>(_context,_varname,1,2)
+AA _$<connector_name>(_context,_varname,1,2)dnl
 
 dnl (first comma in _NAME below is to get an initial _).
-define(`thename',_NAME(,_context,X$<connector_name>,_CAT(V,_varname)))
-BB _EVALNAME(thename,RlNm1)
-CC Correct role size? _CAT(_NAME(thename,Rl1_checkSize)(1*1))
+define(`theXInstanceName',_NAME(,_context,X$<connector_name>,_CAT(V,_varname)))dnl
+BB _NAME(theXInstanceName,RlNm1) "_EVALNAME(theXInstanceName,RlNm1)"
+CC Correct role size?
+_NAME(theXInstanceName,Rl1_checkSize)(1*1) "_CAT(_NAME(theXInstanceName,Rl1_checkSize)(1*1))"
 
-DD _EVALNAME(thename,RlNm2)
-EE Correct role size? _CAT(_NAME(thename,Rl2_checkSize)(3-1))
+DD _NAME(theXInstanceName,RlNm2) "_EVALNAME(theXInstanceName,RlNm2)"
+EE Correct role size?
+_NAME(theXInstanceName,Rl2_checkSize)(3-1) "_CAT(_NAME(theXInstanceName,Rl2_checkSize)(3-1))"
+
+FF Port _NAME(theXInstanceName,Rl1,PrtNm1) "_EVALNAME(theXInstanceName,Rl1,PrtNm1)":
+GG Correct port size & type?
+_NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0))"
+_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required))"
+_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required))"
 
 ct __GLOBAL_TYPEDEFS
 
