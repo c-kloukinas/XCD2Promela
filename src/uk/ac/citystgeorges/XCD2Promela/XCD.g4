@@ -544,9 +544,10 @@ TK_AT: '@';
 NATURAL:  '0' | [1-9] [0-9]*;
 
 ID:   ( '_' { /* reserve _ for internal names */
-              Utils.myAssert(false
-                             , "Identifiers cannot start with an '_' "
-                             + "- these are reserved for internal names");
+        uk.ac.citystgeorges.XCD2Promela.Utils
+            .myAssert(false
+                      , "Identifiers cannot start with an '_' "
+                      + "- these are reserved for internal names");
             }
       | [a-zA-Z]
       ) [a-zA-Z_0-9]* ;

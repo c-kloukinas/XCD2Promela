@@ -62,7 +62,7 @@ $(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
 
 $(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
 	-rm $(BLDCLS)/$(PKGDIR)/$*.class
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC) $(BLDSRC)/$(PKGDIR)/$*.java
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $(BLDSRC)/$(PKGDIR)/$*.java
 
 $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(TOPDIR)/1-scripts/test-xcd makefile
 	$(TOPDIR)/1-scripts/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
