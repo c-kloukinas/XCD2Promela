@@ -130,6 +130,7 @@ tests:	jar $(ALL_TESTS)
 	@export FAILURES=$(TESTDIR)/*.failed ; \
 	if [ z"`ls $${FAILURES} 2> /dev/null`" != z ] ; then \
 	  echo FAILED: `ls $${FAILURES} | wc -l` ; \
+	  ls $${FAILURES} ; \
 	  egrep 'There were [^0]' $${FAILURES} ; \
 	  exit 1 ; \
 	else \
