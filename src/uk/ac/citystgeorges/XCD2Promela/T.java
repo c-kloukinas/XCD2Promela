@@ -14,4 +14,6 @@ class T extends LstStr {
         for (var el : o)
             add(el);
     }
+    T(String s) {super(s);}
+    T(String s1, String s2) {super(s1, s2);}
 };
