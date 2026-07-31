@@ -24,9 +24,9 @@ dnl that of the connector macro (within which checkSize is defined).
 pushdef(`__mySizeShouldBeExpr',$'`1)dnl
 pushdef(`__mySizeShouldBe',eval(__mySizeShouldBeExpr))dnl
 ifelse(__mySizeShouldBe,'_EVALNAME(__prefixRP,size)`,,dnl
-dnl Below we use two quotes because we are inside the quoted errprint,
+dnl Below we use two quotes because we are inside the quoted _error,
 dnl which is inside the quoted macro definition body
-`errprint(Port array size ("''_NAME(__prefixRP,sizeExpr)" = _EVALNAME(__prefixRP,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
+`_error(Port array size ("''_NAME(__prefixRP,sizeExpr)" = _EVALNAME(__prefixRP,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
 )')dnl
 popdef(`__mySizeShouldBe')dnl
 popdef(`__mySizeShouldBeExpr')dnl
@@ -37,7 +37,7 @@ dnl #
 define(_NAME(__prefixRP,checkKind),`dnl
 pushdef(`__myKindShouldBe',$'`1)dnl
 ifelse(__myKindShouldBe,'_NAME(__prefixRP,kind)`,,dnl
-`errprint(Port kind (''_NAME(__prefixRP,kind)``) is different to kind passed (__myKindShouldBe).
+`_error(Port kind (''_NAME(__prefixRP,kind)``) is different to kind passed (__myKindShouldBe).
 )')dnl
 popdef(`__myKindShouldBe')dnl
 ')dnl

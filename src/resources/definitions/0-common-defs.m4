@@ -9,6 +9,16 @@ define(__GLOBAL_VARDECLS,dnl UNDEFINED
 define(__GLOBAL_INITS,dnl UNDEFINED
 )
 
+define(`_warningM',dnl
+`errprint(ifdef(`__program__', `__program__', ``m4'')'dnl
+`:ifelse(__line__, `0', `',dnl
+`__file__:__line__:')` $1: 'shift($@)`
+')')dnl
+define(`_warning',dnl
+`_warningM(warning,$*)')dnl
+define(`_error',dnl
+`_warningM(fatal error,$*)m4exit(`1')')dnl
+dnl
 define(`_CAT', `$1$2')dnl
 define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'_NAME(shift($@))')')')dnl
 define(`_EVALNAME', `_CAT(_NAME($@))')dnl

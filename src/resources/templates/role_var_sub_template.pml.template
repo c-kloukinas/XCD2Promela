@@ -24,9 +24,9 @@ dnl that of the connector macro (within which checkSize is defined).
 pushdef(`__mySizeShouldBeExpr',$'`1)dnl
 pushdef(`__mySizeShouldBe',eval(__mySizeShouldBeExpr))dnl
 ifelse(__mySizeShouldBe,'_EVALNAME(__prefixR,size)`,,dnl
-dnl Below we use two quotes because we are inside the quoted errprint,
+dnl Below we use two quotes because we are inside the quoted _error,
 dnl which is inside the quoted macro definition body
-`errprint(Role array size ("''_NAME(__prefixR,sizeExpr)" = _EVALNAME(__prefixR,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
+`_error(Role array size ("''_NAME(__prefixR,sizeExpr)" = _EVALNAME(__prefixR,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
 )')dnl
 popdef(`__mySizeShouldBe')dnl
 popdef(`__mySizeShouldBeExpr')dnl
