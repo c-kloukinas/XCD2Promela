@@ -167,6 +167,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         = makeArraySize(0);
     final static public ArraySizeContext sizeOrOne(ArraySizeContext sz)
     { return (sz!=null) ? sz : sizeOne; }
+    final public ArraySizeContext sizeVisitOrOne(ArraySizeContext sz)
+    { if (sz!=null) { visit(sz); return sz; } else return sizeOne; }
 
     final static public SymbolTableRoot rootContext = new SymbolTableRoot();
 

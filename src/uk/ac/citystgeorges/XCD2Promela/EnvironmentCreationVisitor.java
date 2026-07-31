@@ -126,6 +126,8 @@ class EnvironmentCreationVisitor
                                  , framenow.compilationUnitID);
         // add symbol's Symbol Table to its ID Info
         globalIdInfo.symbolTable = newctx;
+        // // add potential size iterator to the symbol table
+        // sizeVisitOrOne(arraySize);
         // push new environment context
         pushSymbolTable(newctx);
 
@@ -388,9 +390,9 @@ class EnvironmentCreationVisitor
             ? portTypeToken2PortVarType.get(myTypeOfPort)
             : portTypeToken2PortType   .get(myTypeOfPort);
         String portName = ctx.id.getText();
-        XCDParser.ArraySizeContext thesz = sizeOrOne(ctx.size);
         if (ctx.size!=null)
             stackOfArrays.addFirst(portName);
+        XCDParser.ArraySizeContext thesz = sizeOrOne(ctx.size);
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
 
@@ -896,15 +898,15 @@ class EnvironmentCreationVisitor
         String dtype = visit(dtypeCtx).get(0);
         // always non-null for user-defined variables/parameters
         // Every instance is an array.
-        ArraySizeContext array_sz = sizeOrOne(ctx.size);
         if (ctx.size!=null)
             stackOfArrays.addFirst(varName);
         VariableDefaultValueContext initVal = ctx.initval;
         T res = visitVarOrParamDecl(dtypeCtx
                                     , varName
-                                    , array_sz
+                                    , sizeOrOne(ctx.size)
                                     , initVal
                                     , !readingParams);
+        ArraySizeContext array_sz = sizeVisitOrOne(ctx.size);
         if (!readingParams) {
             IdInfo idinfo = getIdInfo(varName);
             SymbolTable framenow = symbolTableNow();
@@ -1070,7 +1072,6 @@ class EnvironmentCreationVisitor
 
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
-            ArraySizeContext sz = sizeOrOne(ctx.size);
             String component_def = ctx.userdefined.getText();
 
             if (ctx.params!=null)
@@ -1079,9 +1080,10 @@ class EnvironmentCreationVisitor
                       , XCD_type.componentt
                       , component_def
                       , false
-                      , sz
+                      , sizeOrOne(ctx.size)
                       , null // no init value
                       , compUnitId);
+            ArraySizeContext sz = sizeVisitOrOne(ctx.size);
             if (!(framenow instanceof SymbolTableComposite)) {
                 myassert(false
                          , "COMPONENT:\nCompilationUnitID=\""
@@ -1099,21 +1101,22 @@ class EnvironmentCreationVisitor
                 //           + instance_name);
             }
         } else if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
-            ArraySizeContext sz = sizeOrOne(ctx.connsize);
             String connector_def
                 = (ctx.userdefined!=null)
                 ? ctx.userdefined.getText()
                 : (ctx.basicConnProc!=null
                    ? Names.connProcedural()
                    : Names.connAsynchronous());
-            // String params = visit(ctx.conn_params).get(0);
             addIdInfo(instance_name
                       , XCD_type.connectort
                       , connector_def
                       , false
-                      , sz
+                      , sizeOrOne(ctx.connsize)
                       , null    // no init value
                       , compUnitId);
+            ArraySizeContext sz = sizeVisitOrOne(ctx.connsize);
+
+            // String params = visit(ctx.conn_params).get(0);
 
             if (framenow instanceof SymbolTableComposite) {
                 ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
