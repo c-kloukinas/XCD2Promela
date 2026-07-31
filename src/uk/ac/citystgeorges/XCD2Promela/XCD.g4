@@ -176,11 +176,14 @@ connectorArgumentList:
   TK_RPAR
 ;
 connectorArgument:
-  ( role= ID ( index= arrayIndex )?
+  role_val= connectorRoleArg
+  | prim_val= expression // paramArgument
+;
+connectorRoleArg:
+  role= ID ( index= arrayIndex )?
     TK_LBRACE
       pv_pre= connectorArgument_pv ( TK_COMMA pvs+= connectorArgument_pv )*
-    TK_RBRACE )
-  | prim_val= expression // paramArgument
+    TK_RBRACE
 ;
 connectorArgument_pv:
   pv= ID ( index= arrayIndex )?

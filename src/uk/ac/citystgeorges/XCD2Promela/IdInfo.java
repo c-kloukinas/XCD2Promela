@@ -1,6 +1,20 @@
 package uk.ac.citystgeorges.XCD2Promela;
 
+import java.util.Map;
+
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
+
+class CallInfo {
+    String functionName;
+    LstStr argExprList;
+    LstStr argRoleList;
+    Map<String, LstStr> role2portArgMap;
+    CallInfo( String nm, LstStr exprList
+              , LstStr roleList, Map<String, LstStr> r2pMap) {
+        functionName = nm; argExprList = exprList;
+        argRoleList = roleList; role2portArgMap = r2pMap;
+    }
+}
 
 class IdInfo {
     private String getStackTrace() {
@@ -23,6 +37,7 @@ class IdInfo {
     LstStr translation = new LstStr();
     // String big_name;
     // String var_prefix;
+    CallInfo callInfo = null;
     String parent;
     EventStructure methodStructure=null; // used by events/methods only
     SymbolTable symbolTable=null;

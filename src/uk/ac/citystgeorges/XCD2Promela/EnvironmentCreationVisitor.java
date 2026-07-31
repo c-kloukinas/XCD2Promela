@@ -1072,18 +1072,37 @@ class EnvironmentCreationVisitor
 
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
+            myassert(framenow.type == XCD_type.roott
+                     || framenow.type == XCD_type.compositet
+                     || framenow.type == XCD_type.configt
+                     , "Can only define sub-component instances "
+                     + "inside a composite component.");
             String component_def = ctx.userdefined.getText();
 
-            if (ctx.params!=null)
-                visit(ctx.params);
-            addIdInfo(instance_name
-                      , XCD_type.componentt
-                      , component_def
-                      , false
-                      , sizeOrOne(ctx.size)
-                      , null // no init value
-                      , compUnitId);
+            IdInfo myInfo
+                = addIdInfo(instance_name
+                            , XCD_type.componentt
+                            , component_def
+                            , false
+                            , sizeOrOne(ctx.size)
+                            , null // no init value
+                            , compUnitId);
             ArraySizeContext sz = sizeVisitOrOne(ctx.size);
+            // params must be processed after sz, in case they use an
+            // iterator.
+            if (ctx.params!=null) {
+                var argList = visit(ctx.params);
+                String args = "";
+                int index = 0;
+                for (var arg : argList)
+                    args += ( (index++ == 0) ? "" : "," ) + arg;
+                myInfo.callInfo
+                    = new CallInfo(instance_name
+                                   , argList
+                                   , null // no roles here
+                                   , null); // no roles2ports here
+                // mywarning("XXX: Ignoring composite/component arguments" + args);
+            }
             if (!(framenow instanceof SymbolTableComposite)) {
                 myassert(false
                          , "COMPONENT:\nCompilationUnitID=\""
@@ -1100,23 +1119,65 @@ class EnvironmentCreationVisitor
                 //        + "'s subcomponent of type "
                 //           + instance_name);
             }
-        } else if (tk.getType() == XCDParser.TK_CONNECTOR) { // connector element
+        } else if (tk.getType() == XCDParser.TK_CONNECTOR) {
+            myassert(framenow.type == XCD_type.connectort
+                     || framenow.type == XCD_type.compositet
+                     || framenow.type == XCD_type.configt
+                     , "Can only define sub-connector instances "
+                     + "inside a composite component or connector.");
             String connector_def
                 = (ctx.userdefined!=null)
                 ? ctx.userdefined.getText()
                 : (ctx.basicConnProc!=null
                    ? Names.connProcedural()
                    : Names.connAsynchronous());
-            addIdInfo(instance_name
-                      , XCD_type.connectort
-                      , connector_def
-                      , false
-                      , sizeOrOne(ctx.connsize)
-                      , null    // no init value
-                      , compUnitId);
+            IdInfo myInfo
+                = addIdInfo(instance_name
+                            , XCD_type.connectort
+                            , connector_def
+                            , false
+                            , sizeOrOne(ctx.connsize)
+                            , null    // no init value
+                            , compUnitId);
             ArraySizeContext sz = sizeVisitOrOne(ctx.connsize);
-
-            // String params = visit(ctx.conn_params).get(0);
+            // conn_params processed after sz (might use an iterator).
+            setUpConnectorArgLists(); // First, setup the argument lists
+            {
+                if (ctx.conn_params!=null) {
+                    visit(ctx.conn_params);
+                    String args = "";
+                    int index = 0;
+                    for (var arg : connectorExpressionArguments)
+                        args += ( (index++ == 0) ? "" : "," ) + arg;
+                    for (int r=0; r < connectorRoleArguments.size(); r+=2) {
+                        var roleName = connectorRoleArguments.get(r);
+                        var roleSizeExpr = connectorRoleArguments.get(r+1);
+                        args +=
+                            ( (index++ == 0) ? "" : "," )
+                            + roleName
+                            + "[" + roleSizeExpr + "]";
+                        LstStr ports
+                            = connectorRoleToPortArguments.get(roleName);
+                        args += " { ";
+                        for (int p=0; p < ports.size(); p+=2) {
+                            var portName = ports.get(p);
+                            var portSizeExpr = ports.get(p+1);
+                            args +=
+                                ( (p == 0) ? "" : "," )
+                                + portName
+                                + "[" + portSizeExpr + "]";
+                        }
+                        args += " } ";
+                    }
+                    myInfo.callInfo
+                        = new CallInfo(instance_name
+                                       , connectorExpressionArguments
+                                       , connectorRoleArguments
+                                       , connectorRoleToPortArguments);
+                    // mywarning("XXX: Ignoring connector arguments: " + args);
+                }
+            }
+            tearDownConnectorArgLists(); // Now, unset the argument lists
 
             if (framenow instanceof SymbolTableComposite) {
                 ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
@@ -1389,6 +1450,10 @@ class EnvironmentCreationVisitor
                          + ") has already been associated with array "
                          + myName);
                 arrayOfIterator.arrayIterator = myName;
+                // mywarning("@@@@ Registered iterator " + myName
+                //        + " for array " + myArrayIs
+                //        + " in the symbol table of
+                //        " + symbolTableNow().compilationUnitID);
             }
         }
         T res = visit(ctx.arraySz);
@@ -1564,7 +1629,68 @@ class EnvironmentCreationVisitor
 
     @Override public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
     @Override public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
-    @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) { return visitChildren(ctx); }
+    LstStr connectorExpressionArguments = null;
+    LstStr connectorRoleArguments = null;
+    Map<String, LstStr> connectorRoleToPortArguments = null;
+    void setUpConnectorArgLists() {
+        connectorExpressionArguments=new LstStr();
+        connectorRoleArguments=new LstStr();
+        connectorRoleToPortArguments=new HashMap<String, LstStr>();
+    }
+    void tearDownConnectorArgLists() {
+        connectorExpressionArguments=null;
+        connectorRoleArguments=null;
+        connectorRoleToPortArguments=null;
+    }
+
+    @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) {
+        Utils.myAssertHard
+            (connectorExpressionArguments!=null
+             && connectorRoleArguments!=null
+             && connectorRoleToPortArguments!=null
+             , "Connector instance failed to setup argument lists");
+        if (ctx.prim_val!=null)
+            connectorExpressionArguments.add(visit(ctx.prim_val).get(0));
+        else {
+            LstStr role_val = visit(ctx.role_val);
+            String roleName = role_val.get(0);
+            String roleSizeExpr = role_val.get(1);
+            connectorRoleArguments.add(roleName);
+            connectorRoleArguments.add(roleSizeExpr);
+            LstStr ports = new LstStr();
+            for (int prt = 2; prt < role_val.size(); prt+=2) {
+                String portName = role_val.get(prt);
+                String portSizeExpr = role_val.get(prt+1);
+                ports.add(portName);
+                ports.add(portSizeExpr);
+            }
+            connectorRoleToPortArguments.put(roleName, ports);
+        }
+        return defaultResult(); }
+    @Override public T visitConnectorRoleArg(XCDParser.ConnectorRoleArgContext ctx) {
+        String ret = ctx.role.getText();
+        // role array element - if none, it's the whole role array!
+        String sizeExpr = (ctx.index!=null) ? visit(ctx.index).get(0) : "";
+        T res = new T(ret, sizeExpr);
+        { // port variables
+            T pv_preVisited = visit(ctx.pv_pre);
+            res.add(pv_preVisited.get(0)); // first port name
+            res.add(pv_preVisited.get(1)); // first port size expression or ""
+            if (ctx.pvs!=null)
+                for (var pv : ctx.pvs) {
+                    T pvVisited = visit(pv);
+                    res.add(pvVisited.get(0)); // a port name
+                    res.add(pvVisited.get(1)); // a port size expression or ""
+                }
+        }
+        return res;
+    }
+    @Override public T visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) {
+        String ret = ctx.pv.getText();
+        // port array element - if none, it's the whole port array!
+        String sizeExpr = (ctx.index!=null) ? visit(ctx.index).get(0) : "";
+        return new T(ret, sizeExpr);
+    }
 
     @Override public T visitComponentInteractionConstraint(XCDParser.ComponentInteractionConstraintContext ctx) {
         SymbolTable framenow = symbolTableNow();
@@ -1784,7 +1910,6 @@ class EnvironmentCreationVisitor
          * <p>The default implementation returns the result of calling
          * {@link #visitChildren} on {@code ctx}.</p>
          */
-    @Override public T visitConnectorArgument_pv(XCDParser.ConnectorArgument_pvContext ctx) { return visitChildren(ctx); }
     /**
      * Miscellaneous helper functions
      */
