@@ -676,6 +676,10 @@ class EnvironmentCreationVisitor
         funcIdInfo.variableTypeName = functionFullName;
 
         // mywarning("TODO: InlineFunctionDeclaration: MUST COMPLETE (root, composite, component can all declare inline functions!");
+        mywarning("Inline functions have not been implemented yet!\n"
+                  + "Use CallInfo on their call site.\n"
+                  + "Create m4 macros for their calls.\n"
+                  + "pushdef parameters to be their positional argument.");
         String s = "#define " + functionFullName
             + "(" + res1.get(0) + ") " + res1.get(1);
 
