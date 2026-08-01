@@ -1,0 +1,19 @@
+/*
+ * A proc connector is simply establishing a connection between a
+ * required and a provided port.
+ *
+ * There are no constraints to be imposed on the actions that are
+ * exchanged over this connection.
+ * Indeed, the names/parameters of the actions themselves are of no
+ * interest.
+ */
+
+connector proc (caller{client}, callee{server}) {
+  role caller {
+    required port_variable client {}
+  }
+
+  role callee {
+    provided port_variable server {}
+  }
+}
