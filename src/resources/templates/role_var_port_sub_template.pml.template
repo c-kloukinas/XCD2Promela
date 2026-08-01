@@ -1,0 +1,58 @@
+dnl##### Start of connector $<connector_name>, role $<role_name>, port $<portName> definitions
+dnl #
+dnl # Name of port#$<portIndex>
+dnl #
+define(_NAME(__prefixR,PrtNm$<portIndex>),`$<portName>')dnl
+dnl #
+dnl # Prefix of port#$<portIndex>
+dnl #
+pushdef(`__prefixRP',_NAME(__prefixR,Prt$<portIndex>))dnl
+dnl DEBUG: Port _NAME(__prefixR,PrtNm$<portIndex>) _EVALNAME(__prefixR,PrtNm$<portIndex>) is __prefixRP
+dnl #
+dnl # Size expr, size, and kind of the port
+dnl #
+define(_NAME(__prefixRP,sizeExpr),`$<portArraySize>')dnl
+define(_NAME(__prefixRP,size),`eval(_EVALNAME(__prefixRP,sizeExpr))')dnl
+define(_NAME(__prefixRP,kind),`$<portKind>')dnl
+dnl #
+dnl # Size checker of port#$<portIndex>
+dnl #
+define(_NAME(__prefixRP,checkSize),`dnl
+dnl Delay evaluation of $1 below, so it is the $1 of checkSize, and _NOT_
+dnl that of the connector macro (within which checkSize is defined).
+pushdef(`__mySizeShouldBeExpr',$'`1)dnl
+pushdef(`__mySizeShouldBe',eval(__mySizeShouldBeExpr))dnl
+ifelse(__mySizeShouldBe,'_EVALNAME(__prefixRP,size)`,,dnl
+dnl Below we use two quotes because we are inside the quoted _error,
+dnl which is inside the quoted macro definition body
+`_error(Port array size ("''_NAME(__prefixRP,sizeExpr)" = _EVALNAME(__prefixRP,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
+)')dnl
+popdef(`__mySizeShouldBe')dnl
+popdef(`__mySizeShouldBeExpr')dnl
+')dnl
+dnl #
+dnl # Check that the port if of the right kind
+dnl #
+define(_NAME(__prefixRP,checkKind),`dnl
+pushdef(`__myKindShouldBe',$'`1)dnl
+ifelse(__myKindShouldBe,'_NAME(__prefixRP,kind)`,,dnl
+`_error(Port kind (''_NAME(__prefixRP,kind)``) is different to kind passed (__myKindShouldBe).
+)')dnl
+popdef(`__myKindShouldBe')dnl
+')dnl
+dnl #
+dnl # Check both the port size and kind
+dnl #
+define(_NAME(__prefixRP,check),`dnl
+_CAT(_NAME('__prefixRP`,checkSize)('$`1))dnl
+_CAT(_NAME('__prefixRP`,checkKind)('$`2))dnl
+')dnl
+dnl #
+dnl # Get the number of port actions
+dnl #
+define(_NAME(__prefixRP,actionsTotal),`$<actionsTotal>')dnl
+dnl #
+dnl # Role port action guards and guard-ensures pairs
+dnl #
+$<connector_role_port_action_guards>`'dnl
+dnl##### End of connector $<connector_name>, role $<role_name>, port $<portName> definitions

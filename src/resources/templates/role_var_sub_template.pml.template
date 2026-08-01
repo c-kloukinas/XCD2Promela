@@ -1,10 +1,8 @@
-dnl##### Start of role $<role_name> definitions
-dnl
+dnl#### Start of connector $<connector_name>, role $<role_name> definitions
 dnl #
 dnl # Name of role#$<rlIndex>
 dnl #
 define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
-dnl
 dnl #
 dnl # Prefix of role#$<rlIndex>
 dnl #
@@ -81,9 +79,9 @@ dnl
 define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))
 )dnl
 dnl #
-dnl # Role port action guards and guard-ensures pairs
+dnl # Role ports
 dnl #
-$<connector_role_port_action_guards>`'dnl
+$<connector_role_port>`'dnl
 popdef(`__prefixRType')dnl
 popdef(`__prefixR')dnl
-dnl##### End of role $<role_name> definitions
+dnl#### End of connector $<connector_name>, role $<role_name> definitions

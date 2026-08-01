@@ -94,9 +94,10 @@ public class TranslatorXConnector {
         // String _connector_role_tests = "";
         final String role_var_template = Utils.readInputFile
             ("/resources/templates/role_var_sub_template.pml.template");
+        final String role_var_port_template = Utils.readInputFile
+            ("/resources/templates/role_var_port_sub_template.pml.template");
         final String role_var_port_action_template = Utils.readInputFile
             ("/resources/templates/role_var_port_action_sub_template.pml.template");
-        String _connector_role_port_action_guards = "";
         int _rlIndex = 0;
         for (var _role_name : roles) {
             ++_rlIndex;         // m4 arguments start at $1
@@ -203,14 +204,11 @@ public class TranslatorXConnector {
                          _role_variables)
                 .replace("$<role_variable_initialisations>"
                          , roleVarInitialisationsUnrolled);
-            //
-            // port/action guards & port/action require/ensures pairs
-            //
-            _connector_role_port_action_guards = ""; // reset guards
-            // IMPORTANT - get ports in the order used in the parameters!
+            int _portIndex = 0;
+            String _connector_role_port = "";
             final LstStr all_ports
                 = roles2portvarsInParams.get(_role_name);
-            int _portIndex = 0;
+            // IMPORTANT - process ports in the order used in the parameters!
             for (String port : all_ports) {
                 ++_portIndex;   // m4 arguments start at $1
                 // find port's symbol table
@@ -239,6 +237,11 @@ public class TranslatorXConnector {
                     = (SymbolTablePort) portInfo.getSB(); {
                     bv.pushSymbolTable(portST); }
                 final LstStr all_actions = portST.all_port_actions();
+                final int _actionsTotal = all_actions.size();
+                //
+                // port/action guards & port/action require/ensures pairs
+                //
+                String _connector_role_port_action_guards = "";
                 for (String action : all_actions) {
                     IdInfo actionInfo = bv.getIdInfo(action);
                     SymbolTableMethod actionST
@@ -319,10 +322,6 @@ public class TranslatorXConnector {
 
                     _connector_role_port_action_guards +=
                         role_var_port_action_template
-                        .replace("$<portName>", port)
-                        .replace("$<portIndex>", ""+_portIndex)
-                        .replace("$<portArraySize>", _portArraySize)
-                        .replace("$<portKind>", _portKind)
                         .replace("$<actionName>", action)
                         .replace("$<port_action_guard>",_port_action_guard)
                         .replace("$<port_action_ensures>",_port_action_ensures);
@@ -337,14 +336,22 @@ public class TranslatorXConnector {
                     // }
                     //
                 }
-
+                _connector_role_port +=
+                    role_var_port_template
+                    .replace("$<connector_role_port_action_guards>"
+                             , _connector_role_port_action_guards)
+                    .replace("$<portName>", port)
+                    .replace("$<portIndex>", ""+_portIndex)
+                    .replace("$<portArraySize>", _portArraySize)
+                    .replace("$<portKind>", _portKind)
+                    .replace("$<actionsTotal>", ""+_actionsTotal);
 
                 // Lastly (!!!) pop port's symbol table (portST)
                 { bv.popLastSymbolTable(portST); }
             }
             _connector_variables = _connector_variables
-                .replace("$<connector_role_port_action_guards>"
-                         , _connector_role_port_action_guards)
+                .replace("$<connector_role_port>"
+                         , _connector_role_port)
                 .replace("$<role_name>", _role_name);
             // Lastly (!!!) pop role's symbol table (roleST)
             { bv.popLastSymbolTable(roleST); }
