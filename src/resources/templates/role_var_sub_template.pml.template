@@ -13,6 +13,7 @@ dnl # Size expr, and size of the role
 dnl #
 define(_NAME(__prefixR,sizeExpr),`$<roleArraySize>')dnl
 define(_NAME(__prefixR,size),`eval(_EVALNAME(__prefixR,sizeExpr))')dnl
+define(_NAME(__prefixR,sizeTotal),`eval(_EVALNAME(__prefixR,size) * (_varsize))')dnl
 dnl #
 dnl # Size checker of role#$<rlIndex>
 dnl #
@@ -62,7 +63,7 @@ dnl # Role variable (structure) declaration
 dnl #
 define(_NAME(__prefixR,vardecls),dnl
 dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-__prefixRType __prefixR[$<roleArraySize>];`'dnl $< connector_variables>
+__prefixRType __prefixR[_EVALNAME(__prefixR,sizeTotal)];`'dnl $< connector_variables>
 dnl
 define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')
   _NAME(__prefixR,vardecls))

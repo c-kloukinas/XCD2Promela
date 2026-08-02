@@ -8,9 +8,11 @@ define(`_$<connector_name>',`dnl
 dnl### Start of connector $<connector_name> definition
 pushdef(`_context',`$1')dnl
 pushdef(`_varname',`$2')dnl
-pushdef(`_params',`shift(shift($@))')dnl
+pushdef(`_varsize',`$3')dnl
+pushdef(`_params',`shift(shift(shift($@)))')dnl from 4th argument onwards
 dnl
-dnl Same context & varname cannot have different params, so params not in name
+dnl Same context & varname cannot have different params or size,
+dnl so size & params not part of this mangled name.
 dnl (first comma in _NAME is to get an initial _).
 pushdef(`__prefixX',_NAME(,_context,X$<connector_name>,V`'_varname))dnl
 $<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
@@ -18,6 +20,7 @@ $<connector_variables>`'dnl
 $<params_popdefs>`'dnl popdef(`$<param_name>')
 popdef(`__prefixX')dnl
 popdef(`_params')dnl
+popdef(`_varsize')dnl
 popdef(`_varname')dnl
 popdef(`_context')dnl
 dnl### End of connector $<connector_name> definition

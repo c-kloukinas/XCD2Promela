@@ -81,7 +81,7 @@ divert(0)dnl start of v2 macros checking.
 XCXC
 define(`_context',`NONE')
 define(`_varname',`foobar')
-AA _$<connector_name>(_context,_varname,1,2)dnl
+AA _$<connector_name>(_context,_varname,3,1,2)dnl
 
 dnl (first comma in _NAME below is to get an initial _).
 define(`theXInstanceName',_NAME(,_context,X$<connector_name>,_CAT(V,_varname)))dnl

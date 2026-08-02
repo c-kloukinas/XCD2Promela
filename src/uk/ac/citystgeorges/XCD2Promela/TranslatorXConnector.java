@@ -30,13 +30,13 @@ public class TranslatorXConnector {
         // _params_fictional: param list with incremental int values
         // for testing the macros
         String _params_fictional = "";
-        final int argShift = 2;
         for (int i = 0, sz = thisEnv.compConstructs.params.size(); i<sz; ) {
             String param = thisEnv.compConstructs.params.get(i);
             param = Names.paramNameConnector(_connector_name,param);
             params.put(param, ++i);
-            // "+ argShift": first two connector macro args are the
-            // context & instance name - skip them.
+            // "+ argShift": first three connector macro args are the
+            // context, instance name, and instance size - skip them.
+            final int argShift = 3;
             final int argNo = i + argShift;
             _params_pushdefs +=
                 // Evaluate connector parameters, so they're values
@@ -129,7 +129,7 @@ public class TranslatorXConnector {
                 + roleIterator + " */\n"
                 + "d_step {\n"
                 + "_forloop(" + roleIterator
-                + ",0,_CAT(" + _roleArraySize + "),dnl\n\n";
+                + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n\n";
 
             String role_vars = role_var_template
                 .replace("$<role_name>", _role_name)
