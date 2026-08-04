@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean; // only for its getAndSet(val)
 
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
@@ -1150,28 +1151,41 @@ class EnvironmentCreationVisitor
                 if (ctx.conn_params!=null) {
                     visit(ctx.conn_params);
                     String args = "";
-                    int index = 0;
-                    for (var arg : connectorExpressionArguments)
-                        args += ( (index++ == 0) ? "" : "," ) + arg;
-                    for (int r=0; r < connectorRoleArguments.size(); r+=2) {
-                        var roleName = connectorRoleArguments.get(r);
-                        var roleSizeExpr = connectorRoleArguments.get(r+1);
-                        args +=
-                            ( (index++ == 0) ? "" : "," )
-                            + roleName
-                            + "[" + roleSizeExpr + "]";
-                        LstStr ports
-                            = connectorRoleToPortArguments.get(roleName);
-                        args += " { ";
-                        for (int p=0; p < ports.size(); p+=2) {
-                            var portName = ports.get(p);
-                            var portSizeExpr = ports.get(p+1);
-                            args +=
-                                ( (p == 0) ? "" : "," )
-                                + portName
-                                + "[" + portSizeExpr + "]";
+                    {
+                        final AtomicBoolean firstAp = new AtomicBoolean(true);
+                        for (var arg : connectorExpressionArguments) {
+                            args += ( firstAp.getAndSet(false) ? "" : "," )
+                                + arg;
                         }
-                        args += " } ";
+                    }
+                    {
+                        final AtomicBoolean firstRp = new AtomicBoolean(true);
+                        for (int r=0; r < connectorRoleArguments.size(); r+=2) {
+                            final int roleIndex = r/2;
+                            var roleName = connectorRoleArguments.get(r);
+                            var roleSizeExpr = connectorRoleArguments.get(r+1);
+                            args +=
+                                ( firstRp.getAndSet(false) ? "" : "," )
+                                + roleName
+                                + "[" + roleSizeExpr + "]";
+                            LstStr ports
+                                = connectorRoleToPortArguments.get(roleName);
+                            args += " { ";
+                            {
+                                final AtomicBoolean firstPp
+                                    = new AtomicBoolean(true);
+                                for (int p=0; p < ports.size(); p+=2) {
+                                    final int portIndex = p/2;
+                                    var portName = ports.get(p);
+                                    var portSizeExpr = ports.get(p+1);
+                                    args +=
+                                        ( firstPp.getAndSet(false) ? "" : "," )
+                                        + portName
+                                        + "[" + portSizeExpr + "]";
+                                }
+                            }
+                            args += " } ";
+                        }
                     }
                     myInfo.callInfo
                         = new CallInfo(instance_name
