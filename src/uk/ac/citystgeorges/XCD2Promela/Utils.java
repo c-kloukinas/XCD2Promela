@@ -31,7 +31,13 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 class Utils {
     private static FileWriter myNewOutput(String fname) throws IOException {
         Files.createDirectories(Path.of(XCD2Promela.outputdir));
-        return new FileWriter(XCD2Promela.outputdir + fname); }
+        String fileName = XCD2Promela.outputdir;
+        if (fname != null)
+            if (! fname.equals(""))
+                fileName +=
+                    ( (fname.charAt(0) != '/') ? "/" : "" )
+                    + fname;
+        return new FileWriter(fileName); }
 
     List<Runnable> delayedTasks = new ArrayList<Runnable>();
 
