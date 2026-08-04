@@ -1,5 +1,9 @@
 package uk.ac.citystgeorges.XCD2Promela;
 
+import java.lang.Runnable;
+import java.util.List;
+import java.util.ArrayList;
+
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -25,10 +29,11 @@ import java.util.function.Predicate;    import java.util.function.BiPredicate;
 import java.util.AbstractMap.SimpleImmutableEntry;
 
 class Utils {
-    static public FileWriter myNewOutput(String fname) throws IOException {
+    private static FileWriter myNewOutput(String fname) throws IOException {
         Files.createDirectories(Path.of(XCD2Promela.outputdir));
         return new FileWriter(XCD2Promela.outputdir + fname); }
 
+    List<Runnable> delayedTasks = new ArrayList<Runnable>();
 
     public static void withFileWriteString(String fname
                                            , String out) {
@@ -37,13 +42,18 @@ class Utils {
     }
     public static void withFileToWrite(String fname
                                        , Supplier<String> supl) {
-        try (FileWriter theConfig
-             = myNewOutput(fname)) {
-            String res = supl.get();
-            theConfig.write(res);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        final String res = supl.get(); // capture the output string
+        util.delayedTasks
+            .add( () ->         // delay the actual file writing
+                  {
+                      try (FileWriter theConfig
+                           = myNewOutput(fname)) {
+                          theConfig.write(res);
+                      } catch (IOException e) {
+                          throw new RuntimeException(e);
+                      }
+                  }
+                  );
     }
 
     public static String readInputFile(String fin) {

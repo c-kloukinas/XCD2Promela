@@ -3,8 +3,6 @@ package uk.ac.citystgeorges.XCD2Promela;
 // import ANTLR's runtime libraries
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-import java.util.List;
-import java.util.ArrayList;
 
 // import uk.ac.citystgeorges.XCD2Promela.XCDBaseVisitor;
 
@@ -32,7 +30,10 @@ public class XCD2Promela {
         // ArrayList<String> res = new XCD2PromelaVisitor().visit(tree);
         EnvironmentCreationVisitor translator
             = new EnvironmentCreationVisitor(syntax_errors);
-        List<Runnable> tasks = new ArrayList<Runnable>();
+        Utils
+            .myAssert(Utils.util.delayedTasks.size() == 0
+                      , "There should be no delayed tasks in the queue "
+                      + "- aborting");
         T res1 = translator.visit(tree);
         int semantic_errors = translator.get_semantic_errors();
         int warnings = translator.get_warnings();
@@ -64,21 +65,22 @@ public class XCD2Promela {
         //            , (String inp) -> {
         //               return inp;
         //           }));
-        // Add the M4 common definitions file.
-        tasks.add(() -> Utils.withInputAndFileToWrite
-                  ("/resources/definitions/0-common-defs.m4"
-                   , "0-common-defs.m4"
-                   , (String inp) -> {
-                      return inp;
-                  }));
+        // // Add the M4 common definitions file.
+        Utils.withInputAndFileToWrite
+            ("/resources/definitions/0-common-defs.m4"
+             , "0-common-defs.m4"
+             , (String inp) -> {
+                return inp;
+            });
         final var Err = System.err;
-        if (0 == syntax_errors && 0 == semantic_errors)
-            for (Runnable task : tasks)
+        if (0 == syntax_errors && 0 == semantic_errors) {
+            for (Runnable task : Utils.util.delayedTasks)
                 try {
                     task.run();
                 } catch (Exception e) {
                     Err.println(e);
                 }
+        }
         Err.println("There were " + syntax_errors + " syntax errors");
         Err.println("There were " + semantic_errors + " semantic errors");
         Err.println("There were " + warnings + " warnings");
