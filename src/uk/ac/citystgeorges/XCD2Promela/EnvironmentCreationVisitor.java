@@ -1037,11 +1037,11 @@ class EnvironmentCreationVisitor
                 int index = 0;
                 for (var arg : argList)
                     args += ( (index++ == 0) ? "" : "," ) + arg;
-                // myInfo.callInfoX
-                //     = new CallInfoX(component_def, instance_name, szExpr
-                //                     , args, argList
-                //                    , null // no roles here
-                //                    , null); // no roles2ports here
+                myInfo.callInfoX
+                    = new CallInfoX(component_def, instance_name, szExpr
+                                    , args, argList
+                                   , null // no roles here
+                                   , null); // no roles2ports here
                 // mywarning("XXX: Ignoring composite/component arguments" + args);
             }
             if (!(framenow instanceof SymbolTableComposite)) {
@@ -1082,107 +1082,107 @@ class EnvironmentCreationVisitor
                                  , compUnitId);
             String szExpr = arraySizeExpr;
             // conn_params processed after szExpr (might use an iterator).
-            // {
-            //     xArgs = new ConnectorArgsHelper(); // First, setup the
-            //                                        // argument lists.
-            //     if (ctx.conn_params!=null) {
-            //         visit(ctx.conn_params);
-            //         String exprArgs = "";
-            //         for (int i=0
-            //                  , ceaSz=xArgs.connectorExpressionArguments.size();
-            //              i<ceaSz; ++i) {
-            //             exprArgs += ( (0==i) ? "" : "," )
-            //                 + xArgs.connectorExpressionArguments.get(i);
-            //         }
-            //         myInfo.callInfoX
-            //             = new CallInfoX(connector_def, instance_name, szExpr
-            //                             ,exprArgs
-            //                             ,xArgs.connectorExpressionArguments
-            //                             ,xArgs.connectorElementArguments
-            //                             ,xArgs.connectorElementToPortArguments);
-            //         String args4debugging = exprArgs;
-            //         for (int el=0, eSz=xArgs.connectorElementArguments.size();
-            //              el<eSz;
-            //              el+=2) { // advance by 2!
-            //             final int elementIndex = el/2;
-            //             var elementName
-            //                 = xArgs.connectorElementArguments.get(el);
-            //             var elementSizeExpr
-            //                 = xArgs.connectorElementArguments.get(el+1);
-            //             args4debugging +=
-            //                 ( (0==el && exprArgs.equals("")) ? "" : "," )
-            //                 + elementName
-            //                 + ( elementSizeExpr.equals("")
-            //                     ? ""
-            //                     : "[" + elementSizeExpr + "]" );
-            //             // Find the element's IdInfo - needed to check
-            //             // what elementSizeExpr should be when it's "".
-            //             IdInfo elementInfo = getIdInfo(elementName);
-            //             // There are two cases:
-            //             //
-            //             // (1) isFrameAConnectorP -> element is a role
-            //             // of this connector, so its size expression
-            //             // is dependent on this connector's
-            //             // parameters.
-            //             //
-            //             // (2) ! isFrameAConnectorP -> element is a
-            //             // composite/component instance of this
-            //             // composite, so its size expression is again
-            //             // dependent on this composite's parameters.
-            //             //
-            //             // Therefore, in both cases, the size
-            //             // expression of the element is dependent on
-            //             // values known in the current context and can
-            //             // be used safely.
-            //             String elementActualSizeExpr
-            //                 = elementInfo.arraySizeExpr;
-            //             Utils.myAssertHard(elementActualSizeExpr!=null
-            //                                , "Cannot find the array size "
-            //                                + "expression of element \""
-            //                                + elementName + "\"");
-            //             // mywarning("Element \"" + elementName
-            //             //           + "\" has size expression \""
-            //             //           + elementActualSizeExpr + "\"");
-            //             LstStr ports
-            //                 = xArgs.connectorElementToPortArguments
-            //                 .get(elementName);
-            //             args4debugging += " { ";
-            //             for (int prt=0, prtSz=ports.size(); prt < prtSz;
-            //                  prt+=2) { // advance by 2!
-            //                 final int portIndex = prt/2;
-            //                 var portName = ports.get(prt);
-            //                 var portSizeExpr = ports.get(prt+1);
-            //                 IdInfo portInfo
-            //                     = getPortIdInfo(elementName
-            //                                     , elementInfo, portName);
-            //                 String portActualSizeExpr
-            //                     = (portInfo!=null)
-            //                     ? portInfo.arraySizeExpr : null;
-            //                 Utils.myAssertHard(portActualSizeExpr!=null
-            //                                    , "Cannot find the array size "
-            //                                    + "expression of port \""
-            //                                    + portName + "\" of element \""
-            //                                    + elementName + "\"");
-            //                 mywarning("Port \"" + portName
-            //                           + "\" of element \""
-            //                           + elementName
-            //                           + "\" has size expression \""
-            //                           + portActualSizeExpr + "\"");
-            //                 args4debugging +=
-            //                     ( (0==prt) ? "" : "," )
-            //                     + portName
-            //                     + ( portSizeExpr.equals("")
-            //                         ? ""
-            //                         : "[" + portSizeExpr + "]" );
-            //             }
-            //             args4debugging += " } ";
-            //         }
-            //         mywarning("XXX: Ignoring connector arguments: "
-            //                   + args4debugging);
-            //     }
+            {
+                xArgs = new ConnectorArgsHelper(); // First, setup the
+                                                   // argument lists.
+                if (ctx.conn_params!=null) {
+                    visit(ctx.conn_params);
+                    String exprArgs = "";
+                    for (int i=0
+                             , ceaSz=xArgs.connectorExpressionArguments.size();
+                         i<ceaSz; ++i) {
+                        exprArgs += ( (0==i) ? "" : "," )
+                            + xArgs.connectorExpressionArguments.get(i);
+                    }
+                    myInfo.callInfoX
+                        = new CallInfoX(connector_def, instance_name, szExpr
+                                        ,exprArgs
+                                        ,xArgs.connectorExpressionArguments
+                                        ,xArgs.connectorElementArguments
+                                        ,xArgs.connectorElementToPortArguments);
+                    String args4debugging = exprArgs;
+                    for (int el=0, eSz=xArgs.connectorElementArguments.size();
+                         el<eSz;
+                         el+=2) { // advance by 2!
+                        final int elementIndex = el/2;
+                        var elementName
+                            = xArgs.connectorElementArguments.get(el);
+                        var elementSizeExpr
+                            = xArgs.connectorElementArguments.get(el+1);
+                        args4debugging +=
+                            ( (0==el && exprArgs.equals("")) ? "" : "," )
+                            + elementName
+                            + ( elementSizeExpr.equals("")
+                                ? ""
+                                : "[" + elementSizeExpr + "]" );
+                        // Find the element's IdInfo - needed to check
+                        // what elementSizeExpr should be when it's "".
+                        IdInfo elementInfo = getIdInfo(elementName);
+                        // There are two cases:
+                        //
+                        // (1) isFrameAConnectorP -> element is a role
+                        // of this connector, so its size expression
+                        // is dependent on this connector's
+                        // parameters.
+                        //
+                        // (2) ! isFrameAConnectorP -> element is a
+                        // composite/component instance of this
+                        // composite, so its size expression is again
+                        // dependent on this composite's parameters.
+                        //
+                        // Therefore, in both cases, the size
+                        // expression of the element is dependent on
+                        // values known in the current context and can
+                        // be used safely.
+                        String elementActualSizeExpr
+                            = elementInfo.arraySizeExpr;
+                        Utils.myAssertHard(elementActualSizeExpr!=null
+                                           , "Cannot find the array size "
+                                           + "expression of element \""
+                                           + elementName + "\"");
+                        // mywarning("Element \"" + elementName
+                        //           + "\" has size expression \""
+                        //           + elementActualSizeExpr + "\"");
+                        LstStr ports
+                            = xArgs.connectorElementToPortArguments
+                            .get(elementName);
+                        args4debugging += " { ";
+                        for (int prt=0, prtSz=ports.size(); prt < prtSz;
+                             prt+=2) { // advance by 2!
+                            final int portIndex = prt/2;
+                            var portName = ports.get(prt);
+                            var portSizeExpr = ports.get(prt+1);
+                            IdInfo portInfo
+                                = getPortIdInfo(elementName
+                                                , elementInfo, portName);
+                            String portActualSizeExpr
+                                = (portInfo!=null)
+                                ? portInfo.arraySizeExpr : null;
+                            Utils.myAssertHard(portActualSizeExpr!=null
+                                               , "Cannot find the array size "
+                                               + "expression of port \""
+                                               + portName + "\" of element \""
+                                               + elementName + "\"");
+                            mywarning("Port \"" + portName
+                                      + "\" of element \""
+                                      + elementName
+                                      + "\" has size expression \""
+                                      + portActualSizeExpr + "\"");
+                            args4debugging +=
+                                ( (0==prt) ? "" : "," )
+                                + portName
+                                + ( portSizeExpr.equals("")
+                                    ? ""
+                                    : "[" + portSizeExpr + "]" );
+                        }
+                        args4debugging += " } ";
+                    }
+                    mywarning("XXX: Ignoring connector arguments: "
+                              + args4debugging);
+                }
 
-            //     xArgs = null; // Lastly, tear down the connector arguments.
-            // }
+                xArgs = null; // Lastly, tear down the connector arguments.
+            }
 
             if (framenow instanceof SymbolTableComposite) {
                 ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
@@ -1656,35 +1656,35 @@ class EnvironmentCreationVisitor
 
     @Override public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
     @Override public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
-    // class ConnectorArgsHelper {
-    //     LstStr connectorExpressionArguments = new LstStr();
-    //     LstStr connectorElementArguments = new LstStr();
-    //     Map<String, LstStr> connectorElementToPortArguments
-    //         = new HashMap<String, LstStr>();
-    // }
-    // ConnectorArgsHelper xArgs = null;
+    class ConnectorArgsHelper {
+        LstStr connectorExpressionArguments = new LstStr();
+        LstStr connectorElementArguments = new LstStr();
+        Map<String, LstStr> connectorElementToPortArguments
+            = new HashMap<String, LstStr>();
+    }
+    ConnectorArgsHelper xArgs = null;
 
     @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) {
-        // Utils.myAssertHard
-        //     (xArgs!=null
-        //      , "Connector instance failed to setup argument lists");
-        // if (ctx.prim_val!=null)
-        //     xArgs.connectorExpressionArguments.add(visit(ctx.prim_val).get(0));
-        // else {
-        //     LstStr role_val = visit(ctx.role_val);
-        //     String roleName = role_val.get(0);
-        //     String roleSizeExpr = role_val.get(1);
-        //     xArgs.connectorElementArguments.add(roleName);
-        //     xArgs.connectorElementArguments.add(roleSizeExpr);
-        //     LstStr ports = new LstStr();
-        //     for (int prt = 2; prt < role_val.size(); prt+=2) {
-        //         String portName = role_val.get(prt);
-        //         String portSizeExpr = role_val.get(prt+1);
-        //         ports.add(portName);
-        //         ports.add(portSizeExpr);
-        //     }
-        //     xArgs.connectorElementToPortArguments.put(roleName, ports);
-        // }
+        Utils.myAssertHard
+            (xArgs!=null
+             , "Connector instance failed to setup argument lists");
+        if (ctx.prim_val!=null)
+            xArgs.connectorExpressionArguments.add(visit(ctx.prim_val).get(0));
+        else {
+            LstStr role_val = visit(ctx.role_val);
+            String roleName = role_val.get(0);
+            String roleSizeExpr = role_val.get(1);
+            xArgs.connectorElementArguments.add(roleName);
+            xArgs.connectorElementArguments.add(roleSizeExpr);
+            LstStr ports = new LstStr();
+            for (int prt = 2; prt < role_val.size(); prt+=2) {
+                String portName = role_val.get(prt);
+                String portSizeExpr = role_val.get(prt+1);
+                ports.add(portName);
+                ports.add(portSizeExpr);
+            }
+            xArgs.connectorElementToPortArguments.put(roleName, ports);
+        }
         return defaultResult(); }
     @Override public T visitConnectorRoleArg(XCDParser.ConnectorRoleArgContext ctx) {
         String ret = ctx.role.getText();

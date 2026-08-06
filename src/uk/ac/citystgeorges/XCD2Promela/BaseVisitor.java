@@ -238,6 +238,61 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                  + symbolTableNow().compilationUnitID);
         return res;
     }
+    public IdInfo getPortIdInfo(String elemName
+                                , IdInfo elementInfo, String portName) {
+        var framenow = symbolTableNow().you();
+        boolean isFrameAConnectorP = (framenow.type == XCD_type.connectort);
+        if (isFrameAConnectorP) {
+            // Must be a role
+            Utils.myAssertHard(elementInfo.type==XCD_type.rolet
+                               , "Element \"" + elemName
+                               + "\" is not of expected role type - "
+                               + "instead, it is " + elementInfo.type);
+            return getIdInfo(elementInfo.symbolTable, portName);
+        }
+
+        // Inside a composite
+        Utils.myAssertHard(elementInfo.type!=XCD_type.rolet
+                           , "Element \"" + elemName
+                           + "\" is of role type unexpectedly");
+
+        // Type should be a component or composite instance.
+        Utils.myAssertHard(elementInfo.type==XCD_type.componentt
+                           || elementInfo.type==XCD_type.compositet
+                           , "Element \"" + elemName + "\" is of unknown type "
+                           + elementInfo.variableTypeName
+                           + " " + elementInfo.type);
+        if (elementInfo.type==XCD_type.componentt) { // Component instance!
+            // Find the component type symbol table
+            IdInfo typeInfo = rootContext.map.get(elementInfo.variableTypeName);
+            if (typeInfo!=null) // normally
+                return getIdInfo(typeInfo.symbolTable, portName);
+
+            // what the hell?!?
+            myassert(typeInfo!=null
+                     , "Element \"" + elemName
+                     + "\" has no type info (\""
+                     + elementInfo.variableTypeName
+                     + "\" " + elementInfo.type
+                     + ") globally.");
+            Utils.myAssertHard(typeInfo!=null
+                               , "Could it be a case of use before declaration?"
+                               + "\nPlease report it if not.");
+            return getIdInfo(typeInfo.symbolTable, portName);
+        }
+
+        // Type should be a composite instance.
+
+        // How do we find its port? Could be the port of any of its
+        // sub-component instances. The port "name" (expression!)
+        // should tell us whose sub-component it is.
+        //
+        // Potential recursion here - the sub-component could be a
+        // composite itself.
+        Utils.myAssertHard(false
+                           , "We don't support ports of composites currently.");
+        return null;
+    }
 
     public DataTypeContext makeDataType(String dt) {
         org.antlr.v4.runtime.CharStream input

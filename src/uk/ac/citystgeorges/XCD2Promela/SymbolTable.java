@@ -172,6 +172,25 @@ class SymbolTableRoot extends SymbolTable {
     }
 }
 
+class PortInfo {                // portName -> PortInfo ("port" maybe a portvar)
+    String portKind = "";       // emitter/consumer/required/provided
+    String portIndex = "";      // index of port in parameters list
+    String portSizeExpr = "";   // port size expr in parameters list
+//  String portSize;            // 1 if portSizeExpr!="", some N otherwise
+}
+class ElementInfo {              // elementName -> ElementInfo
+    // "element" is either a role or a component
+    String connectorTypeName=""; // type name of connector applied to roleName
+    String connectorInstName=""; // instance name of connector applied to ...
+    String connectorSizeExpr=""; // connector inst size expression
+    String elementIndex="";      // index of element in parameters list
+    String elementSizeExpr="";   // element size expr in parameters list
+//  String elementSize;     // 1 if elementSizeExpr!="", some N otherwise
+    Map<String, PortInfo> elementPortArgs=new HashMap<String,PortInfo>();
+    // within a single element call info, a port can only appear once, so
+    // no need for a List<PortInfo> in elementPortArgs.
+}
+
 class CompositeConstructs extends CommonConstructs {
     LstStr params = new LstStr();
     LstStr vars = new LstStr();
@@ -179,12 +198,18 @@ class CompositeConstructs extends CommonConstructs {
     LstStr translatedAssertions = new LstStr();
     CompositeConstructs() { super(); }
 }
+class ElementBindings {         // Just to ensure that elementBindings
+                                // below is properly initialised.
+    List<ElementInfo> bindings = new ArrayList<ElementInfo>();
+}
 class SymbolTableComposite extends SymbolTable { // COMPOSITE or CONNECTOR
     LstStr subcomponents = new LstStr();
     LstStr subconnectors = new LstStr();
     CompositeConstructs compConstructs = new CompositeConstructs();
     LstStr rolesAsOrderedInParams = new LstStr();
     Map<String, LstStr> roles2portvarsInParams = new HashMap<String, LstStr>();
+    Map<String, ElementBindings> elementBindings
+        = new HashMap<String, ElementBindings>();
 
     @Override
     SymbolTableComposite you() {// System.err.println("I'm a SymbolTableComposite!");

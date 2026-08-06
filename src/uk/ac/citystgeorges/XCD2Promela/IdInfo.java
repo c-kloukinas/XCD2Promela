@@ -4,15 +4,21 @@ import java.util.Map;
 
 import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
-class CallInfo {
-    String functionName;
-    LstStr argExprList;
-    LstStr argRoleList;
-    Map<String, LstStr> role2portArgMap;
-    CallInfo( String nm, LstStr exprList
-              , LstStr roleList, Map<String, LstStr> r2pMap) {
-        functionName = nm; argExprList = exprList;
-        argRoleList = roleList; role2portArgMap = r2pMap;
+class CallInfoX {
+    String connectorType;
+    String connectorInstance;
+    String connectorInstanceSize;
+    String expressionArgs;
+    LstStr argExpressionList;
+    LstStr argElementList;
+    Map<String, LstStr> element2portArgMap;
+    CallInfoX( String tp, String nm, String sz
+               , String exprArgs, LstStr exprList
+               , LstStr elementList, Map<String, LstStr> e2pMap) {
+        connectorType = tp; connectorInstance = nm;
+        connectorInstanceSize = sz ;
+        expressionArgs = exprArgs; argExpressionList = exprList;
+        argElementList = elementList; element2portArgMap = e2pMap;
     }
 }
 
@@ -37,7 +43,7 @@ class IdInfo {
     LstStr translation = new LstStr();
     // String big_name;
     // String var_prefix;
-    CallInfo callInfo = null;
+    CallInfoX callInfoX = null;
     String parent;
     EventStructure methodStructure=null; // used by events/methods only
     SymbolTable symbolTable=null;
