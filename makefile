@@ -141,6 +141,13 @@ test:  tests
 
 clean:
 	-rm -rf $(TARGETJAR) $(JBLDDIRFULL) $(BLDDIRFULL)
+	-ls -d */. \
+	| while read f ; do \
+		d=`dirname "${f}"` ; \
+		if [ -d "${d}" -a ! -h "${d}" ] ; then \
+			-find "${d}" -name '*~' -a \! -name z-stage-us~ -exec rm '{}' \; ; \
+		fi ; \
+	done
 
 backupf:	backup-full
 
