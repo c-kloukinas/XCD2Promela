@@ -124,9 +124,6 @@ connector basic_init2par(initiator{auction,propose}, participant{auction,propose
 }
 
 connector composite_init2par(initiator{auction,propose}, participant{auction,propose}){
-
-    connector basic_init2par connInstance(initiator{auction,propose}, participant{auction,propose});
-
     role initiator{
         emitter port_variable auction{
             startAuction();
@@ -163,6 +160,9 @@ connector composite_init2par(initiator{auction,propose}, participant{auction,pro
             proposeAmount(byte propAmount);
         }
     }
+
+    connector basic_init2par connInstance(initiator{auction,propose}, participant{auction,propose});
+
     connector async link1(participant{auction},initiator{auction});
     connector async link2(participant{propose}, initiator{propose});
 }
