@@ -19,10 +19,23 @@ public class TranslatorInlineFunctionDeclarationContext implements TranslatorI {
 
         var params = ctx.params;
         if (params.par_pre != null) {
-            prms += params.par_pre.id.getText();
+            {
+                String prmName = params.par_pre.array.id.getText();
+                prms += prmName;
+                bv.myassert(params.par_pre.array.size==null
+                            , "Function parameters cannot be arrays - "
+                            + "function \"" + ctx.id.getText()
+                            + "\", parameter \"" + prmName + "\"");
+            }
             if (params.pars!=null)
-                for (var par : params.pars)
-                    prms += ", " + par.id.getText();
+                for (var par : params.pars) {
+                    String prmName = par.array.id.getText();
+                    prms += ", " + prmName;
+                    bv.myassert(par.array.size==null
+                                , "Function parameters cannot be arrays - "
+                                + "function \"" + ctx.id.getText()
+                                + "\", parameter \"" + prmName + "\"");
+                }
         }
 
         var def = bv.visit(ctx.inline);

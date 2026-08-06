@@ -40,16 +40,6 @@ class EnvironmentCreationVisitor
         return aggregate;
     }
 
-    @Override
-    String component_variable_id(String var, ArraySizeContext index)
-    {   Utils.myAssertHard(index!=null, "Passed a null array size");
-        return var
-            + "["
-            + ((index==null)
-               ? "1"
-               : visit(index).get(0))
-            + "]"; }
-
    /**
      * Constructs that create their own environment.
      */
@@ -76,7 +66,6 @@ class EnvironmentCreationVisitor
                         , XCD_type.typet
                         , kword
                         , false
-                        , sizeZero // (ArraySizeContext)null
                         , (VariableDefaultValueContext)null
                         , compilationUnitID); }
 
@@ -87,25 +76,17 @@ class EnvironmentCreationVisitor
     //     return registerNewEnvironment(name, ctx, XCD_type.unknownt);
     // }
     private T registerNewEnvironment(String name, ParserRuleContext ctx
-                                     , XCD_type tp
-                                     , ArraySizeContext arraySize
-                                     , SymbolTable newctx) {
-        return registerNewEnvironment(name, ctx, tp, arraySize, newctx
-                                      , (TranslatorI)null);
-    }
+                                     , XCD_type tp, SymbolTable newctx)
+    { return registerNewEnvironment(name, ctx, tp, newctx, (TranslatorI)null); }
     private T registerNewEnvironment(String name, ParserRuleContext ctx
-                                     , XCD_type tp
-                                     , ArraySizeContext arraySize
-                                     , SymbolTable newctx
+                                     , XCD_type tp, SymbolTable newctx
                                      , TranslatorI tr) {
-        return registerNewEnvironment(name, ctx, tp, arraySize, newctx, tr
+        return registerNewEnvironment(name, ctx, tp, newctx, tr
                                       , (ParserRuleContext context)
                                       -> {return visitChildren(context);});
     }
     private T registerNewEnvironment(String name, ParserRuleContext ctx
-                                     , XCD_type tp
-                                     , ArraySizeContext arraySize
-                                     , SymbolTable newctx
+                                     , XCD_type tp, SymbolTable newctx
                                      , TranslatorI tr
                                      , Function<ParserRuleContext, T> vis) {
         updateln(ctx);
@@ -119,15 +100,12 @@ class EnvironmentCreationVisitor
          */
 
         // Add the name to the current environment
-        globalIdInfo = addIdInfo(name, tp, false
-                                 // roles,portvars,ports,sub-component/connector
-                                 , arraySize
-                                 , (VariableDefaultValueContext)null
-                                 , framenow.compilationUnitID);
+        globalIdInfo = fixOrAddIdInfo(name, tp, "" // unknown variableTypeName
+                                      , false
+                                      , (VariableDefaultValueContext)null
+                                      , framenow.compilationUnitID);
         // add symbol's Symbol Table to its ID Info
         globalIdInfo.symbolTable = newctx;
-        // // add potential size iterator to the symbol table
-        // sizeVisitOrOne(arraySize);
         // push new environment context
         pushSymbolTable(newctx);
 
@@ -180,11 +158,7 @@ class EnvironmentCreationVisitor
             rootContext.composites.put(myName, newctx);
         }
         TranslatorI tr = new TranslatorCompositeOrConnectorDeclarationContext();
-        var res = registerNewEnvironment(myName, ctx
-                                         , myType
-                                         // there's no size part
-                                         , sizeZero // (ArraySizeContext) null
-                                         , newctx, tr);
+        var res = registerNewEnvironment(myName, ctx, myType, newctx, tr);
 
         /* Check that the set of roles and the set of roles listed in
          * the parameters are the same.
@@ -317,13 +291,15 @@ class EnvironmentCreationVisitor
             = (ctx.struct.getType()==XCDParser.TK_COMPONENT)
             ? XCD_type.componentt
             : XCD_type.rolet;
-        String myName = ctx.id.getText();
+        T arrayTranslation = visit(ctx.array);
+        String myName = arrayTranslation.get(0);
+        String arraySizeExpr = arrayTranslation.get(1);
         SymbolTable framenow = symbolTableNow();
         mySyntaxCheck(myType!=XCD_type.componentt
                       || framenow.type==XCD_type.roott
                       , "Component "
                       + myName
-                      + " must be defined int the global context"
+                      + " must be defined in the global context"
                       + " - parent is "
                       + printFrame(framenow));
         mySyntaxCheck(myType!=XCD_type.rolet
@@ -331,21 +307,9 @@ class EnvironmentCreationVisitor
                       , "Role must be defined inside connectors"
                       + " - parent is "
                       + printFrame(framenow));
-        ArraySizeContext arSize
-            = (ctx.size==null)
-            ? ( (myType==XCD_type.rolet)
-                ? sizeOne
-                : sizeZero )
-            : ctx.size;
-        if (ctx.size!=null)
-            stackOfArrays.addFirst(myName);
-        Utils.myAssertHard
-            ( myType!=XCD_type.rolet // role -> !sizeZero
-              || arSize!=sizeZero
-              , "A role cannot have a zero array size - internal error" );
         mySyntaxCheck
             ( myType==XCD_type.rolet // !role -> sizeZero
-              || arSize==sizeZero
+              || arraySizeExpr.equals("")
               , "Elemental component definitions, like for "
               + myName + ", cannot have an array size.\n"
               + "Only their instances inside composite components can." );
@@ -355,7 +319,7 @@ class EnvironmentCreationVisitor
             myassert(ctx.param==null
                      , "Role \"" + myName + "\": roles cannot have parameters");
         }
-        tr = new TranslatorComponentOrRoleDeclarationContext();
+        tr = new TranslatorComponentOrRoleDeclarationContext(myName);
         SymbolTable newctx
             = framenow.makeSymbolTableComponent(myName, ctx
                                                 , myType , false);
@@ -363,16 +327,14 @@ class EnvironmentCreationVisitor
         if (myType==XCD_type.componentt)
             rootContext.components.put(myName,(SymbolTableComponent)newctx);
 
-        var res=registerNewEnvironment(myName, ctx, myType, arSize, newctx, tr);
-        if (ctx.size!=null)
-            stackOfArrays.removeFirst();
+        var res=registerNewEnvironment(myName, ctx, myType, newctx, tr);
         return res;
     }
 
     @Override public T visitPortDeclaration(XCDParser.PortDeclarationContext ctx) {
         updateln(ctx);
         var framenow = symbolTableNow();
-       // TK_EMITTER/CONSUMER/REQUIRED/PROVIDED
+        // TK_EMITTER/CONSUMER/REQUIRED/PROVIDED
         int myTypeOfPort=ctx.type.getType();
         boolean imVariable=(ctx.valOrVar.getType()==XCDParser.TK_PORTVAR);
         mySyntaxCheck(!imVariable
@@ -389,30 +351,26 @@ class EnvironmentCreationVisitor
             = (imVariable)
             ? portTypeToken2PortVarType.get(myTypeOfPort)
             : portTypeToken2PortType   .get(myTypeOfPort);
-        String portName = ctx.id.getText();
-        if (ctx.size!=null)
-            stackOfArrays.addFirst(portName);
-        XCDParser.ArraySizeContext thesz = sizeOrOne(ctx.size);
+        T arrayTranslation = visit(ctx.array);
+        String portName = arrayTranslation.get(0);
+        String portSizeExpr = arrayTranslation.get(1);
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
 
         myassert(myType!=null
                  && portName!=null
                  && portList != null, "Error: unknown kind of port");
-        // addIdInfo(portName
-        //           , tp
-        //           // , "portType"
-        //           , false
-        //           , array_sz
-        //           , (VariableDefaultValueContext) null
-        //           , compUnitId);
+        // fixOrAddIdInfo(portName
+        //                , tp
+        //                // , "portType"
+        //                , false
+        //                , (VariableDefaultValueContext) null
+        //                , compUnitId);
         portList.add(portName);
 
         SymbolTablePort newctx
             = framenow.makeSymbolTablePort(portName, ctx, myType, false);
-        var res = registerNewEnvironment(portName, ctx, myType, thesz, newctx);
-        if (ctx.size!=null)
-            stackOfArrays.removeFirst();
+        var res = registerNewEnvironment(portName, ctx, myType, newctx);
         return res;
     }
 
@@ -477,7 +435,6 @@ class EnvironmentCreationVisitor
                                        , (imaMethod
                                           ? XCD_type.methodt
                                           : XCD_type.eventt)
-                                       , sizeZero // there's no size part
                                        , newctx);
         /* registerNewEnvironment pops the context - re-push it so
          * that interaction/functional constraints will be processed
@@ -506,7 +463,6 @@ class EnvironmentCreationVisitor
                 IdInfo idinfo = addIdInfo(exc
                                           , XCD_type.exceptiont
                                           , false
-                                          , sizeZero // (ArraySizeContext)null
                                           , (VariableDefaultValueContext)null
                                           , newctx.compilationUnitID);
                 idinfo.translation.add(Names.exceptionName(exc));
@@ -667,9 +623,7 @@ class EnvironmentCreationVisitor
             = framenow.makeSymbolTableFunction(shortFunctionName, ctx);
         TranslatorI tr = new TranslatorInlineFunctionDeclarationContext();
         T res1 = registerNewEnvironment(shortFunctionName, ctx
-                                        , XCD_type.functiont
-                                        , sizeZero // there's no size part
-                                        , newctx, tr);
+                                        , XCD_type.functiont, newctx, tr);
 
         // get function's IdInfo and add its functionFullName
         IdInfo funcIdInfo = getIdInfo(shortFunctionName);
@@ -770,7 +724,6 @@ class EnvironmentCreationVisitor
                                         , XCD_type.enumt
                                         , "" // valuesAsAString - a hack...
                                         , false
-                                        , sizeZero
                                         , null
                                         , framenow.compilationUnitID);
 
@@ -786,7 +739,6 @@ class EnvironmentCreationVisitor
             IdInfo valInfo = addIdInfo(vl
                                        , XCD_type.enumvalt
                                        , false
-                                       , sizeZero
                                        , null
                                        , enumName.toString());
             valInfo.translation
@@ -871,7 +823,6 @@ class EnvironmentCreationVisitor
                         , XCD_type.typedeft
                         , typedefFullName // a hack
                         , false
-                        , sizeZero
                         , null
                         , framenow.compilationUnitID);
         mywarning("Added type \"" + newtype + "\" (\"" + typedefFullName
@@ -897,20 +848,17 @@ class EnvironmentCreationVisitor
 
     @Override public T visitVarDecl(XCDParser.VarDeclContext ctx) {
         updateln(ctx);
-        String varName = ctx.id.getText();
+        T arrayTranslation = visit(ctx.array);
+        String varName = arrayTranslation.get(0);
+        String arraySizeExpr = arrayTranslation.get(1);
         DataTypeContext dtypeCtx = ctx.type; // int, byte, bool, void, ID(long name)
         String dtype = visit(dtypeCtx).get(0);
-        // always non-null for user-defined variables/parameters
-        // Every instance is an array.
-        if (ctx.size!=null)
-            stackOfArrays.addFirst(varName);
         VariableDefaultValueContext initVal = ctx.initval;
         T res = visitVarOrParamDecl(dtypeCtx
                                     , varName
-                                    , sizeOrOne(ctx.size)
+                                    , arraySizeExpr // sizeOrOne(ctx.size)
                                     , initVal
                                     , !readingParams);
-        ArraySizeContext array_sz = sizeVisitOrOne(ctx.size);
         if (!readingParams) {
             IdInfo idinfo = getIdInfo(varName);
             SymbolTable framenow = symbolTableNow();
@@ -920,14 +868,12 @@ class EnvironmentCreationVisitor
             else
                 idinfo.type=XCD_type.mparamt;
         }
-        if (ctx.size!=null)
-            stackOfArrays.removeFirst();
         return res;
     }
 
     public T visitVarOrParamDecl(DataTypeContext dtype
                                  , String varName
-                                 , ArraySizeContext array_sz
+                                 , String array_sz
                                  , VariableDefaultValueContext initVal
                                  , boolean isVar) {
         return visitVarOrParamDecl(dtype.getText()
@@ -939,22 +885,20 @@ class EnvironmentCreationVisitor
 
     public T visitVarOrParamDecl(String dtype
                                  , String varName
-                                 , ArraySizeContext array_sz
+                                 , String array_sz
                                  , VariableDefaultValueContext initVal
                                  , boolean isVar) {
         var framenow = (SymbolTable) symbolTableNow();
         String compUnitId = framenow.compilationUnitID;
         XCD_type tp = framenow.type;
-
-        IdInfo idinfo = addIdInfo(varName
-                                  , (isVar
-                                     ? XCD_type.vart
-                                     : XCD_type.paramt)
-                                  , dtype
-                                  , !isVar
-                                  , array_sz
-                                  , initVal
-                                  , compUnitId);
+        IdInfo idinfo = fixOrAddIdInfo(varName
+                                       , (isVar
+                                          ? XCD_type.vart
+                                          : XCD_type.paramt)
+                                       , dtype
+                                       , !isVar
+                                       , initVal
+                                       , compUnitId);
         if (tp==XCD_type.methodt
             || tp==XCD_type.eventt
             || tp==XCD_type.functiont) {
@@ -1028,18 +972,10 @@ class EnvironmentCreationVisitor
             idinfo.translation.add(trans);
         }
 
-        if (array_sz!=null) {
-            T res = visit(array_sz);
-            if (res.size()!=0) {
-                idinfo.translation.add(res.get(0));
-                // mywarning("VarDecl: " + varName
-                //           + " has arraySz " + res.get(0));
-            } else {
-                idinfo.translation.add("UNKNOWN_ARRAY_SZ_TRANSLATION");
-                myassert(false
-                         , "VarDecl: " + varName
-                         + " has arraySz UNKNOWN_ARRAY_SZ_TRANSLATION");
-            }
+        if (array_sz!=null && !array_sz.equals("")) {
+            idinfo.translation.add(array_sz);
+            mywarning("VarDecl: " + varName
+                      + " has arraySz " + array_sz);
         } else {
             idinfo.translation.add("1");
             // mywarning("VarDecl: " + varName
@@ -1069,10 +1005,11 @@ class EnvironmentCreationVisitor
         updateln(ctx);
         Token tk = (Token) ctx.elType;
         var framenow = symbolTableNow().you();
+        boolean isFrameAConnectorP = (framenow.type == XCD_type.connectort);
         String compUnitId = framenow.compilationUnitID;
-        String instance_name = ctx.id.getText();
-        if (ctx.size!=null || ctx.connsize!=null)
-            stackOfArrays.addFirst(instance_name);
+        T arrayTranslation = visit(ctx.array);
+        String instance_name = arrayTranslation.get(0);
+        String arraySizeExpr = arrayTranslation.get(1);
 
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
@@ -1084,27 +1021,27 @@ class EnvironmentCreationVisitor
             String component_def = ctx.userdefined.getText();
 
             IdInfo myInfo
-                = addIdInfo(instance_name
-                            , XCD_type.componentt
-                            , component_def
-                            , false
-                            , sizeOrOne(ctx.size)
-                            , null // no init value
-                            , compUnitId);
-            ArraySizeContext sz = sizeVisitOrOne(ctx.size);
-            // params must be processed after sz, in case they use an
-            // iterator.
+                = fixOrAddIdInfo(instance_name
+                                 , XCD_type.componentt
+                                 , component_def
+                                 , false
+                                 , // no init value
+                                 (VariableDefaultValueContext)null
+                                 , compUnitId);
+            String szExpr = arraySizeExpr;
+            // params must be processed after szExpr, in case they use
+            // an iterator.
             if (ctx.params!=null) {
                 var argList = visit(ctx.params);
                 String args = "";
                 int index = 0;
                 for (var arg : argList)
                     args += ( (index++ == 0) ? "" : "," ) + arg;
-                myInfo.callInfo
-                    = new CallInfo(instance_name
-                                   , argList
-                                   , null // no roles here
-                                   , null); // no roles2ports here
+                // myInfo.callInfoX
+                //     = new CallInfoX(component_def, instance_name, szExpr
+                //                     , args, argList
+                //                    , null // no roles here
+                //                    , null); // no roles2ports here
                 // mywarning("XXX: Ignoring composite/component arguments" + args);
             }
             if (!(framenow instanceof SymbolTableComposite)) {
@@ -1136,58 +1073,116 @@ class EnvironmentCreationVisitor
                    ? Names.connProcedural()
                    : Names.connAsynchronous());
             IdInfo myInfo
-                = addIdInfo(instance_name
-                            , XCD_type.connectort
-                            , connector_def
-                            , false
-                            , sizeOrOne(ctx.connsize)
-                            , null    // no init value
-                            , compUnitId);
-            ArraySizeContext sz = sizeVisitOrOne(ctx.connsize);
-            // conn_params processed after sz (might use an iterator).
-            setUpConnectorArgLists(); // First, setup the argument lists
-            {
-                if (ctx.conn_params!=null) {
-                    visit(ctx.conn_params);
-                    String args = "";
-                    for (int i=0, ceaSz=connectorExpressionArguments.size();
-                         i<ceaSz; ++i) {
-                        args += ( (0==i) ? "" : "," )
-                            + connectorExpressionArguments.get(i);
-                    }
-                    for (int r=0, rSz=connectorRoleArguments.size(); r<rSz;
-                         r+=2) { // advance by 2!
-                        final int roleIndex = r/2;
-                        var roleName = connectorRoleArguments.get(r);
-                        var roleSizeExpr = connectorRoleArguments.get(r+1);
-                        args +=
-                            ( (0==rSz) ? "" : "," )
-                            + roleName
-                            + "[" + roleSizeExpr + "]";
-                        LstStr ports
-                            = connectorRoleToPortArguments.get(roleName);
-                        args += " { ";
-                        for (int p=0, pSz=ports.size(); p < pSz;
-                             p+=2) { // advance by 2!
-                            final int portIndex = p/2;
-                            var portName = ports.get(p);
-                            var portSizeExpr = ports.get(p+1);
-                            args +=
-                                ( (0==p) ? "" : "," )
-                                + portName
-                                + "[" + portSizeExpr + "]";
-                        }
-                        args += " } ";
-                    }
-                    myInfo.callInfo
-                        = new CallInfo(instance_name
-                                       , connectorExpressionArguments
-                                       , connectorRoleArguments
-                                       , connectorRoleToPortArguments);
-                    // mywarning("XXX: Ignoring connector arguments: " + args);
-                }
-            }
-            tearDownConnectorArgLists(); // Now, unset the argument lists
+                = fixOrAddIdInfo(instance_name
+                                 , XCD_type.connectort
+                                 , connector_def
+                                 , false
+                                 , // no init value
+                                 (VariableDefaultValueContext)null
+                                 , compUnitId);
+            String szExpr = arraySizeExpr;
+            // conn_params processed after szExpr (might use an iterator).
+            // {
+            //     xArgs = new ConnectorArgsHelper(); // First, setup the
+            //                                        // argument lists.
+            //     if (ctx.conn_params!=null) {
+            //         visit(ctx.conn_params);
+            //         String exprArgs = "";
+            //         for (int i=0
+            //                  , ceaSz=xArgs.connectorExpressionArguments.size();
+            //              i<ceaSz; ++i) {
+            //             exprArgs += ( (0==i) ? "" : "," )
+            //                 + xArgs.connectorExpressionArguments.get(i);
+            //         }
+            //         myInfo.callInfoX
+            //             = new CallInfoX(connector_def, instance_name, szExpr
+            //                             ,exprArgs
+            //                             ,xArgs.connectorExpressionArguments
+            //                             ,xArgs.connectorElementArguments
+            //                             ,xArgs.connectorElementToPortArguments);
+            //         String args4debugging = exprArgs;
+            //         for (int el=0, eSz=xArgs.connectorElementArguments.size();
+            //              el<eSz;
+            //              el+=2) { // advance by 2!
+            //             final int elementIndex = el/2;
+            //             var elementName
+            //                 = xArgs.connectorElementArguments.get(el);
+            //             var elementSizeExpr
+            //                 = xArgs.connectorElementArguments.get(el+1);
+            //             args4debugging +=
+            //                 ( (0==el && exprArgs.equals("")) ? "" : "," )
+            //                 + elementName
+            //                 + ( elementSizeExpr.equals("")
+            //                     ? ""
+            //                     : "[" + elementSizeExpr + "]" );
+            //             // Find the element's IdInfo - needed to check
+            //             // what elementSizeExpr should be when it's "".
+            //             IdInfo elementInfo = getIdInfo(elementName);
+            //             // There are two cases:
+            //             //
+            //             // (1) isFrameAConnectorP -> element is a role
+            //             // of this connector, so its size expression
+            //             // is dependent on this connector's
+            //             // parameters.
+            //             //
+            //             // (2) ! isFrameAConnectorP -> element is a
+            //             // composite/component instance of this
+            //             // composite, so its size expression is again
+            //             // dependent on this composite's parameters.
+            //             //
+            //             // Therefore, in both cases, the size
+            //             // expression of the element is dependent on
+            //             // values known in the current context and can
+            //             // be used safely.
+            //             String elementActualSizeExpr
+            //                 = elementInfo.arraySizeExpr;
+            //             Utils.myAssertHard(elementActualSizeExpr!=null
+            //                                , "Cannot find the array size "
+            //                                + "expression of element \""
+            //                                + elementName + "\"");
+            //             // mywarning("Element \"" + elementName
+            //             //           + "\" has size expression \""
+            //             //           + elementActualSizeExpr + "\"");
+            //             LstStr ports
+            //                 = xArgs.connectorElementToPortArguments
+            //                 .get(elementName);
+            //             args4debugging += " { ";
+            //             for (int prt=0, prtSz=ports.size(); prt < prtSz;
+            //                  prt+=2) { // advance by 2!
+            //                 final int portIndex = prt/2;
+            //                 var portName = ports.get(prt);
+            //                 var portSizeExpr = ports.get(prt+1);
+            //                 IdInfo portInfo
+            //                     = getPortIdInfo(elementName
+            //                                     , elementInfo, portName);
+            //                 String portActualSizeExpr
+            //                     = (portInfo!=null)
+            //                     ? portInfo.arraySizeExpr : null;
+            //                 Utils.myAssertHard(portActualSizeExpr!=null
+            //                                    , "Cannot find the array size "
+            //                                    + "expression of port \""
+            //                                    + portName + "\" of element \""
+            //                                    + elementName + "\"");
+            //                 mywarning("Port \"" + portName
+            //                           + "\" of element \""
+            //                           + elementName
+            //                           + "\" has size expression \""
+            //                           + portActualSizeExpr + "\"");
+            //                 args4debugging +=
+            //                     ( (0==prt) ? "" : "," )
+            //                     + portName
+            //                     + ( portSizeExpr.equals("")
+            //                         ? ""
+            //                         : "[" + portSizeExpr + "]" );
+            //             }
+            //             args4debugging += " } ";
+            //         }
+            //         mywarning("XXX: Ignoring connector arguments: "
+            //                   + args4debugging);
+            //     }
+
+            //     xArgs = null; // Lastly, tear down the connector arguments.
+            // }
 
             if (framenow instanceof SymbolTableComposite) {
                 ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
@@ -1205,9 +1200,6 @@ class EnvironmentCreationVisitor
                          + "\" of type \"" + connector_def + "\"\n");
             }
         } else {myassert(false, "Unknown element type inside component");}
-
-        if (ctx.size!=null || ctx.connsize!=null)
-            stackOfArrays.removeFirst();
 
         return defaultResult();
     }
@@ -1296,7 +1288,6 @@ class EnvironmentCreationVisitor
             return visitChildren(ctx);
 
         String roleName = ctx.role.getText();
-        // ArraySizeContext sz = sizeOrOne(ctx.size);
         LstStr portParamNames = new LstStr();
         portParamNames.add(ctx.pv_pre.getText());
         for (var pv : ctx.pvs) {
@@ -1433,21 +1424,42 @@ class EnvironmentCreationVisitor
     }
 
     @Override
+    public T visitArrayDecl(XCDParser.ArrayDeclContext ctx) {
+        String arrayName = ctx.id.getText();
+        stackOfArrays.addFirst(arrayName);
+        IdInfo someArrayIdInfo = addIdInfo(arrayName
+                                           , XCD_type.unknownt // to be replaced
+                                           , ""                // unknown type
+                                           , false             // is param?
+                                           , // no init value
+                                           (VariableDefaultValueContext)null
+                                           ,symbolTableNow().compilationUnitID);
+        T res = new T(arrayName);
+        if (ctx.size!=null) {
+            String arraySizeExpr = visit(ctx.size).get(0);
+            someArrayIdInfo.arraySizeExpr = arraySizeExpr;
+            res.add(arraySizeExpr);
+        } else
+            res.add("");        // missing size expression - either One or Zero
+        stackOfArrays.removeFirst();
+        return res;
+   }
+
+    @Override
     public T visitArraySize(XCDParser.ArraySizeContext ctx) {
         updateln(ctx);
-        // var tr = new TranslatorArraySizeContext();
+        String myArrayIs = stackOfArrays.peekFirst();
+        Utils.myAssertHard(myArrayIs!=null
+                           , "Cannot associate this size expression "
+                           + "with an array");
         if (ctx.atId!=null) {
             String myName = ctx.atId.getText();
-            String myArrayIs = stackOfArrays.peekFirst();
-            Utils.myAssertHard(myArrayIs!=null
-                               , "Cannot assign @"+myName+" to an array");
             // register @atId in the symbol table
             IdInfo idinfo = addIdInfo(myName
                                       , XCD_type.att
                                       , // dtype (String)
                                         myArrayIs
                                       , false // is_paramp
-                                      , sizeZero
                                       , (VariableDefaultValueContext)null
                                       , symbolTableNow().compilationUnitID);
             {
@@ -1467,6 +1479,11 @@ class EnvironmentCreationVisitor
             }
         }
         T res = visit(ctx.arraySz);
+        IdInfo myArrayInfo = getIdInfo(myArrayIs);
+        Utils.myAssertHard(myArrayInfo!=null
+                           , "Cannot find info on the array \""
+                           + myArrayIs + "\"");
+        myArrayInfo.arraySizeExpr = res.get(0);
         return res;
     }
 
@@ -1639,43 +1656,35 @@ class EnvironmentCreationVisitor
 
     @Override public T visitConnectorParameterList(XCDParser.ConnectorParameterListContext ctx) { return visitChildren(ctx); }
     @Override public T visitConnectorArgumentList(XCDParser.ConnectorArgumentListContext ctx) { return visitChildren(ctx); }
-    LstStr connectorExpressionArguments = null;
-    LstStr connectorRoleArguments = null;
-    Map<String, LstStr> connectorRoleToPortArguments = null;
-    void setUpConnectorArgLists() {
-        connectorExpressionArguments=new LstStr();
-        connectorRoleArguments=new LstStr();
-        connectorRoleToPortArguments=new HashMap<String, LstStr>();
-    }
-    void tearDownConnectorArgLists() {
-        connectorExpressionArguments=null;
-        connectorRoleArguments=null;
-        connectorRoleToPortArguments=null;
-    }
+    // class ConnectorArgsHelper {
+    //     LstStr connectorExpressionArguments = new LstStr();
+    //     LstStr connectorElementArguments = new LstStr();
+    //     Map<String, LstStr> connectorElementToPortArguments
+    //         = new HashMap<String, LstStr>();
+    // }
+    // ConnectorArgsHelper xArgs = null;
 
     @Override public T visitConnectorArgument(XCDParser.ConnectorArgumentContext ctx) {
-        Utils.myAssertHard
-            (connectorExpressionArguments!=null
-             && connectorRoleArguments!=null
-             && connectorRoleToPortArguments!=null
-             , "Connector instance failed to setup argument lists");
-        if (ctx.prim_val!=null)
-            connectorExpressionArguments.add(visit(ctx.prim_val).get(0));
-        else {
-            LstStr role_val = visit(ctx.role_val);
-            String roleName = role_val.get(0);
-            String roleSizeExpr = role_val.get(1);
-            connectorRoleArguments.add(roleName);
-            connectorRoleArguments.add(roleSizeExpr);
-            LstStr ports = new LstStr();
-            for (int prt = 2; prt < role_val.size(); prt+=2) {
-                String portName = role_val.get(prt);
-                String portSizeExpr = role_val.get(prt+1);
-                ports.add(portName);
-                ports.add(portSizeExpr);
-            }
-            connectorRoleToPortArguments.put(roleName, ports);
-        }
+        // Utils.myAssertHard
+        //     (xArgs!=null
+        //      , "Connector instance failed to setup argument lists");
+        // if (ctx.prim_val!=null)
+        //     xArgs.connectorExpressionArguments.add(visit(ctx.prim_val).get(0));
+        // else {
+        //     LstStr role_val = visit(ctx.role_val);
+        //     String roleName = role_val.get(0);
+        //     String roleSizeExpr = role_val.get(1);
+        //     xArgs.connectorElementArguments.add(roleName);
+        //     xArgs.connectorElementArguments.add(roleSizeExpr);
+        //     LstStr ports = new LstStr();
+        //     for (int prt = 2; prt < role_val.size(); prt+=2) {
+        //         String portName = role_val.get(prt);
+        //         String portSizeExpr = role_val.get(prt+1);
+        //         ports.add(portName);
+        //         ports.add(portSizeExpr);
+        //     }
+        //     xArgs.connectorElementToPortArguments.put(roleName, ports);
+        // }
         return defaultResult(); }
     @Override public T visitConnectorRoleArg(XCDParser.ConnectorRoleArgContext ctx) {
         String ret = ctx.role.getText();

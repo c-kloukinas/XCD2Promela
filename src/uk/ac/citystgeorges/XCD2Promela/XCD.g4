@@ -28,8 +28,8 @@ compositeElement:
 ;
 
 componentOrRoleDeclaration:
-  struct=(TK_COMPONENT | TK_ROLE) id=ID
-      (size=arraySize)?         // Roles can be an array - components NOT!
+  struct=(TK_COMPONENT | TK_ROLE)
+      array=arrayDecl // Roles can be an array - components NOT!
       (param=formalParameters)?
   TK_LBRACE
     ( elements+=componentElement )+
@@ -46,7 +46,7 @@ componentElement:
 
 portDeclaration:
   type=(TK_EMITTER | TK_CONSUMER | TK_REQUIRED | TK_PROVIDED)
-      valOrVar=( TK_PORT | TK_PORTVAR ) id=ID (size=arraySize)?
+      valOrVar=( TK_PORT | TK_PORTVAR ) array=arrayDecl
   TK_LBRACE
     // ( (events+=eventContract)+
     // | (methods+=methodContract)+ )
@@ -127,11 +127,13 @@ inlineFunctionDeclaration:
 ;
 
 varDecl:
-  type=dataType  id=ID (size=arraySize)?
+  type=dataType  array=arrayDecl
   (op=TK_ASSIGN initval=variableDefaultValue)?
 ;
 
-// The following rule should be replaced by arrayIndex
+arrayDecl:   // used to ensure that stackOfArrays is updated correctly
+    id=ID (size=arraySize)?
+;
 arraySize:
   TK_LBRACKET
     // (constant = NATURAL |config_par = ID)
@@ -150,11 +152,13 @@ variableDefaultValue:
 elementVarDecl:
 ( elType=(TK_COMPONENT | TK_COMPOSITE)
      userdefined=ID
-     id=ID (size=arraySize)? TK_LPAR (params=argumentList)? TK_RPAR )
+     array=arrayDecl
+     TK_LPAR (params=argumentList)? TK_RPAR )
      TK_SEMICOLON
   | ( elType=TK_CONNECTOR
        ( userdefined=ID | basicConnProc=TK_PROC | basicConnAsync=TK_ASYNC )
-       id=ID (connsize=arraySize)? conn_params=connectorArgumentList )
+       array=arrayDecl
+       conn_params=connectorArgumentList )
     TK_SEMICOLON
 ;
 //
@@ -191,6 +195,7 @@ connectorArgument_pv:
 
 formalParameters:
   TK_LPAR
+    // formal parameters CANNOT be arrays - semantic check.
     ( par_pre= varDecl ( TK_COMMA pars+= varDecl )* )?
   TK_RPAR
 ;

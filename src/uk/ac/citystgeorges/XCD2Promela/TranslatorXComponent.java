@@ -141,7 +141,7 @@ public class TranslatorXComponent {
                 .visitVarOrParamDecl
                 ("bit"
                  , trVar
-                 , bv.sizeOne   // (ArraySizeContext)null
+                 , "1" // bv.sizeOne   // (ArraySizeContext)null
                  , (VariableDefaultValueContext)null
                  , true);
         }
@@ -151,7 +151,7 @@ public class TranslatorXComponent {
                 .visitVarOrParamDecl
                 ("byte"
                  , trVar
-                 , bv.sizeOne   // (ArraySizeContext)null
+                 , "1" // bv.sizeOne   // (ArraySizeContext)null
                  , (VariableDefaultValueContext)null
                  , true);
         }
@@ -162,8 +162,8 @@ public class TranslatorXComponent {
                 + Names.typeOfVarDefName(compName, var)
                 + " "
                 + info.variableTypeName + "\n";
-            ArraySizeContext arrSz = info.arraySz;
-            if (arrSz!=null) {
+            String arrSz = info.arraySizeExpr;
+            if (! arrSz.equals("")) {
                 /* See getDataSize in XcdGenerator - seems to assume
                  * it'll be either a number or a component
                  * parameter */
@@ -171,7 +171,7 @@ public class TranslatorXComponent {
                 //        + compName
                 //        + ",CompInstanceID,Instance,"
                 //        + var + ")");
-                ;
+                bv.mywarning("TODO: XXX");
             }
 
             String type = bv.component_typeof_id(big);

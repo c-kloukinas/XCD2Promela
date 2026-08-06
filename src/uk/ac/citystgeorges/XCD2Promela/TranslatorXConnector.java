@@ -112,13 +112,9 @@ public class TranslatorXConnector {
                 ("YYYYY Role "
                  + _role_name + "'s iterator is " + roleIterator + "\n");
             String roleIndex = "1"; // when roleArSz == bv.sizeOne
-            ArraySizeContext roleArSz = role.arraySz;
-            Utils.myAssertHard(roleArSz!=null && roleArSz!=bv.sizeZero
+            String _roleArraySize = role.arraySizeExpr;
+            Utils.myAssertHard(! _roleArraySize.equals("0")
                                , "Role "+_role_name+" has a zero array size");
-            String _roleArraySize =
-                // new TranslatorArraySizeContext()
-                //     .translate(bv,roleArSz).get(0)
-                bv.visit(roleArSz.arraySz).get(0);
             // System.err.println("YYYYYY roleArSz: "+_roleArraySize+"\n");
 
             String roleVarInitialisationsUnrolled
@@ -141,7 +137,9 @@ public class TranslatorXConnector {
             for (String varn : vars) {
                 IdInfo varinfo = bv.getIdInfo(roleST, varn);
                 String vartype = varinfo.variableTypeName;
-                ArraySizeContext varszCtx = varinfo.arraySz;
+                String varsz = varinfo.arraySizeExpr;
+                if (varsz.equals(""))
+                    varinfo.arraySizeExpr = varsz = "1";
                 String varIterator =
                     "_NAME(__prefixR,"
                     + varn + "," + varinfo.arrayIterator + ")";
@@ -151,9 +149,6 @@ public class TranslatorXConnector {
                String roleVarName =
                     //"_EVALNAME(__prefixR," + varn + ")";
                     varn;
-                Utils.myAssertHard(varszCtx!=null
-                                   , "Role var " + varn + " ("
-                                   + roleVarName + ") has no array size");
                 VariableDefaultValueContext varinitCtx = varinfo.initVal;
                 String rhs = "0";
                 if (varinitCtx!=null) { // rhs is an exp - translate it
@@ -161,11 +156,6 @@ public class TranslatorXConnector {
                     rhs = new TranslatorAssignmentExpressionContext()
                         .translate(bv,varinitCtx.assignExpr).get(0);
                 }
-                String varsz =
-                    // // bv.visit(varszCtx).get(0);
-                    // new TranslatorArraySizeContext()
-                    // .translate(bv,varszCtx).get(0)
-                    bv.visit(varszCtx.arraySz).get(0);
                 // System.err.println("ZZZZZZ varsz: "+varsz+"\n");
                 _role_variables +=
                     "\n\t" + vartype + " " + roleVarName
@@ -213,8 +203,7 @@ public class TranslatorXConnector {
                 ++_portIndex;   // m4 arguments start at $1
                 // find port's symbol table
                 IdInfo portInfo = bv.getIdInfo(port);
-                ArraySizeContext portArSz = portInfo.arraySz;
-                String _portArraySize = bv.visit(portArSz.arraySz).get(0);
+                String _portArraySize = portInfo.arraySizeExpr;
                 String _portKind = "UNKNOWN";
                 {
                     XCD_type portKind = portInfo.type;

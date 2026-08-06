@@ -31,7 +31,7 @@ class IdInfo {
     String  variableTypeName = null;
     boolean is_param;
     boolean has_post = false;
-    ArraySizeContext arraySz;
+    String arraySizeExpr = "";  // by default, none (means either 0 or 1).
     String arrayIterator = "_i"; // name of iterator (@id) used on the array
     VariableDefaultValueContext initVal;
     LstStr translation = new LstStr();
@@ -42,21 +42,16 @@ class IdInfo {
     EventStructure methodStructure=null; // used by events/methods only
     SymbolTable symbolTable=null;
     IdInfo(XCD_type tp, boolean is_paramp
-           , ArraySizeContext arraySize
            , VariableDefaultValueContext theInitVal
            // , String big, String prefix
            , String prnt){
         traceAtRegistration = getStackTrace();
         type = tp;
         is_param = is_paramp;
-        arraySz = arraySize;
         initVal = theInitVal;
         // big_name = big;
         // var_prefix = prefix;
         parent = prnt;
-
-        Utils.myAssertHard(arraySize!=null // || BaseVisitor.sizeZero==null
-                           , "Array size is null");
     }
     SymbolTable getSB() {
         Utils.myAssertHard(symbolTable!=null

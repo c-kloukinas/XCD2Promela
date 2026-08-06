@@ -138,69 +138,70 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         popLastSymbolTableReal();
     }
 
-    static private ArraySizeContext makeArraySize(int sz) {
-        if (sz==0 && sizeZero!=null)
-            return sizeZero;
-        if (sz==1 && sizeOne!=null)
-            return sizeOne;
-        org.antlr.v4.runtime.CharStream input
-            = org.antlr.v4.runtime.CharStreams.fromString("["+sz+"];");
-        // create a lexer that feeds off of input CharStream
-        XCDLexer lexer
-            = new XCDLexer(input);
-        // create a buffer of tokens pulled from the lexer
-        org.antlr.v4.runtime.CommonTokenStream tokens
-            = new org.antlr.v4.runtime.CommonTokenStream(lexer);
-        // create a parser that feeds off the tokens buffer
-        XCDParser parser
-            = new XCDParser(tokens);
-        // begin parsing at "arraySize" parse rule
-        ArraySizeContext tree
-            = (ArraySizeContext) parser.arraySize();
-        Utils.myWarning("---^^^ The size asked was " + sz
-                        + " & the one created is " + tree.arraySz.getText());
-        return tree;
-    }
-    final static public ArraySizeContext sizeOne
-        = makeArraySize(1);
-    final static public ArraySizeContext sizeZero
-        = makeArraySize(0);
-    final static public ArraySizeContext sizeOrOne(ArraySizeContext sz)
-    { return (sz!=null) ? sz : sizeOne; }
-    final public ArraySizeContext sizeVisitOrOne(ArraySizeContext sz)
-    { if (sz!=null) { visit(sz); return sz; } else return sizeOne; }
-
     final static public SymbolTableRoot rootContext = new SymbolTableRoot();
 
-        protected IdInfo addIdInfo(String symbol
+    protected IdInfo getIdInfoInCurrentSTMaybe(String symbol) {
+        IdInfo res=null;
+        var currentMap = symbolTableNow().map;
+        if (currentMap.containsKey(symbol)) {
+            res = currentMap.get(symbol); // getIdInfo(symbol);
+        }
+        return res;
+    }
+    protected IdInfo fixOrAddIdInfo(String symbol
+                                    , XCD_type tp, String varTypeName
+                                    , boolean is_paramp
+                                    , VariableDefaultValueContext initVal
+                                    , String parentId) {
+        IdInfo res = fixOrAddIdInfo(symbol, tp, is_paramp, initVal, parentId);
+        res.variableTypeName = varTypeName;
+        return res;
+    }
+    protected IdInfo fixOrAddIdInfo(String symbol
+                                    , XCD_type tp
+                                    , boolean is_paramp
+                                    , VariableDefaultValueContext initVal
+                                    , String parentId) {
+        IdInfo res = getIdInfoInCurrentSTMaybe(symbol);
+        if (res==null)
+            res = addIdInfo(symbol, tp, is_paramp, initVal, parentId);
+        else {
+            Utils.myAssertHard(res.parent!=null
+                               , "IdInfo of \"" + symbol
+                               + "\" has a null parent");
+            Utils.myAssertHard(res.parent.equals(parentId)
+                               , "IdInfo disagrees on who the parent is - "
+                               + "thinks it is \"" + res.parent
+                               + "\" when it should be \"" + parentId + "\"");
+            res.type = tp;
+            res.is_param = is_paramp;
+            res.initVal = initVal;
+        }
+        return res;
+    }
+    protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, String varTypeName
                                , boolean is_paramp
-                               , ArraySizeContext arraySize
                                , VariableDefaultValueContext initVal
                                , String parentId) {
         IdInfo res
-            = addIdInfo(symbol, tp, is_paramp, arraySize
-                        , initVal, parentId);
+            = addIdInfo(symbol, tp, is_paramp, initVal, parentId);
         res.variableTypeName = varTypeName;
         return res; }
     protected IdInfo addIdInfo(String symbol
                                , XCD_type tp, boolean is_paramp
-                               , ArraySizeContext arraySize
                                , VariableDefaultValueContext initVal
                                , String parentId) {
         var newInfo = new IdInfo(tp, is_paramp
-                                 , arraySize
                                  , initVal
                                  , parentId);
-        var currentMap = stbl.get(stbl.size()-1).map;
-        if (currentMap.containsKey(symbol)) {
-            IdInfo info = currentMap.get(symbol);
+
+        IdInfo info = getIdInfoInCurrentSTMaybe(symbol);
+        if (info!=null) {
             boolean matches = (info.type == newInfo.type)
                 // && (info.sType.equals(newInfo.sType))
                 && (info.is_param == newInfo.is_param)
-                && ( (info.arraySz==null && newInfo.arraySz==null)
-                     || (info.arraySz!=null && newInfo.arraySz!=null
-                         && (info.arraySz.equals(newInfo.arraySz))) )
+                && (info.arraySizeExpr.equals(newInfo.arraySizeExpr))
                 && ( (info.initVal==null && newInfo.initVal==null)
                      || (info.initVal!=null && newInfo.initVal!=null
                          && (info.initVal.equals(newInfo.initVal))) )
@@ -210,7 +211,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                           + " (was/is)\ntype: " + info.type + " vs " + newInfo.type
                           // + "\n" + info.sType + " vs " + newInfo.sType
                           + "\nis_param: " + info.is_param + " vs " + newInfo.is_param
-                          + "\narraySz: " + info.arraySz + " vs " + newInfo.arraySz
+                          + "\narraySz: " + info.arraySizeExpr + " vs " + newInfo.arraySizeExpr
                           + "\ninitVal: " + info.initVal + " vs " + newInfo.initVal
                           + "\nparent: " + info.parent + " vs " + newInfo.parent);
                 myassert(false, "Symbol \""+symbol+"\" already in the map");
@@ -218,7 +219,9 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
                 myassert(false, "Symbol \"" +symbol+"\" already in the map - input visited twice!");
 
         } else {
-            currentMap.put(symbol, newInfo); }
+            var currentMap = symbolTableNow().map;
+            currentMap.put(symbol, newInfo);
+        }
         return newInfo;
     }
 
@@ -304,9 +307,6 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
     String component_typeof_id(String var) { return Names.typeOfVar(var);
         // "TypeOf("+ var + ")";
     }
-    String component_variable_id(String var, String index)
-    { return var + "[" + index + "]"; }
-    abstract String component_variable_id(String var, ArraySizeContext index);
 
     boolean is_enumConstant(String id) {
         var idInfo = getIdInfo(id);

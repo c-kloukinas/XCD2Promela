@@ -169,8 +169,8 @@ public class TranslatorXComposite {
                     IdInfo info = bv.getIdInfo(thisCompositeEnv
                                                , instance_name);
                     String component_def = info.variableTypeName;
-                    boolean is_array = info.arraySz!=null;
-                    ArraySizeContext sz = info.arraySz;
+                    String sz = info.arraySizeExpr;
+                    boolean is_array = !sz.equals("");
                     if (is_array)
                         instance += "  do\n"
                             + "   :: " + loop_offset + " < " + sz + " -> \n       ";

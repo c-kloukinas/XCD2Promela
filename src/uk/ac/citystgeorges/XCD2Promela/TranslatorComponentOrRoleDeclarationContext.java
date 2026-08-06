@@ -10,13 +10,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TranslatorComponentOrRoleDeclarationContext implements TranslatorI {
+    String compName;
+    TranslatorComponentOrRoleDeclarationContext(String nm) {compName=nm;}
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (ComponentOrRoleDeclarationContext)ctx); }
     public T translate(BaseVisitor<T> bv, ComponentOrRoleDeclarationContext ctx) {
         // bv.mywarning
         //     ("\n***Called TranslatorComponentOrRoleDeclarationContext translate!***");
-        String compName = ctx.id.getText();
         int thisStruct = ctx.struct.getType();
         boolean amIaComponentp = (thisStruct==XCDParser.TK_COMPONENT);
         T res = new T();
