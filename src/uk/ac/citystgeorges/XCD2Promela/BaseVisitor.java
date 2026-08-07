@@ -289,8 +289,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         //
         // Potential recursion here - the sub-component could be a
         // composite itself.
-        Utils.myAssertHard(false
-                           , "We don't support ports of composites currently.");
+        Utils.myAssertHard
+            (false, "TODO: We don't support ports of composites currently.");
         return null;
     }
 
