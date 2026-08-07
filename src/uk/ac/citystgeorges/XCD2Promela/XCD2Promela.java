@@ -65,13 +65,18 @@ public class XCD2Promela {
         //            , (String inp) -> {
         //               return inp;
         //           }));
-        // // Add the M4 common definitions file.
-        Utils.withInputAndFileToWrite
-            ("/resources/definitions/0-common-defs.m4"
-             , "0-common-defs.m4"
-             , (String inp) -> {
-                return inp;
-            });
+        // // Add the M4 common definitions file & friends.
+        { String[] files = { "0-common-defs.m4"
+                             , "async.xcd", "async.m4"
+                             , "proc.xcd",  "proc.m4" };
+            for (var file : files)
+                Utils.withInputAndFileToWrite
+                    ("/resources/definitions/" + file
+                     , file
+                     , (String inp) -> {
+                        return inp;
+                    });
+        }
         final var Err = System.err;
         if (0 == syntax_errors && 0 == semantic_errors) {
             for (Runnable task : Utils.util.delayedTasks)
