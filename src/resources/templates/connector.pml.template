@@ -11,6 +11,10 @@ pushdef(`_varname',`$2')dnl
 pushdef(`_varsize',`$3')dnl
 pushdef(`_params',`shift(shift(shift($@)))')dnl from 4th argument onwards
 dnl
+dnl Instantiate subconnectors
+dnl
+$<connector_subconnectors_called>
+dnl
 dnl Same context & varname cannot have different params or size,
 dnl so size & params not part of this mangled name.
 dnl (first comma in _NAME is to get an initial _).

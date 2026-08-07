@@ -1025,7 +1025,8 @@ class EnvironmentCreationVisitor
         String compUnitId = framenow.compilationUnitID;
         T arrayTranslation = visit(ctx.array);
         String instance_name = arrayTranslation.get(0);
-        String arraySizeExpr = arrayTranslation.get(1);
+        String szExpr = arrayTranslation.get(1);
+        if (szExpr.equals("")) szExpr="1";
 
         if (tk.getType() == XCDParser.TK_COMPONENT // sub-component instance
             || tk.getType() == XCDParser.TK_COMPOSITE) {
@@ -1044,7 +1045,12 @@ class EnvironmentCreationVisitor
                                  , // no init value
                                  (VariableDefaultValueContext)null
                                  , compUnitId);
-            String szExpr = arraySizeExpr;
+            Utils.myAssertHard(myInfo.arraySizeExpr.equals("")
+                               || myInfo.arraySizeExpr.equals(szExpr)
+                               , "Size (" + myInfo.arraySizeExpr
+                               + ") is different to szExpr (" + szExpr + ")");
+            myInfo.arraySizeExpr=szExpr;
+
             // params must be processed after szExpr, in case they use
             // an iterator.
             if (ctx.params!=null) {
@@ -1096,7 +1102,11 @@ class EnvironmentCreationVisitor
                                  , // no init value
                                  (VariableDefaultValueContext)null
                                  , compUnitId);
-            String szExpr = arraySizeExpr;
+            Utils.myAssertHard(myInfo.arraySizeExpr.equals("")
+                               || myInfo.arraySizeExpr.equals(szExpr)
+                               , "Size (" + myInfo.arraySizeExpr
+                               + ") is different to szExpr (" + szExpr + ")");
+            myInfo.arraySizeExpr=szExpr;
             // conn_params processed after szExpr (might use an iterator).
             {
                 xArgs = new ConnectorArgsHelper(); // First, setup the
@@ -1117,10 +1127,11 @@ class EnvironmentCreationVisitor
                                         ,xArgs.connectorElementArguments
                                         ,xArgs.connectorElementToPortArguments);
                     String args4debugging = exprArgs;
+                    ElementBindings emptyBindings = new ElementBindings();
                     for (int el=0, eSz=xArgs.connectorElementArguments.size();
                          el<eSz;
                          el+=2) { // advance by 2!
-                        final int elementIndex = el/2;
+                        final String elementIndex = "" + (el/2);
                         var elementName
                             = xArgs.connectorElementArguments.get(el);
                         var elementSizeExpr
@@ -1160,13 +1171,17 @@ class EnvironmentCreationVisitor
                         // mywarning("Element \"" + elementName
                         //           + "\" has size expression \""
                         //           + elementActualSizeExpr + "\"");
+                        ElementInfo callElemInfo
+                            = new ElementInfo(connector_def, instance_name
+                                              , szExpr, elementIndex
+                                              , elementActualSizeExpr);
                         LstStr ports
                             = xArgs.connectorElementToPortArguments
                             .get(elementName);
                         args4debugging += " { ";
                         for (int prt=0, prtSz=ports.size(); prt < prtSz;
                              prt+=2) { // advance by 2!
-                            final int portIndex = prt/2;
+                            final String portIndex = "" + (prt/2);
                             var portName = ports.get(prt);
                             var portSizeExpr = ports.get(prt+1);
                             IdInfo portInfo
@@ -1197,12 +1212,17 @@ class EnvironmentCreationVisitor
                                  + portInfo.type + "\" of port \""
                                  + portName + "\"");
                             }
-                            mywarning("Port \"" + portName
-                                      + "\" of element \""
-                                      + elementName
-                                      + "\" of type \"" + portKind
-                                      + "\", has size expression \""
-                                      + portActualSizeExpr + "\"");
+                            // mywarning("Port \"" + portName
+                            //           + "\" of element \""
+                            //           + elementName
+                            //           + "\" of type \"" + portKind
+                            //           + "\", has size expression \""
+                            //           + portActualSizeExpr + "\"");
+                            PortInfo callPortInfo
+                                = new PortInfo(portKind, portIndex
+                                               , portActualSizeExpr);
+                            callElemInfo.elementPortArgs
+                                .put(portName, callPortInfo);
                             args4debugging +=
                                 ( (0==prt) ? "" : "," )
                                 + portName
@@ -1212,9 +1232,17 @@ class EnvironmentCreationVisitor
                                 + "(" + portKind + ")";
                         }
                         args4debugging += " } ";
+                        // Add element to bindings mapping to symbol table map.
+                        var mapElem2Bindings
+                            = ((SymbolTableComposite)framenow).elementBindings;
+                        ElementBindings mapValue
+                            = mapElem2Bindings.getOrDefault(elementName
+                                                            , emptyBindings);
+                        mapValue.bindings.add(callElemInfo);
+                        mapElem2Bindings.put(elementName, mapValue);
                     }
-                    mywarning("XXX: Ignoring connector arguments: "
-                              + args4debugging);
+                    // mywarning("XXX: Ignoring connector arguments: "
+                    //           + args4debugging);
                 }
 
                 xArgs = null; // Lastly, tear down the connector arguments.

@@ -69,24 +69,42 @@ public class TranslatorXConnector {
         final Map<String, LstStr> roles2portvarsInParams
             = thisEnv.roles2portvarsInParams;
         Set<String> subconnector_types = new TreeSet<String>();
+        String _connector_subconnectors_called = "";
         for (var subX : subconnectors) {
             IdInfo subXinfo = bv.getIdInfo(thisEnv,subX);
+            String subXtype = subXinfo.variableTypeName;
             Err.println("subconnector " + subX
-                        + " has type " + subXinfo.variableTypeName);
-            subconnector_types.add(subXinfo.variableTypeName);
+                        + " has type " + subXtype);
+            subconnector_types.add(subXtype);
+            // Get the call info, to get the exprArgs, etc.
+            CallInfoX subconnCallInfo = subXinfo.callInfoX;
+            Utils.myAssertHard(subconnCallInfo!=null, "No CallInfo for "+subX);
+            var xInstance = subconnCallInfo.connectorInstanceSize;
+            var exprArgsIfAny = subconnCallInfo.expressionArgs;
+            exprArgsIfAny
+                = (exprArgsIfAny.equals("") ? "" : ("," + exprArgsIfAny));
+            _connector_subconnectors_called
+                += "_" + subXtype
+                    + ( "(_context"
+                        + "," + subconnCallInfo.connectorInstance
+                        + "," + xInstance
+                        + exprArgsIfAny
+                        + ")dnl\n" );
         }
 
         String _connector_subconnectors = "";
-        // include sub-connector type definitions
-        for (var subXtype : subconnector_types)
-            if (subXtype != "CONNECTOR_PROCEDURAL"
-                && subXtype != "CONNECTOR_ASYNCHRONOUS") {
-                String inc = "," + subXtype + ".pml.m4";
-                _connector_subconnectors += inc;
+        {
+            boolean is1stIteration = true;
+            // include sub-connector type definitions
+            for (var subXtype : subconnector_types) {
+                if (subXtype != "CONNECTOR_PROCEDURAL"
+                    && subXtype != "CONNECTOR_ASYNCHRONOUS") {
+                    String inc = (is1stIteration?"":",") + subXtype + ".pml.m4";
+                    _connector_subconnectors += inc;
+                }
+                is1stIteration = false;
             }
-        // delete initial ',', if any
-        if (_connector_subconnectors.length() != 0)
-            _connector_subconnectors = _connector_subconnectors.substring(1);
+        }
         // Err.println("Getting " + _connector_subconnectors);
 
         // framenow.dumpSymbolsRec();
@@ -358,6 +376,8 @@ public class TranslatorXConnector {
             final var pushdefs = _params_pushdefs;
             final var popdefs = _params_popdefs;
             final var fictionalparams = _params_fictional;
+            final var connector_subconnectors_called
+                = _connector_subconnectors_called;
             final Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
@@ -375,6 +395,8 @@ public class TranslatorXConnector {
                 .replace("$<connector_name>", _connector_name)
                 .replace("$<connector_subconnectors>", X_subconnectors)
                 .replace("$<connector_variables>", X_variables)
+                .replace("$<connector_subconnectors_called>"
+                         , connector_subconnectors_called)
                 ;
                 if (paramnameslist.equals(""))
                     res = res

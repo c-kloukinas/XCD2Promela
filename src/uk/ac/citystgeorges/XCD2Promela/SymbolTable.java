@@ -177,6 +177,8 @@ class PortInfo {                // portName -> PortInfo ("port" maybe a portvar)
     String portIndex = "";      // index of port in parameters list
     String portSizeExpr = "";   // port size expr in parameters list
 //  String portSize;            // 1 if portSizeExpr!="", some N otherwise
+    PortInfo(String kind, String indx, String szExpr)
+    {   portKind = kind; portIndex = indx; portSizeExpr = szExpr;   }
 }
 class ElementInfo {              // elementName -> ElementInfo
     // "element" is either a role or a component
@@ -189,6 +191,11 @@ class ElementInfo {              // elementName -> ElementInfo
     Map<String, PortInfo> elementPortArgs=new HashMap<String,PortInfo>();
     // within a single element call info, a port can only appear once, so
     // no need for a List<PortInfo> in elementPortArgs.
+    ElementInfo(String tpName, String instName, String xSzExpr, String indx, String elSzExpr) {
+        connectorTypeName = tpName; connectorInstName = instName;
+        connectorSizeExpr = xSzExpr; elementSizeExpr = elSzExpr;
+        elementIndex = indx;
+    }
 }
 
 class CompositeConstructs extends CommonConstructs {
@@ -201,6 +208,7 @@ class CompositeConstructs extends CommonConstructs {
 class ElementBindings {         // Just to ensure that elementBindings
                                 // below is properly initialised.
     List<ElementInfo> bindings = new ArrayList<ElementInfo>();
+    ElementBindings() {}
 }
 class SymbolTableComposite extends SymbolTable { // COMPOSITE or CONNECTOR
     LstStr subcomponents = new LstStr();
