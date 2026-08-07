@@ -44,4 +44,7 @@ define(`_forloop',dnl
 `pushdef(`$1', `$2')$4`'popdef(`$1')`'_forloop(`$1', incr($2), $3, `$4')',)')dnl
 
 divert(0)dnl
+dnl# include async & proc
+include(async.m4)dnl
+include(proc.m4)dnl
 

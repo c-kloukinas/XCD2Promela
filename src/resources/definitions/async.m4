@@ -1,5 +1,4 @@
 dnl -*- mode: m4 -*-
-include(0-common-defs.m4)dnl
 divert(-1)dnl
 # include definitions of subconnectors
 # NO SUBCONNECTORS
@@ -260,3 +259,4 @@ dnl Debugging
 dnl _async(a,b)
 dnl _a_Xasync_Vb_RlNm1 _a_Xasync_Vb_Rl1_PrtNm1 _a_Xasync_Vb_Rl1_Prt1_kind
 dnl _a_Xasync_Vb_RlNm2 _a_Xasync_Vb_Rl2_PrtNm1 _a_Xasync_Vb_Rl2_Prt1_kind
+
