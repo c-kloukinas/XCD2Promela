@@ -1128,19 +1128,20 @@ class EnvironmentCreationVisitor
                         // Find the element's IdInfo - needed to check
                         // what elementSizeExpr should be when it's "".
                         IdInfo elementInfo = getIdInfo(elementName);
-                        // There are two cases:
+                        // There are ___TWO___ cases:
                         //
                         // (1) isFrameAConnectorP -> element is a role
-                        // of this connector, so its size expression
-                        // is dependent on this connector's
+                        // of this connector, ___SO___ its size
+                        // expression is dependent on this connector's
                         // parameters.
                         //
                         // (2) ! isFrameAConnectorP -> element is a
                         // composite/component instance of this
-                        // composite, so its size expression is again
-                        // dependent on this composite's parameters.
+                        // composite, ___SO___ its size expression is
+                        // again dependent on this composite's
+                        // parameters.
                         //
-                        // Therefore, in both cases, the size
+                        // ___THEREFORE___, in both cases, the size
                         // expression of the element is dependent on
                         // values known in the current context and can
                         // be used safely.
