@@ -294,6 +294,11 @@ class EnvironmentCreationVisitor
         T arrayTranslation = visit(ctx.array);
         String myName = arrayTranslation.get(0);
         String arraySizeExpr = arrayTranslation.get(1);
+        // fix the array size expr if it's empty. role -> "1", comp -> "0"
+        if (arraySizeExpr.equals("")) {
+            IdInfo myInfo = getIdInfo(myName);
+            myInfo.arraySizeExpr = (myType==XCD_type.rolet) ? "1" : "0";
+        }
         SymbolTable framenow = symbolTableNow();
         mySyntaxCheck(myType!=XCD_type.componentt
                       || framenow.type==XCD_type.roott
@@ -354,6 +359,11 @@ class EnvironmentCreationVisitor
         T arrayTranslation = visit(ctx.array);
         String portName = arrayTranslation.get(0);
         String portSizeExpr = arrayTranslation.get(1);
+        // fix the array size expr to "1" if it's empty.
+        if (portSizeExpr.equals("")) {
+            IdInfo myInfo = getIdInfo(portName);
+            myInfo.arraySizeExpr = "1";
+        }
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
 
