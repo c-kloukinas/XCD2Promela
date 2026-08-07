@@ -358,11 +358,17 @@ class EnvironmentCreationVisitor
             : portTypeToken2PortType   .get(myTypeOfPort);
         T arrayTranslation = visit(ctx.array);
         String portName = arrayTranslation.get(0);
-        String portSizeExpr = arrayTranslation.get(1);
         // fix the array size expr to "1" if it's empty.
-        if (portSizeExpr.equals("")) {
+        {
             IdInfo myInfo = getIdInfo(portName);
-            myInfo.arraySizeExpr = "1";
+            if (myInfo.arraySizeExpr.equals("")) {
+                String portSizeExpr = arrayTranslation.get(1);
+                Utils.myAssertHard
+                    (portSizeExpr.equals("")
+                     , "Somehow port's array size differs - instead of \"\", "
+                     + "it is \"" + portSizeExpr + "\"");
+                myInfo.arraySizeExpr = "1";
+            }
         }
         LstStr portList
             = ((SymbolTableComponent)framenow).getPortList(myTypeOfPort);
@@ -1169,22 +1175,41 @@ class EnvironmentCreationVisitor
                             String portActualSizeExpr
                                 = (portInfo!=null)
                                 ? portInfo.arraySizeExpr : null;
-                            Utils.myAssertHard(portActualSizeExpr!=null
-                                               , "Cannot find the array size "
-                                               + "expression of port \""
-                                               + portName + "\" of element \""
-                                               + elementName + "\"");
+                            Utils.myAssertHard
+                                (portActualSizeExpr!=null
+                                 , "Cannot find the array size "
+                                 + "expression of port \"" + portName
+                                 + "\" of element \"" + elementName + "\"");
+                            String portKind = "";
+                            switch (portInfo.type) {
+                            case XCD_type.emittert, XCD_type.emittervart ->
+                                portKind = "emitter";
+                            case XCD_type.consumert, XCD_type.consumervart ->
+                                portKind = "consumer";
+                            case XCD_type.requiredt, XCD_type.requiredvart ->
+                                portKind = "required";
+                            case XCD_type.providedt, XCD_type.providedvart ->
+                                portKind = "provided";
+                            default ->
+                                Utils.myAssertHard
+                                (false
+                                 , "Unknown port type \""
+                                 + portInfo.type + "\" of port \""
+                                 + portName + "\"");
+                            }
                             mywarning("Port \"" + portName
                                       + "\" of element \""
                                       + elementName
-                                      + "\" has size expression \""
+                                      + "\" of type \"" + portKind
+                                      + "\", has size expression \""
                                       + portActualSizeExpr + "\"");
                             args4debugging +=
                                 ( (0==prt) ? "" : "," )
                                 + portName
                                 + ( portSizeExpr.equals("")
                                     ? ""
-                                    : "[" + portSizeExpr + "]" );
+                                    : "[" + portActualSizeExpr + "]" )
+                                + "(" + portKind + ")";
                         }
                         args4debugging += " } ";
                     }
