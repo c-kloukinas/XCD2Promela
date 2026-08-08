@@ -12,7 +12,11 @@ compilationUnit:
 
 compositeOrConnectorDeclaration:
   tp=( TK_COMPOSITE | TK_COMPONENT | TK_CONNECTOR )
-    id=ID ( cparams=formalParameters | xparams=connectorParameterList )?
+    ( id=ID
+      // Below two are for allowing elementary connector (structural)
+      // definitions in the language itself.
+    | async=TK_ASYNC | proc=TK_PROC )
+    ( cparams=formalParameters | xparams=connectorParameterList )?
   TK_LBRACE
     ( elements+=compositeElement )+
   TK_RBRACE

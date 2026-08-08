@@ -104,3 +104,13 @@ ct __GLOBAL_TYPEDEFS
 cv __GLOBAL_VARDECLS
 
 ci __GLOBAL_INITS
+
+dnl Debugging
+dnl _async(a,b)
+dnl _a_Xasync_Vb_RlNm1 _a_Xasync_Vb_Rl1_PrtNm1 _a_Xasync_Vb_Rl1_Prt1_kind
+dnl _a_Xasync_Vb_RlNm2 _a_Xasync_Vb_Rl2_PrtNm1 _a_Xasync_Vb_Rl2_Prt1_kind
+dnl
+dnl _proc(a,b)
+dnl _a_Xproc_Vb_RlNm1 _a_Xproc_Vb_Rl1_PrtNm1 _a_Xproc_Vb_Rl1_Prt1_kind
+dnl _a_Xproc_Vb_RlNm2 _a_Xproc_Vb_Rl2_PrtNm1 _a_Xproc_Vb_Rl2_Prt1_kind
+

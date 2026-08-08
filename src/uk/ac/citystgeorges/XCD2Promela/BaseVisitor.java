@@ -50,6 +50,9 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         return literalName;     // remove all 's
     }
 
+    protected boolean lockAsyncName = false;
+    protected boolean lockProcName = false;
+
     static public String keywordResult
         = getTokenString(XCDParser.TK_RESULT);
     static public String keywordException
@@ -67,6 +70,10 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         = getTokenString(XCDParser.TK_SHORT);
     static public String keywordInteger
         = getTokenString(XCDParser.TK_INTEGER);
+    static public String keywordAsync
+        = getTokenString(XCDParser.TK_ASYNC);
+    static public String keywordProc
+        = getTokenString(XCDParser.TK_PROC);
 
     /**
      * Miscellaneous helper functions
@@ -81,6 +88,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         Utils.util.myassert(cond, msg); }
     static protected void myWarning(String msg) { Utils.myWarning(msg); }
     protected void mywarning(String msg) { Utils.util.mywarning(msg); }
+    protected void message(String msg) { Utils.util.message(msg); }
     protected void mySyntaxCheck(boolean cond, String msg)
     { Utils.util.// mySyntaxCheck
             myassert(cond, msg); }
@@ -145,6 +153,16 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         var currentMap = symbolTableNow().map;
         if (currentMap.containsKey(symbol)) {
             res = currentMap.get(symbol); // getIdInfo(symbol);
+        }
+        return res;
+    }
+    public IdInfo getIdInfoMaybe(SymbolTable currEnv, String id) {
+        IdInfo res = null;
+        while (res == null && currEnv!=null) {
+            Map<String,IdInfo> the_map = currEnv.map;
+            if (the_map.containsKey(id))
+                res=the_map.get(id);
+            currEnv=currEnv.parent;
         }
         return res;
     }
@@ -227,13 +245,7 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
 
     public IdInfo getIdInfo(String id){return getIdInfo(symbolTableNow(), id);}
     public IdInfo getIdInfo(SymbolTable currEnv, String id) {
-        IdInfo res = null;
-        while (res == null && currEnv!=null) {
-            Map<String,IdInfo> the_map = currEnv.map;
-            if (the_map.containsKey(id))
-                res=the_map.get(id);
-            currEnv=currEnv.parent;
-        }
+        IdInfo res = getIdInfoMaybe(currEnv, id);
         myassert(res!=null, "getIdInfo: Symbol \"" + id + "\" not found inside "
                  + symbolTableNow().compilationUnitID);
         return res;

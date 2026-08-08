@@ -125,7 +125,8 @@ public class TranslatorXComposite {
                 //               + " has subcomponent instance " + s);
                 // mywarning("XXXX: " + all_subcomponents);
                 Utils.withInputAndFileToWrite
-                    ("/resources/templates/composite-component.pml.template"
+                    (XCD2Promela.resourceTemplates
+                     + "composite-component.pml.template"
                      , compName + "_COMPOSITE.h"
                      , (String confFileContents) -> {
                         // IMPORTANT - typedefs may be using some

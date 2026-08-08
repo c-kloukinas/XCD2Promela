@@ -43,31 +43,39 @@ class EnvironmentCreationVisitor
    /**
      * Constructs that create their own environment.
      */
-
     @Override public T visitCompilationUnits(XCDParser.CompilationUnitsContext ctx) {
         String compilationUnitID = "@root"; // root
         // initialise env, so that "result", etc. are known IDs
-        myassert(getSTbl().size()==0, "Expected no environments!");
-        getSTbl().add(rootContext);
-        LstStr kwords = new LstStr();
-        // kwords.add(keywordResult);
-        // kwords.add(keywordException);
-        // kwords.add(keywordSkip);
-        // kwords.add(keywordIn);
-        /* Add basic types in the list of key words, so that
-         * translate_ID can find them */
-        kwords.add(keywordVoid);
-        kwords.add(keywordBool);
-        kwords.add(keywordByte);
-        kwords.add(keywordShort);
-        kwords.add(keywordInteger);
-        for (String kword : kwords )
-            { addIdInfo(kword
-                        , XCD_type.typet
-                        , kword
-                        , false
-                        , (VariableDefaultValueContext)null
-                        , compilationUnitID); }
+        myassert(getSTbl().size()==0
+                 || (getSTbl().size()==1 && getSTbl().get(0) == rootContext)
+                 , "Expected no environments!");
+        if (getSTbl().size()==0) {
+            getSTbl().add(rootContext);
+            LstStr kwords = new LstStr();
+            // kwords.add(keywordResult);
+            // kwords.add(keywordException);
+            // kwords.add(keywordSkip);
+            // kwords.add(keywordIn);
+            /* Add basic types in the list of key words, so that
+             * translate_ID can find them */
+            kwords.add(keywordVoid);
+            kwords.add(keywordBool);
+            kwords.add(keywordByte);
+            kwords.add(keywordShort);
+            kwords.add(keywordInteger);
+            for (String kword : kwords )
+                { addIdInfo(kword
+                            , XCD_type.typet
+                            , kword
+                            , false
+                            , (VariableDefaultValueContext)null
+                            , compilationUnitID); }
+        } else {
+            if (getIdInfoMaybe(rootContext, "async")!=null)
+                lockAsyncName = true;
+            if (getIdInfoMaybe(rootContext, "proc")!=null)
+                lockProcName = true;
+        }
 
         return visitChildren(ctx);
     }
@@ -146,8 +154,20 @@ class EnvironmentCreationVisitor
                        && ctx.xparams==null)
                       , "A composite does not accept a list of roles"
                       + " and their port variables as parameters");
+        mySyntaxCheck(myType!=XCD_type.compositet
+                      ||
+                      (ctx.id!=null)
+                      , "A composite cannot be named \"async\" or \"proc\".\n"
+                      + "These are reserved names of basic connectors");
 
-        String myName = ctx.id.getText();
+        String myName = (ctx.id!=null
+                         ? ctx.id.getText()
+                         : (ctx.async!=null
+                            ? "async" : "proc"));
+        mySyntaxCheck(!lockAsyncName || ctx.async==null
+                      , "Cannot use \"async\" as a connector name - reserved");
+        mySyntaxCheck(!lockProcName || ctx.proc==null
+                      , "Cannot use \"proc\" as a connector name - reserved");
         SymbolTableComposite newctx
             = framenow.makeSymbolTableComposite(myName, ctx
                                                 , myType, false);
@@ -164,10 +184,10 @@ class EnvironmentCreationVisitor
          * the parameters are the same.
          */
         if (myType==XCD_type.connectort) {
-            // mywarning("There are " + newctx.roles.size() + " roles defined "
-            //           + "and "
-            //           + newctx.roles2portvarsInParams.keySet().size()
-            //           + " roles used");
+            // mywarning("There are " + newctx.rolesAsOrderedInParams.size()
+            //        + " roles defined and "
+            //        + newctx.roles2portvarsInParams.keySet().size()
+            //        + " roles used");
             Set<String> rolesDefined
                 = Set.copyOf(newctx.subcomponents);
             // elements.stream()
@@ -770,7 +790,7 @@ class EnvironmentCreationVisitor
 
         // produce translation
         Utils.withInputAndFileToWrite
-                    ("/resources/templates/enum.h.template"
+                    (XCD2Promela.resourceTemplates + "enum.h.template"
                      , "TYPE_" + enumFullName + ".h"
                      , (String confFileContents) -> {
                 return confFileContents
@@ -852,7 +872,7 @@ class EnvironmentCreationVisitor
 
         // produce translation
         Utils.withInputAndFileToWrite
-                    ("/resources/templates/typedef.h.template"
+                    (XCD2Promela.resourceTemplates + "typedef.h.template"
                      , "TYPE_" + typedefFullName + ".h"
                      , (String confFileContents) -> {
                 return confFileContents
@@ -1092,8 +1112,8 @@ class EnvironmentCreationVisitor
                 = (ctx.userdefined!=null)
                 ? ctx.userdefined.getText()
                 : (ctx.basicConnProc!=null
-                   ? Names.connProcedural()
-                   : Names.connAsynchronous());
+                   ? keywordProc
+                   : keywordAsync);
             IdInfo myInfo
                 = fixOrAddIdInfo(instance_name
                                  , XCD_type.connectort
@@ -1296,7 +1316,7 @@ class EnvironmentCreationVisitor
         getSTbl().add(newctx);
         T res=visitChildren(ctx);
         Utils.withInputAndFileToWrite
-            ("/resources/templates/configuration.pml.template"
+            (XCD2Promela.resourceTemplates + "configuration.pml.template"
              , "configuration.pml"
              , (String confFileContents) -> {
                 if (newctx.map.size()!=1) {

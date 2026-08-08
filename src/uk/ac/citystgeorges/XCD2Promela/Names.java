@@ -88,10 +88,6 @@ class Names {
 
     static String connectorName(String x) {
         return "_NAME(" + x + ",_varname)"; }
-    static String connProcedural() {
-        return "CONNECTOR_PROCEDURAL"; }
-    static String connAsynchronous() {
-        return "CONNECTOR_ASYNCHRONOUS"; }
     static String roleName( String x, String role ) {
         return "`_NAME("+connectorName(x)+","+role+")'"; }
 

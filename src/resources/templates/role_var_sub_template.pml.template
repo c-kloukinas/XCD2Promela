@@ -35,6 +35,12 @@ dnl # Typedefs of role#$<rlIndex>
 dnl #
 dnl # Name of the type of the role variables
 pushdef(`__prefixRType',_NAME(__prefixR,Type))dnl
+dnl If $ <role_variables> are empty, then define typedefs,etc. to be empty:
+ifelse($<role_variables>,,dnl Empty definitions (when no variables)
+define(_NAME(__prefixR,typedefs),)dnl
+define(_NAME(__prefixR,vardecls),)dnl
+define(_NAME(__prefixR,inits),)dnl
+,dnl Normal definitions, for when $ <role_variables> are not empty:
 dnl #
 dnl # Type definition for the structure containing the role variables.
 dnl #
@@ -78,6 +84,7 @@ define(_NAME(__prefixR,inits),dnl
   _CAT($<role_variable_initialisations>)dnl
 dnl
 define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))
+)dnl
 )dnl
 dnl #
 dnl # Role ports

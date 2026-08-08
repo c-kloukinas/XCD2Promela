@@ -16,7 +16,10 @@ public class TranslatorCompositeOrConnectorDeclarationContext implements Transla
     public T translate(BaseVisitor<T> bv, CompositeOrConnectorDeclarationContext ctx) {
         // bv.mywarning
         //     ("\n***Called TranslatorCompositeOrConnectorDeclarationContext translate!***");
-        String compName = ctx.id.getText();
+        String compName = (ctx.id!=null
+                           ? ctx.id.getText()
+                           : (ctx.async!=null
+                              ? "async" : "proc"));
         int thisStruct = ctx.tp.getType();
         T res = new T();
         SymbolTable framenow = (bv.symbolTableNow());

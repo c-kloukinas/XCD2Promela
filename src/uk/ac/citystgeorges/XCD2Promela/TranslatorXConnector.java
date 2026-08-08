@@ -45,16 +45,13 @@ public class TranslatorXConnector {
                 + param + "\n";
             _params_popdefs +=
                 "popdef(" + param + ")dnl\n";
-            _params_fictional += "," + i;
-            _params_name_list += "," + param;
-            _params_name_real_list += ",$" + i;
+            _params_fictional += ((i==1)?"":",") + i;
+            _params_name_list += ((i==1)?"":",") + param;
+            _params_name_real_list += ((i==1)?"$":",$") + i;
         }
-        // delete initial ',', if any
-        if (_params_fictional.length() != 0) {
-            _params_fictional = _params_fictional.substring(1);
-            _params_name_list = _params_name_list.substring(1);
-            _params_name_real_list = _params_name_real_list.substring(1);
-        }
+        bv.mywarning("_params_fictional = " + _params_fictional
+                     + "\n_params_name_list = " + _params_name_list
+                     + "\n_params_name_real_list = " + _params_name_real_list);
         bv.myassert(thisEnv.compConstructs.vars==null
                     || thisEnv.compConstructs.vars.size()==0
                     , "Connector " + _connector_name
@@ -97,11 +94,9 @@ public class TranslatorXConnector {
             boolean is1stIteration = true;
             // include sub-connector type definitions
             for (var subXtype : subconnector_types) {
-                if (subXtype != "CONNECTOR_PROCEDURAL"
-                    && subXtype != "CONNECTOR_ASYNCHRONOUS") {
-                    String inc = (is1stIteration?"":",") + subXtype + ".pml.m4";
-                    _connector_subconnectors += inc;
-                }
+                String inc = (is1stIteration?"":",")
+                    + "CONNECTOR_TYPE_" + subXtype + ".pml.m4";
+                _connector_subconnectors += inc;
                 is1stIteration = false;
             }
         }
@@ -111,11 +106,14 @@ public class TranslatorXConnector {
         String _connector_variables = "";
         // String _connector_role_tests = "";
         final String role_var_template = Utils.readInputFile
-            ("/resources/templates/role_var_sub_template.pml.template");
+            (XCD2Promela.resourceTemplates
+             + "role_var_sub_template.pml.template");
         final String role_var_port_template = Utils.readInputFile
-            ("/resources/templates/role_var_port_sub_template.pml.template");
+            (XCD2Promela.resourceTemplates
+             + "role_var_port_sub_template.pml.template");
         final String role_var_port_action_template = Utils.readInputFile
-            ("/resources/templates/role_var_port_action_sub_template.pml.template");
+            (XCD2Promela.resourceTemplates
+             + "role_var_port_action_sub_template.pml.template");
         int _rlIndex = 0;
         for (var _role_name : roles) {
             ++_rlIndex;         // m4 arguments start at $1
@@ -409,11 +407,11 @@ public class TranslatorXConnector {
                 return res;
             };
             Utils.withInputAndFileToWrite
-                ("/resources/templates/connector.pml.template"
+                (XCD2Promela.resourceTemplates + "connector.pml.template"
                  , "CONNECTOR_TYPE_" + _connector_name + ".pml.m4"
                  , replace_template_arguments);
             Utils.withInputAndFileToWrite
-                ("/resources/templates/z-testing-role.m4"
+                (XCD2Promela.resourceTemplates + "z-testing-role.m4"
                  , "z-testing-role.m4"
                  , replace_template_arguments);
         }

@@ -39,7 +39,23 @@ class Utils {
                     + fname;
         return new FileWriter(fileName); }
 
-    List<Runnable> delayedTasks = new ArrayList<Runnable>();
+    private List<Runnable> delayedTasks = new ArrayList<Runnable>();
+    public int numberOfDelayedTasks()
+    {   return delayedTasks.size();   }
+    public void addDelayedTask(Runnable task)
+    {   delayedTasks.add(task);   }
+
+    public void runDelayedTasks() {
+        while (delayedTasks!=null && delayedTasks.size()!=0) {
+            Runnable task = delayedTasks.get(0);
+            delayedTasks.remove(0);
+            try {
+                task.run();
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        }
+    }
 
     public static void withFileWriteString(String fname
                                            , String out) {
@@ -142,7 +158,7 @@ class Utils {
         if (!cond) System.err.println(msg);
         errors += cond ? 0 : 1; }
     public void myassert(boolean cond, String msg) {
-        msg = "error(line " +ln + ", char " + atchar + "): " + msg;
+        msg = "error(line " + ln + ", char " + atchar + "): " + msg;
         Utils.myAssert(cond, msg); }
     private static int warnings = 0;
     public void reset_warnings() {warnings=0;}
@@ -150,8 +166,11 @@ class Utils {
     public static void myWarning(String msg) {
         System.err.println(msg); ++warnings; }
     public void mywarning(String msg) {
-        msg = "warning(line " +ln + ", char " + atchar + "): " + msg;
+        msg = "warning(line " + ln + ", char " + atchar + "): " + msg;
         Utils.myWarning(msg); }
+    public void message(String msg) {
+        msg = "NOTE(line " + ln + ", char " + atchar + "): " + msg;
+        System.err.println(msg); }
     // public void mySyntaxCheckHard(boolean cond, String msg) {
     //     msg = "Syntax error (line " +ln + ", char " + atchar + "): " + msg;
     //     if (!cond) {
