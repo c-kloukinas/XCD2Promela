@@ -32,7 +32,7 @@ componentOrRoleDeclaration:
       array=arrayDecl // Roles can be an array - components NOT!
       (param=formalParameters)?
   TK_LBRACE
-    ( elements+=componentElement )+
+    ( elements+=componentElement )*
   TK_RBRACE
 ;
 componentElement:
@@ -50,7 +50,7 @@ portDeclaration:
   TK_LBRACE
     // ( (events+=eventContract)+
     // | (methods+=methodContract)+ )
-    (methods+=methodContract)+
+    (methods+=methodContract)*
   TK_RBRACE
 ;
 
