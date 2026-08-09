@@ -82,7 +82,7 @@ public class TranslatorXConnector {
                 = (exprArgsIfAny.equals("") ? "" : ("," + exprArgsIfAny));
             _connector_subconnectors_called
                 += "_" + subXtype
-                    + ( "(_context"
+                    + ( "(__prefixX"
                         + "," + subconnCallInfo.connectorInstance
                         + "," + xInstance
                         + exprArgsIfAny
