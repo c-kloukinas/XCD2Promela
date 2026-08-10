@@ -14,12 +14,18 @@ dnl
 dnl Same context & varname cannot have different params or size,
 dnl so size & params not part of this mangled name.
 dnl (first comma in _NAME is to get an initial _).
-pushdef(`__prefixX',_NAME(,_context,X$<connector_name>,V`'_varname))dnl
+pushdef(`__prefixX',__connectorId(_context,$<connector_name>,_varname))dnl
 dnl
 dnl Instantiate subconnectors - their context is __prefixX
 dnl
 $<connector_subconnectors_called>dnl
 $<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
+dnl #
+dnl # Size expr, and size of the connector
+dnl #
+define(_NAME(__prefixX,sizeExpr),_varsize)dnl
+define(_NAME(__prefixX,size),`eval('_EVALNAME(__prefixX,sizeExpr)`)')dnl
+dnl
 $<connector_variables>`'dnl
 $<params_popdefs>`'dnl popdef(`$<param_name>')
 popdef(`__prefixX')dnl

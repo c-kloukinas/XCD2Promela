@@ -43,5 +43,37 @@ define(`_forloop',dnl
 `ifelse(eval($2 < $3), 1,dnl
 `pushdef(`$1', `$2')$4`'popdef(`$1')`'_forloop(`$1', incr($2), $3, `$4')',)')dnl
 
+#
+# Naming conventions
+#
+define(`__connectorId',`dnl
+_NAME(,$1,dnl context name
+X`'$2,dnl connector type
+V`'$3`'dnl instance name
+)')
+
+define(`__roleId',`dnl
+_NAME(__connectorId($1,dnl context name
+$2,dnl connector type
+$3),dnl instance name
+Rl`'$4`'dnl role number
+)')
+
+define(`__portId',`dnl
+_NAME(__roleId($1,dnl context name
+$2,dnl connector type
+$3,dnl instance name
+$4),dnl role number
+Prt`'$5`'dnl port number
+)')
+
+define(`__actionId',`dnl
+_NAME(__portId($1,dnl context name
+$2,dnl connector type
+$3,dnl instance name
+$4,dnl role number
+$5),dnl port number
+$6`'dnl action name
+)')
 divert(0)dnl
 

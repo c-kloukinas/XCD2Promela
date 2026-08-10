@@ -6,14 +6,14 @@ define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
 dnl #
 dnl # Prefix of role#$<rlIndex>
 dnl #
-pushdef(`__prefixR',_NAME(__prefixX,Rl$<rlIndex>))dnl
+pushdef(`__prefixR',__roleId(_context,$<connector_name>,_varname,$<rlIndex>))dnl
 dnl DEBUG: Role _NAME(__prefixX,RlNm$<rlIndex>) _EVALNAME(__prefixX,RlNm$<rlIndex>) is __prefixR
 dnl #
 dnl # Size expr, and size of the role
 dnl #
 define(_NAME(__prefixR,sizeExpr),`$<roleArraySize>')dnl
-define(_NAME(__prefixR,size),`eval(_EVALNAME(__prefixR,sizeExpr))')dnl
-define(_NAME(__prefixR,sizeTotal),`eval(_EVALNAME(__prefixR,size) * (_varsize))')dnl
+define(_NAME(__prefixR,size),`eval('_EVALNAME(__prefixR,sizeExpr)`)')dnl
+define(_NAME(__prefixR,sizeTotal),`eval('_EVALNAME(__prefixR,size) * (_varsize)`)')dnl
 dnl #
 dnl # Size checker of role#$<rlIndex>
 dnl #

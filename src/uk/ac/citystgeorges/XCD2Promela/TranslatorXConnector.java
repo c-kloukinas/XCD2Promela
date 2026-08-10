@@ -143,10 +143,7 @@ public class TranslatorXConnector {
                 + "_forloop(" + roleIterator
                 + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n";
 
-            String role_vars = role_var_template
-                .replace("$<role_name>", _role_name)
-                .replace("$<rlIndex>", ""+_rlIndex)
-                .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
+            String role_vars = role_var_template;
             String _role_variables = "";
             LstStr vars = roleST.compConstructs.vars;
 
@@ -206,11 +203,6 @@ public class TranslatorXConnector {
                 roleVarInitialisationsUnrolled
                     += ")dnl\n} ";
             }
-            _connector_variables += role_vars
-                .replace("$<role_variables>",
-                         _role_variables)
-                .replace("$<role_variable_initialisations>"
-                         , roleVarInitialisationsUnrolled);
             int _portIndex = 0;
             String _connector_role_port = "";
             final LstStr all_ports
@@ -346,6 +338,8 @@ public class TranslatorXConnector {
                     role_var_port_template
                     .replace("$<connector_role_port_action_guards>"
                              , _connector_role_port_action_guards)
+                    // high-level port info below last (previous
+                    // replacements may be using them)
                     .replace("$<portName>", port)
                     .replace("$<portIndex>", ""+_portIndex)
                     .replace("$<portArraySize>", _portArraySize)
@@ -355,10 +349,18 @@ public class TranslatorXConnector {
                 // Lastly (!!!) pop port's symbol table (portST)
                 { bv.popLastSymbolTable(portST); }
             }
-            _connector_variables = _connector_variables
+            _connector_variables += role_vars
+                .replace("$<role_variables>",
+                         _role_variables)
+                .replace("$<role_variable_initialisations>"
+                         , roleVarInitialisationsUnrolled)
                 .replace("$<connector_role_port>"
                          , _connector_role_port)
-                .replace("$<role_name>", _role_name);
+                // high-level role info below last (previous
+                // replacements may be using them)
+                .replace("$<role_name>", _role_name)
+                .replace("$<rlIndex>", ""+_rlIndex)
+                .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
             // Lastly (!!!) pop role's symbol table (roleST)
             { bv.popLastSymbolTable(roleST); }
         }
@@ -380,31 +382,33 @@ public class TranslatorXConnector {
             final Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
-                .replace("$<connector_name>", _connector_name)
-                .replace("$<connector_subconnectors>", X_subconnectors)
-                .replace("$<connector_variables>", X_variables)
-                ;
-                // do the following last! (they appear inside X_variables)
-                res = res
                 .replace("$<params_pushdefs>", pushdefs)
                 .replace("$<params_popdefs>", popdefs)
                 .replace("$<params_fictional>", fictionalparams)
-                ;
-                res = res       // once more, with extra feeling!
-                .replace("$<connector_name>", _connector_name)
-                .replace("$<connector_subconnectors>", X_subconnectors)
                 .replace("$<connector_variables>", X_variables)
                 .replace("$<connector_subconnectors_called>"
                          , connector_subconnectors_called)
+                // high-level connector info below last (previous
+                // replacements may be using them)
+                .replace("$<connector_subconnectors>", X_subconnectors)
+                .replace("$<connector_name>", _connector_name)
                 ;
-                if (paramnameslist.equals(""))
-                    res = res
-                        .replace(",$<params_name_list>", "")
-                        .replace(",$<params_name_real_list>", "");
-                else
-                    res = res
-                        .replace("$<params_name_list>", paramnameslist)
-                        .replace("$<params_name_real_list>", paramnamesreallist);
+                {
+                    boolean replaceCommaToo = false;
+                    if (paramnameslist.equals("")) {
+                        replaceCommaToo = true;
+                        Utils.myAssertHard
+                            (paramnamesreallist.equals("")
+                             , "Real list should be empty but instead it is \""
+                             + paramnamesreallist + "\"");
+                    }
+                    res = res.replace((replaceCommaToo ? "," : "")
+                                      + "$<params_name_list>"
+                                      , paramnameslist)
+                             .replace((replaceCommaToo ? "," : "")
+                                      + "$<params_name_real_list>"
+                                      , paramnamesreallist);
+                }
                 return res;
             };
             Utils.withInputAndFileToWrite

@@ -1,6 +1,6 @@
 dnl###### Start of connector $<connector_name>, role $<role_name>, port $<portName>, action $<actionName> definitions
 pushdef(`__prefixRPA',dnl name of the role action
-_NAME(__prefixRP,$<actionName>))dnl
+__actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>))dnl
 dnl # Action guards
 dnl #
 dnl # action guards should be CONJOINED with the guards of any         TODO XXX

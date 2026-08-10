@@ -99,6 +99,18 @@ _NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0) "_CAT(_NAME(theXInstanceName,Rl1
 _NAME(theXInstanceName,Rl1,Prt1,checkKind)(required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required))"
 _NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required))"
 
+connectorId: __connectorId(_context,$<connector_name>,_varname) _EVALNAME(         __connectorId(_context,$<connector_name>,_varname),sizeExpr)
+     roleId: __roleId(     _context,$<connector_name>,_varname,1) _EVALNAME(       __roleId(     _context,$<connector_name>,_varname,1),sizeExpr)
+     portId: __portId(     _context,$<connector_name>,_varname,1,1) _EVALNAME(     __portId(     _context,$<connector_name>,_varname,1,1),sizeExpr)
+   actionId: __actionId(   _context,$<connector_name>,_varname,1,1,open)
+"_EVALNAME(__actionId(   _context,$<connector_name>,_varname,1,1,open),guards)"
+
+connectorId: __connectorId(_context,$<connector_name>,_varname) _EVALNAME(         __connectorId(_context,$<connector_name>,_varname),size)
+     roleId: __roleId(     _context,$<connector_name>,_varname,1) _EVALNAME(       __roleId(     _context,$<connector_name>,_varname,1),size)
+     portId: __portId(     _context,$<connector_name>,_varname,1,1) _EVALNAME(     __portId(     _context,$<connector_name>,_varname,1,1),size)
+   actionId: __actionId(   _context,$<connector_name>,_varname,1,1,open)
+"_EVALNAME(__actionId(   _context,$<connector_name>,_varname,1,1,open),ensures)"
+
 ctBEGIN
 __GLOBAL_TYPEDEFS
 ctEND

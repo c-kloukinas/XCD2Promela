@@ -6,13 +6,13 @@ define(_NAME(__prefixR,PrtNm$<portIndex>),`$<portName>')dnl
 dnl #
 dnl # Prefix of port#$<portIndex>
 dnl #
-pushdef(`__prefixRP',_NAME(__prefixR,Prt$<portIndex>))dnl
+pushdef(`__prefixRP',__portId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>))dnl
 dnl DEBUG: Port _NAME(__prefixR,PrtNm$<portIndex>) _EVALNAME(__prefixR,PrtNm$<portIndex>) is __prefixRP
 dnl #
 dnl # Size expr, size, and kind of the port
 dnl #
 define(_NAME(__prefixRP,sizeExpr),`$<portArraySize>')dnl
-define(_NAME(__prefixRP,size),`eval(_EVALNAME(__prefixRP,sizeExpr))')dnl
+define(_NAME(__prefixRP,size),`eval('_EVALNAME(__prefixRP,sizeExpr)`)')dnl
 define(_NAME(__prefixRP,kind),`$<portKind>')dnl
 dnl #
 dnl # Size checker of port#$<portIndex>
