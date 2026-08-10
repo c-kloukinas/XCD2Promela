@@ -99,11 +99,17 @@ _NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0) "_CAT(_NAME(theXInstanceName,Rl1
 _NAME(theXInstanceName,Rl1,Prt1,checkKind)(required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required))"
 _NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required))"
 
-ct __GLOBAL_TYPEDEFS
+ctBEGIN
+__GLOBAL_TYPEDEFS
+ctEND
 
-cv __GLOBAL_VARDECLS
+cvBEGIN
+__GLOBAL_VARDECLS
+cvEND
 
-ci __GLOBAL_INITS
+ciBEGIN
+__GLOBAL_INITS
+ciEND
 
 dnl Debugging
 dnl _async(a,b)

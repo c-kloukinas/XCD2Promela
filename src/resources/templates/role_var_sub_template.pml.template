@@ -37,7 +37,9 @@ dnl # Name of the type of the role variables
 pushdef(`__prefixRType',_NAME(__prefixR,Type))dnl
 dnl If $ <role_variables> are empty, then define typedefs,etc. to be empty:
 ifelse(_is_empty$<role_variables>,_is_empty,`dnl Empty definitions (when no variables)
+define(_NAME(__prefixR,typedef),)dnl
 define(_NAME(__prefixR,typedefs),)dnl
+define(_NAME(__prefixR,vardecl),)dnl
 define(_NAME(__prefixR,vardecls),)dnl
 define(_NAME(__prefixR,inits),)dnl
 ',`dnl Normal definitions, for when $ <role_variables> are not empty:
@@ -48,13 +50,16 @@ dnl # Type definition for the structure containing the role variables.
 dnl #
 dnl # role variables should also contain the variables of any          TODO XXX
 dnl # sub-connector roles that this role has been associated with
+define(_NAME(__prefixR,typedef),dnl
+  typedef `$'1 {
+        `$'2`'dnl
+
+    };dnl
+)
 ifdef(_NAME(__prefixR,typedefs),,dnl
 dnl
 define(_NAME(__prefixR,typedefs),dnl
-  typedef __prefixRType {dnl
-   $<role_variables>`'dnl
-
-  };dnl
+  _EVALNAME(__prefixR,typedef)(__prefixRType,$<role_variables>)dnl
 dnl
 dnl add typedef to global type definitions
 dnl
@@ -69,13 +74,15 @@ _NAME(__prefixR,typedefs) dnl
 dnl #
 dnl # Role variable (structure) declaration
 dnl #
+define(_NAME(__prefixR,vardecl),dnl type,varname,varsize
+   `$'1 `$'2[`$'3];
+)
 define(_NAME(__prefixR,vardecls),dnl
 dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-__prefixRType __prefixR[_EVALNAME(__prefixR,sizeTotal)];`'dnl $< connector_variables>
+_EVALNAME(__prefixR,vardecl)(__prefixRType,__prefixR,_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
 dnl
-define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')
-  _NAME(__prefixR,vardecls))
-)dnl
+define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')dnl
+ _NAME(__prefixR,vardecls)))dnl
 dnl #
 dnl # Role variable initialisations
 dnl #
