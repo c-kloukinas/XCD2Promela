@@ -141,7 +141,7 @@ public class TranslatorXConnector {
                 + roleIterator + " */\n"
                 + "d_step {\n"
                 + "_forloop(" + roleIterator
-                + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n\n";
+                + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n";
 
             String role_vars = role_var_template
                 .replace("$<role_name>", _role_name)
@@ -182,20 +182,21 @@ public class TranslatorXConnector {
                         + "[" + varsz + "];dnl\n" ;
                 roleVarInitialisationsUnrolled
                     += "_forloop(" + varIterator
-                    + ",0,_CAT(" + varsz + "),dnl\n\n";
+                    + ",0,_CAT(" + varsz + "),dnl\n";
                 {
                     roleVarInitialisationsUnrolled
-                        += "        "
+                        += "    "
                         + "__prefixR[" + roleIterator + "]."
                         + roleVarName + "[" + varIterator + "] = "
-                        + rhs + ";\n";
+                        + rhs + ";";
                     if (varinfo.has_post) {
                         roleVarInitialisationsUnrolled
-                            += "        "
+                            += "\n    "
                             + "__prefixR[" + roleIterator + "]._post_"
                             + roleVarName + "[" + varIterator + "] = "
-                            + rhs + ";\n";
+                            + rhs + ";";
                     }
+                    roleVarInitialisationsUnrolled += "`'dnl\n";
                 }
                 // add the ending parenthesis of var's _forloop
                 roleVarInitialisationsUnrolled
@@ -203,7 +204,7 @@ public class TranslatorXConnector {
             }
             { // + ending parenthesis of role's _forloop & bracket of d_step
                 roleVarInitialisationsUnrolled
-                    += ")\n}\n";
+                    += ")dnl\n} ";
             }
             _connector_variables += role_vars
                 .replace("$<role_variables>",
