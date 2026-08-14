@@ -47,7 +47,7 @@ define(`_forloop',dnl
 # Naming conventions
 #
 define(`__connectorId',`dnl
-_NAME(,$1,dnl context name
+_NAME($1,dnl context name
 X`'$2,dnl connector type
 V`'$3`'dnl instance name
 )')
