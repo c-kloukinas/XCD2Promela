@@ -1147,11 +1147,11 @@ class EnvironmentCreationVisitor
                                         ,xArgs.connectorElementArguments
                                         ,xArgs.connectorElementToPortArguments);
                     String args4debugging = exprArgs;
-                    ElementBindings emptyBindings = new ElementBindings();
                     for (int el=0, eSz=xArgs.connectorElementArguments.size();
                          el<eSz;
                          el+=2) { // advance by 2!
-                        final String elementIndex = "" + (el/2);
+                        // role indices start from #1
+                        String elementIndex = "" + (1 + (el/2));
                         var elementName
                             = xArgs.connectorElementArguments.get(el);
                         var elementSizeExpr
@@ -1201,7 +1201,8 @@ class EnvironmentCreationVisitor
                         args4debugging += " { ";
                         for (int prt=0, prtSz=ports.size(); prt < prtSz;
                              prt+=2) { // advance by 2!
-                            final String portIndex = "" + (prt/2);
+                            // port indices start from #1 as well.
+                            String portIndex = "" + (1 + (prt/2));
                             var portName = ports.get(prt);
                             var portSizeExpr = ports.get(prt+1);
                             IdInfo portInfo
@@ -1256,8 +1257,8 @@ class EnvironmentCreationVisitor
                         var mapElem2Bindings
                             = ((SymbolTableComposite)framenow).elementBindings;
                         ElementBindings mapValue
-                            = mapElem2Bindings.getOrDefault(elementName
-                                                            , emptyBindings);
+                            = mapElem2Bindings
+                            .getOrDefault(elementName, new ElementBindings());
                         mapValue.bindings.add(callElemInfo);
                         mapElem2Bindings.put(elementName, mapValue);
                     }
