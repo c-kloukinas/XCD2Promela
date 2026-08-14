@@ -16,10 +16,14 @@ dnl so size & params not part of this mangled name.
 dnl (first comma in _NAME is to get an initial _).
 pushdef(`__prefixX',__connectorId(_context,$<connector_name>,_varname))dnl
 dnl
+dnl Define parameters
+dnl
+$<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
+pushdef(`__subConnCtx',__prefixX)dnl new context for sub-connectors
+dnl
 dnl Instantiate subconnectors - their context is __prefixX
 dnl
-$<connector_subconnectors_called>dnl
-$<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
+$<connector_subconnectors_called>`'dnl
 dnl #
 dnl # Size expr, and size of the connector
 dnl #
@@ -27,6 +31,8 @@ define(_NAME(__prefixX,sizeExpr),_varsize)dnl
 define(_NAME(__prefixX,size),`eval('_EVALNAME(__prefixX,sizeExpr)`)')dnl
 dnl
 $<connector_variables>`'dnl
+dnl
+popdef(`__subConnCtx')dnl
 $<params_popdefs>`'dnl popdef(`$<param_name>')
 popdef(`__prefixX')dnl
 popdef(`_params')dnl
