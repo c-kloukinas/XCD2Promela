@@ -5,9 +5,7 @@ typedef byte ID;
 
 component comp1(){
     enum Amount := {None, Little, Average, Much};
-
     typedef byte ID;
-
     bool requestMade := false;
     Amount chosenAmount :=  Little;
     emitter port emitter1 {
@@ -32,11 +30,9 @@ component comp1(){
 component comp2(){
     bool requestMade := false;
     Amount chosenAmount :=  Little;
-
 	isTrue (bool a) { return a; }
 	negate (bool a) { return !a; }
 	areEqual(Amount a, Amount b) { return a==b; }
-
     emitter port emitter2 {
         @functional{
             when: true;
@@ -72,11 +68,10 @@ component comp2(){
     }
 }
 
-connector client2server_deadlock(byte numOfClients, byte numOfServers, client{service}, server{service}){
+connector client2server_deadlock(byte numOfClients, client{service}, server{service}){
     role client [@ic:numOfClients]{
         bool opened := false;
         byte clientIndex := @ic;
-
         required port_variable service {
             @interaction{
                 allows: !opened ;
@@ -95,11 +90,8 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             byte request();
         }
     }
-
-    role server [@is:numOfServers] {
+    role server {
         bool opened:=false;
-        byte serverIndex := @is;
-
         provided port_variable service{
             @interaction{
                 allows: !opened;
@@ -112,12 +104,56 @@ connector client2server_deadlock(byte numOfClients, byte numOfServers, client{se
             }
             void close();
             @interaction{
-                allows: opened && serverIndex == @is;
-                ensures: serverIndex \in [0, numOfServers-1];
+                allows: opened;
+                ensures: assert(true);
             }
             byte request();
         }
     }
+    connector client2server_internal internal( numOfClients, client{service}, server{service});
+}
 
-    connector proc link(client{service}, server{service});
+connector client2server_internal(byte numOfClients, client{service}, server{service}){
+    role client [@ic:numOfClients]{
+        bool icopened := false;
+        byte icclientIndex := @ic;
+        required port_variable service {
+            @interaction{
+                allows: !icopened ;
+                ensures: icopened := true;
+            }
+            void open();
+            @interaction{
+                allows: icopened;
+                ensures: icopened := false;
+            }
+            void close();
+            @interaction{
+                allows: icopened && icclientIndex == @ic;
+                ensures: icclientIndex \in [0, numOfClients-1];
+            }
+            byte request();
+        }
+    }
+    role server {
+        bool isopened:=false;
+        provided port_variable service{
+            @interaction{
+                allows: !isopened;
+                ensures: isopened:=true;
+            }
+            void open();
+            @interaction{
+                allows: isopened ;
+                ensures: isopened:= false;
+            }
+            void close();
+            @interaction{
+                allows: isopened;
+                ensures: assert(true);
+            }
+            byte request();
+        }
+    }
+    connector proc link[@lc:numOfClients](client[@lc]{service}, server{service});
 }
