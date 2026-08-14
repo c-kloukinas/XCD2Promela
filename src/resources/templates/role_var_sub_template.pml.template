@@ -1,13 +1,19 @@
 dnl#### Start of connector $<connector_name>, role $<role_name> definitions
 dnl #
-dnl # Name of role#$<rlIndex>
-dnl #
-define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
-dnl #
 dnl # Prefix of role#$<rlIndex>
 dnl #
 pushdef(`__prefixR',__roleId(_context,$<connector_name>,_varname,$<rlIndex>))dnl
-dnl DEBUG: Role _NAME(__prefixX,RlNm$<rlIndex>) _EVALNAME(__prefixX,RlNm$<rlIndex>) is __prefixR
+dnl #
+dnl # Extra role data from sub-connector roles bound to this one.
+dnl #
+define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
+$<subExtraRoleData>dnl
+dnl #
+dnl # Name of role#$<rlIndex>
+dnl #
+dnl define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
+define(_NAME(__prefixR,Name),`$<role_name>')dnl
+dnl DEBUG: Role _NAME(__prefixR,Name) _EVALNAME(__prefixR,Name) is __prefixR
 dnl #
 dnl # Size expr, and size of the role
 dnl #
@@ -35,8 +41,10 @@ dnl # Typedefs of role#$<rlIndex>
 dnl #
 dnl # Name of the type of the role variables
 pushdef(`__prefixRType',_NAME(__prefixR,Type))dnl
+define(_NAME(__prefixR,Fields),$<role_variables>
+_EVALNAME(__prefixR,ExtraRoleData))dnl
 dnl If $ <role_variables> are empty, then define typedefs,etc. to be empty:
-ifelse(_is_empty$<role_variables>,_is_empty,`dnl Empty definitions (when no variables)
+ifelse(_CAT(_is_empty,_EVALNAME(__prefixR,Fields)),_is_empty,`dnl Empty definitions (when no variables)
 define(_NAME(__prefixR,typedef),)dnl
 define(_NAME(__prefixR,typedefs),)dnl
 define(_NAME(__prefixR,vardecl),)dnl
@@ -53,13 +61,12 @@ dnl # sub-connector roles that this role has been associated with
 define(_NAME(__prefixR,typedef),dnl
   typedef `$'1 {
         `$'2`'dnl
-
-    };dnl
-)
+  };dnl
+)dnl
 ifdef(_NAME(__prefixR,typedefs),,dnl
 dnl
 define(_NAME(__prefixR,typedefs),dnl
-  _EVALNAME(__prefixR,typedef)(__prefixRType,$<role_variables>)dnl
+_EVALNAME(__prefixR,typedef)(__prefixRType,_NAME(__prefixR,Fields))dnl
 dnl
 dnl add typedef to global type definitions
 dnl

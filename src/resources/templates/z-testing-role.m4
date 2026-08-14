@@ -79,19 +79,20 @@ ci _GLOBAL_INITS
 
 divert(0)dnl start of v2 macros checking.
 XCXC
-define(`_context',`NONE')
+define(`_context',`_NONE')
 define(`_varname',`foobar')
-AA _$<connector_name>(_context,_varname,3,1,2)dnl
+define(`my_connector_name',client2server_deadlock)
+AA _CAT(_,my_connector_name)(_context,_varname,3,1,2)dnl _$<connector_name>(_context,_varname,3,1,2)dnl
 
 dnl (first comma in _NAME below is to get an initial _).
-define(`theXInstanceName',_NAME(,_context,X$<connector_name>,_CAT(V,_varname)))dnl
-BB _NAME(theXInstanceName,RlNm1) "_EVALNAME(theXInstanceName,RlNm1)"
+define(`theXInstanceName',_NAME(_context,X`'my_connector_name,_CAT(V,_varname)))dnl
+BB _NAME(theXInstanceName,Rl1,Name) "_EVALNAME(theXInstanceName,Rl1,Name)"
 CC Correct role size?
 _NAME(theXInstanceName,Rl1_checkSize)(1*1) "_CAT(_NAME(theXInstanceName,Rl1_checkSize)(1*1))"
 
-DD _NAME(theXInstanceName,RlNm2) "_EVALNAME(theXInstanceName,RlNm2)"
+DD _NAME(theXInstanceName,Rl2,Name) "_EVALNAME(theXInstanceName,Rl2,Name)"
 EE Correct role size?
-_NAME(theXInstanceName,Rl2_checkSize)(3-1) "_CAT(_NAME(theXInstanceName,Rl2_checkSize)(3-1))"
+_NAME(theXInstanceName,Rl2_checkSize)(2-1) "_CAT(_NAME(theXInstanceName,Rl2_checkSize)(2-1))"
 
 FF Port _NAME(theXInstanceName,Rl1,PrtNm1) "_EVALNAME(theXInstanceName,Rl1,PrtNm1)":
 GG Correct port size & type?
@@ -99,17 +100,17 @@ _NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0) "_CAT(_NAME(theXInstanceName,Rl1
 _NAME(theXInstanceName,Rl1,Prt1,checkKind)(required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required))"
 _NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required))"
 
-connectorId: __connectorId(_context,$<connector_name>,_varname) _EVALNAME(         __connectorId(_context,$<connector_name>,_varname),sizeExpr)
-     roleId: __roleId(     _context,$<connector_name>,_varname,1) _EVALNAME(       __roleId(     _context,$<connector_name>,_varname,1),sizeExpr)
-     portId: __portId(     _context,$<connector_name>,_varname,1,1) _EVALNAME(     __portId(     _context,$<connector_name>,_varname,1,1),sizeExpr)
-   actionId: __actionId(   _context,$<connector_name>,_varname,1,1,open)
-"_EVALNAME(__actionId(   _context,$<connector_name>,_varname,1,1,open),guards)"
+connectorId: __connectorId(_context,`'my_connector_name,_varname) _EVALNAME(         __connectorId(_context,`'my_connector_name,_varname),sizeExpr)
+     roleId: __roleId(     _context,`'my_connector_name,_varname,1) _EVALNAME(       __roleId(     _context,`'my_connector_name,_varname,1),sizeExpr)
+     portId: __portId(     _context,`'my_connector_name,_varname,1,1) _EVALNAME(     __portId(     _context,`'my_connector_name,_varname,1,1),sizeExpr)
+   actionId: __actionId(   _context,`'my_connector_name,_varname,1,1,open)
+"_EVALNAME(__actionId(   _context,`'my_connector_name,_varname,1,1,open),guards)"
 
-connectorId: __connectorId(_context,$<connector_name>,_varname) _EVALNAME(         __connectorId(_context,$<connector_name>,_varname),size)
-     roleId: __roleId(     _context,$<connector_name>,_varname,1) _EVALNAME(       __roleId(     _context,$<connector_name>,_varname,1),size)
-     portId: __portId(     _context,$<connector_name>,_varname,1,1) _EVALNAME(     __portId(     _context,$<connector_name>,_varname,1,1),size)
-   actionId: __actionId(   _context,$<connector_name>,_varname,1,1,open)
-"_EVALNAME(__actionId(   _context,$<connector_name>,_varname,1,1,open),ensures)"
+connectorId: __connectorId(_context,`'my_connector_name,_varname) _EVALNAME(         __connectorId(_context,`'my_connector_name,_varname),size)
+     roleId: __roleId(     _context,`'my_connector_name,_varname,1) _EVALNAME(       __roleId(     _context,`'my_connector_name,_varname,1),size)
+     portId: __portId(     _context,`'my_connector_name,_varname,1,1) _EVALNAME(     __portId(     _context,`'my_connector_name,_varname,1,1),size)
+   actionId: __actionId(   _context,`'my_connector_name,_varname,1,1,open)
+"_EVALNAME(__actionId(   _context,`'my_connector_name,_varname,1,1,open),ensures)"
 
 ctBEGIN
 __GLOBAL_TYPEDEFS
@@ -125,10 +126,10 @@ ciEND
 
 dnl Debugging
 dnl _async(a,b)
-dnl _a_Xasync_Vb_RlNm1 _a_Xasync_Vb_Rl1_PrtNm1 _a_Xasync_Vb_Rl1_Prt1_kind
-dnl _a_Xasync_Vb_RlNm2 _a_Xasync_Vb_Rl2_PrtNm1 _a_Xasync_Vb_Rl2_Prt1_kind
+dnl _a_Xasync_Vb_Rl1_Name _a_Xasync_Vb_Rl1_PrtNm1 _a_Xasync_Vb_Rl1_Prt1_kind
+dnl _a_Xasync_Vb_Rl2_Name _a_Xasync_Vb_Rl2_PrtNm1 _a_Xasync_Vb_Rl2_Prt1_kind
 dnl
 dnl _proc(a,b)
-dnl _a_Xproc_Vb_RlNm1 _a_Xproc_Vb_Rl1_PrtNm1 _a_Xproc_Vb_Rl1_Prt1_kind
-dnl _a_Xproc_Vb_RlNm2 _a_Xproc_Vb_Rl2_PrtNm1 _a_Xproc_Vb_Rl2_Prt1_kind
+dnl _a_Xproc_Vb_Rl1_Name _a_Xproc_Vb_Rl1_PrtNm1 _a_Xproc_Vb_Rl1_Prt1_kind
+dnl _a_Xproc_Vb_Rl2_Name _a_Xproc_Vb_Rl2_PrtNm1 _a_Xproc_Vb_Rl2_Prt1_kind
 

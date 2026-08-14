@@ -32,7 +32,8 @@ public class TranslatorXConnector {
         String _params_fictional = "";
         for (int i = 0, sz = thisEnv.compConstructs.params.size(); i<sz; ) {
             String param = thisEnv.compConstructs.params.get(i);
-            param = Names.paramNameConnector(_connector_name,param);
+            // param = Names.paramNameConnector(_connector_name,param);
+            param = "_NAME(_EVALNAME(__prefixX),PARAM_" + param + ")";
             params.put(param, ++i);
             // "+ argShift": first three connector macro args are the
             // context, instance name, and instance size - skip them.
@@ -82,11 +83,11 @@ public class TranslatorXConnector {
                 = (exprArgsIfAny.equals("") ? "" : ("," + exprArgsIfAny));
             _connector_subconnectors_called
                 += "_" + subXtype
-                    + ( "(__prefixX"
+                    + ( "(__subConnCtx"
                         + "," + subconnCallInfo.connectorInstance
                         + "," + xInstance
                         + exprArgsIfAny
-                        + ")dnl\n" );
+                        + ")dnl sub-connector call\n" );
         }
 
         String _connector_subconnectors = "";
@@ -349,13 +350,128 @@ public class TranslatorXConnector {
                 // Lastly (!!!) pop port's symbol table (portST)
                 { bv.popLastSymbolTable(portST); }
             }
+
+            /// for each sub-connector role that this role is bound:
+            ///
+            // find the sub-connector info in ST's elementBindings.
+            ElementBindings bindingsOfRole
+                = thisEnv.elementBindings.getOrDefault(_role_name
+                                                       , new ElementBindings());
+            // _subRoleTypedefs: These are auto-declared when the
+            // sub-connector macro is called, so they can be used
+            // freely later on in the role's typedef.
+            //
+            // String _subRoleTypedefs = "";
+            //
+            // Declaration of the data that the sub-role instances
+            // need, to be inserted into the role's typedef.
+            String _subExtraRoleData = "";
+            // Instantiations of the sub-role data, to be inserted
+            // into the role's initialisations.
+            String _subRoleDataInitialisations = "";
+            // Guards of the sub-role port methods, to be inserted
+            // into the role's port method guards.
+            String _subRolePortMethodGuards = "";
+            // Ensures of the sub-role port methods, to be inserted
+            // into the role's port method ensures.
+            String _subRolePortMethodEnsures = "";
+            for (ElementInfo binding : bindingsOfRole.bindings) {
+                final String _subConnType = binding.connectorTypeName;
+                final String _subConnVarName = binding.connectorInstName;
+                final String _subConnVarSize = binding.connectorSizeExpr;
+                final String _subConnRoleAssumedIndex
+                    = binding.elementIndex;
+                final String _subConnRoleFullName
+                    = "__roleId(_subConnCtx"
+                    + "," + _subConnType
+                    + "," + _subConnVarName
+                    + "," + _subConnRoleAssumedIndex + ")";
+                final String subConnRoleFullNameType
+                    = "_EVALNAME(" + _subConnRoleFullName + ",Type)";
+                final String subConnRoleFullNameVarDeclMacro
+                    = "_EVALNAME(" + _subConnRoleFullName + ",vardecl)";
+                final String subConnRoleFullNameAdditionalState
+                    = subConnRoleFullNameVarDeclMacro
+                    + "(" + subConnRoleFullNameType
+                    + "," + _subConnRoleFullName
+                    // how many instances of this sub-role's data - as
+                    // many as sub-connector instances.
+                    + "," + _subConnVarSize
+                    + ")"
+                    + ( "dnl ExtraRoleData from sub-role ("
+                        + _subConnRoleFullName + "," + _subConnRoleAssumedIndex
+                        + ( ") of sub-connector ("
+                            + _subConnType + " " + _subConnVarName
+                            + ")\n" ) );
+                // collect _subExtraRoleData
+                _subExtraRoleData += subConnRoleFullNameAdditionalState;
+
+                final String subConnRoleAssumedSize
+                    = binding.elementSizeExpr;
+                final Map<String, PortInfo> subConnRolePortArgs
+                    = binding.elementPortArgs;
+                // String _subConnVarSize = "???";
+                IdInfo subXinfo = bv.getIdInfo(thisEnv,_subConnVarName);
+                CallInfoX subconnCallInfo = subXinfo.callInfoX;
+                var _exprArgsIfAny = subconnCallInfo.expressionArgs;
+                _exprArgsIfAny
+                    = (_exprArgsIfAny.equals("") ? "" : ("," + _exprArgsIfAny));
+
+            /// sub-connector context: `_subConnCtx' =
+            ///
+            /// _NAME(__connectorId(_context,$<connector_name>,_varname)
+            ///       ,$<subConnVarName>)
+                String extraRoleData = Utils.readInputFile
+                    (XCD2Promela.resourceTemplates
+                     + "subconnector_role_var_sub_template.pml.template")
+                    .replace("$<subConnType>",    _subConnType)
+                    .replace("$<subConnVarName>", _subConnVarName)
+                    .replace("$<subConnVarSize>", _subConnVarSize)
+
+                    .replace("$<subConnRoleFullName>", _subConnRoleFullName)
+                    .replace("$<subConnRoleAssumedIndex>", _subConnRoleAssumedIndex)
+
+                    // .replace("$<exprArgsIfAny>",  _exprArgsIfAny)
+
+                    // .replace("$<subExtraRoleData>", _subExtraRoleData)
+
+                    .replace("$<role_name>", _role_name)
+                    .replace("$<rlIndex>", ""+_rlIndex)
+                    .replace("$<roleArraySize>","_CAT("+_roleArraySize+")")
+                    .replace("$<connector_name>", _connector_name)
+
+                    ;
+                _subExtraRoleData += extraRoleData;
+
+            /// (1) add the sub-role's typedef to this role's typedef
+            ///
+            /// sub-connector var declaration: `_subConnVarDecl'
+            ///
+            /// _NAME(__roleId(_subConnCtx
+            ///                ,$<subConnType>
+            ///                ,$<subConnVarName>
+            ///                ,$<subConnRoleAssumedIndex>)
+            ///       ,vardecl)($<subConnType>
+            ///                 ,$<subConnVarName>
+            ///                 ,$<subConnVarSize>) <- what should this be?
+            ///
+            /// I am passing either a whole role array (of some size
+            /// N, potentially of size 1) or an element of that role
+            /// array (by definition array of size 1).
+            ///
+            /// The argument role array must match in size the
+            /// parameter role array, so their sizes must match as
+            /// well.
+            ///
+            /// Therefore, ...
+            }
+
             _connector_variables += role_vars
-                .replace("$<role_variables>",
-                         _role_variables)
+                .replace("$<subExtraRoleData>", _subExtraRoleData)
+                .replace("$<role_variables>", _role_variables)
                 .replace("$<role_variable_initialisations>"
                          , roleVarInitialisationsUnrolled)
-                .replace("$<connector_role_port>"
-                         , _connector_role_port)
+                .replace("$<connector_role_port>", _connector_role_port)
                 // high-level role info below last (previous
                 // replacements may be using them)
                 .replace("$<role_name>", _role_name)
