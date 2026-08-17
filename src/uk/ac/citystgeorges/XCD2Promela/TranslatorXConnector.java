@@ -37,8 +37,8 @@ public class TranslatorXConnector {
             params.put(param, ++i);
             // "+ argShift": first three connector macro args are the
             // context, instance name, and instance size - skip them.
-            final int argShift = 3;
-            final int argNo = i + argShift;
+            int argShift = 3;
+            int argNo = i + argShift;
             _params_pushdefs +=
                 // Evaluate connector parameters, so they're values
                 // instead of expressions.
@@ -64,7 +64,7 @@ public class TranslatorXConnector {
         // thisEnv.subconnectors holds the subconnector names
         LstStr roles = thisEnv.rolesAsOrderedInParams;
         LstStr subconnectors = thisEnv.subconnectors;
-        final Map<String, LstStr> roles2portvarsInParams
+        Map<String, LstStr> roles2portvarsInParams
             = thisEnv.roles2portvarsInParams;
         Set<String> subconnector_types = new TreeSet<String>();
         String _connector_subconnectors_called = "";
@@ -106,20 +106,20 @@ public class TranslatorXConnector {
         // framenow.dumpSymbolsRec();
         String _connector_variables = "";
         // String _connector_role_tests = "";
-        final String role_var_template = Utils.readInputFile
+        String role_var_template = Utils.readInputFile
             (XCD2Promela.resourceTemplates
              + "role_var_sub_template.pml.template");
-        final String role_var_port_template = Utils.readInputFile
+        String role_var_port_template = Utils.readInputFile
             (XCD2Promela.resourceTemplates
              + "role_var_port_sub_template.pml.template");
-        final String role_var_port_action_template = Utils.readInputFile
+        String role_var_port_action_template = Utils.readInputFile
             (XCD2Promela.resourceTemplates
              + "role_var_port_action_sub_template.pml.template");
         int _rlIndex = 0;
         for (var _role_name : roles) {
             ++_rlIndex;         // m4 arguments start at $1
             IdInfo role = bv.getIdInfo(thisEnv, _role_name);
-            String roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
+            String _roleIterator = "_NAME(__prefixR," + role.arrayIterator + ")";
             // Find role's symbolTable and push it!!! Otherwise, its
             // IDs will be missing.
             SymbolTableComponent roleST
@@ -127,21 +127,17 @@ public class TranslatorXConnector {
                 bv.pushSymbolTable(roleST); }
             System.err.println
                 ("YYYYY Role "
-                 + _role_name + "'s iterator is " + roleIterator + "\n");
+                 + _role_name + "'s iterator is " + _roleIterator + "\n");
             String roleIndex = "1"; // when roleArSz == bv.sizeOne
             String _roleArraySize = role.arraySizeExpr;
             Utils.myAssertHard(! _roleArraySize.equals("0")
                                , "Role "+_role_name+" has a zero array size");
             // System.err.println("YYYYYY roleArSz: "+_roleArraySize+"\n");
 
-            String roleVarInitialisationsUnrolled
-                = "/** Initialising role "
-                + _role_name + " **/\n"
-
-                + "/* Unrolling initialisations using iterator @"
-                + roleIterator + " */\n"
-                + "d_step {\n"
-                + "_forloop(" + roleIterator
+            String roleVarInitialisationsUnrolledBody =
+                "/* Unrolling initialisations using iterator @"
+                + _roleIterator + " */\n"
+                + "_forloop(" + _roleIterator
                 + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n";
 
             String role_vars = role_var_template;
@@ -178,35 +174,40 @@ public class TranslatorXConnector {
                     _role_variables +=
                         "\n\t" + vartype + " _post_" + roleVarName
                         + "[" + varsz + "];dnl\n" ;
-                roleVarInitialisationsUnrolled
+                roleVarInitialisationsUnrolledBody
                     += "_forloop(" + varIterator
                     + ",0,_CAT(" + varsz + "),dnl\n";
                 {
-                    roleVarInitialisationsUnrolled
+                    roleVarInitialisationsUnrolledBody
                         += "    "
-                        + "__prefixR[" + roleIterator + "]."
+                        // + "_CAT(__ParentComponent)` '"
+                        // + "_EVALNAME(__prefixR,ActualName)["
+                        + "_NAME(__prefixR,ActualNameLHS)["
+                        + _roleIterator + "]."
                         + roleVarName + "[" + varIterator + "] = "
                         + rhs + ";";
                     if (varinfo.has_post) {
-                        roleVarInitialisationsUnrolled
+                        roleVarInitialisationsUnrolledBody
                             += "\n    "
-                            + "__prefixR[" + roleIterator + "]._post_"
+                            // + "_CAT(__ParentComponent)` '"
+                            // + "_EVALNAME(__prefixR,ActualName)["
+                            + "_NAME(__prefixR,ActualNameLHS)["
+                            + _roleIterator + "]._post_"
                             + roleVarName + "[" + varIterator + "] = "
                             + rhs + ";";
                     }
-                    roleVarInitialisationsUnrolled += "`'dnl\n";
+                    roleVarInitialisationsUnrolledBody += "`'dnl\n";
                 }
                 // add the ending parenthesis of var's _forloop
-                roleVarInitialisationsUnrolled
+                roleVarInitialisationsUnrolledBody
                     += ")\n";
             }
-            { // + ending parenthesis of role's _forloop & bracket of d_step
-                roleVarInitialisationsUnrolled
-                    += ")dnl\n} ";
+            { // + ending parenthesis of role's _forloop
+                roleVarInitialisationsUnrolledBody += ")dnl\n";
             }
             int _portIndex = 0;
             String _connector_role_port = "";
-            final LstStr all_ports
+            LstStr all_ports
                 = roles2portvarsInParams.get(_role_name);
             // IMPORTANT - process ports in the order used in the parameters!
             for (String port : all_ports) {
@@ -235,8 +236,8 @@ public class TranslatorXConnector {
                 SymbolTablePort portST
                     = (SymbolTablePort) portInfo.getSB(); {
                     bv.pushSymbolTable(portST); }
-                final LstStr all_actions = portST.all_port_actions();
-                final int _actionsTotal = all_actions.size();
+                LstStr all_actions = portST.all_port_actions();
+                int _actionsTotal = all_actions.size();
                 //
                 // port/action guards & port/action require/ensures pairs
                 //
@@ -366,9 +367,6 @@ public class TranslatorXConnector {
             // Declaration of the data that the sub-role instances
             // need, to be inserted into the role's typedef.
             String _subExtraRoleData = "";
-            // Instantiations of the sub-role data, to be inserted
-            // into the role's initialisations.
-            String _subRoleDataInitialisations = "";
             // Guards of the sub-role port methods, to be inserted
             // into the role's port method guards.
             String _subRolePortMethodGuards = "";
@@ -376,21 +374,23 @@ public class TranslatorXConnector {
             // into the role's port method ensures.
             String _subRolePortMethodEnsures = "";
             for (ElementInfo binding : bindingsOfRole.bindings) {
-                final String _subConnType = binding.connectorTypeName;
-                final String _subConnVarName = binding.connectorInstName;
-                final String _subConnVarSize = binding.connectorSizeExpr;
-                final String _subConnRoleAssumedIndex
+                String _subConnType = binding.connectorTypeName;
+                String _subConnVarName = binding.connectorInstName;
+                String _subConnVarSize = binding.connectorSizeExpr;
+                String _subConnRoleAssumedIndex
                     = binding.elementIndex;
-                final String _subConnRoleFullName
-                    = "__roleId(_subConnCtx"
+                String _subConnRoleFullName
+                    = "__roleId(__subConnCtx"
                     + "," + _subConnType
                     + "," + _subConnVarName
                     + "," + _subConnRoleAssumedIndex + ")";
-                final String subConnRoleFullNameType
+                String _subConnRoleFieldNameName
+                    = "_NAME($<subConnVarName>,_NAME(__subprefixR,Name))";
+                String subConnRoleFullNameType
                     = "_EVALNAME(" + _subConnRoleFullName + ",Type)";
-                final String subConnRoleFullNameVarDeclMacro
+                String subConnRoleFullNameVarDeclMacro
                     = "_EVALNAME(" + _subConnRoleFullName + ",vardecl)";
-                final String subConnRoleFullNameAdditionalState
+                String subConnRoleFullNameAdditionalState
                     = subConnRoleFullNameVarDeclMacro
                     + "(" + subConnRoleFullNameType
                     + "," + _subConnRoleFullName
@@ -406,9 +406,9 @@ public class TranslatorXConnector {
                 // collect _subExtraRoleData
                 _subExtraRoleData += subConnRoleFullNameAdditionalState;
 
-                final String subConnRoleAssumedSize
+                String subConnRoleAssumedSize
                     = binding.elementSizeExpr;
-                final Map<String, PortInfo> subConnRolePortArgs
+                Map<String, PortInfo> subConnRolePortArgs
                     = binding.elementPortArgs;
                 // String _subConnVarSize = "???";
                 IdInfo subXinfo = bv.getIdInfo(thisEnv,_subConnVarName);
@@ -438,6 +438,7 @@ public class TranslatorXConnector {
                     .replace("$<role_name>", _role_name)
                     .replace("$<rlIndex>", ""+_rlIndex)
                     .replace("$<roleArraySize>","_CAT("+_roleArraySize+")")
+                    .replace("$<roleIterator>",_roleIterator)
                     .replace("$<connector_name>", _connector_name)
 
                     ;
@@ -470,13 +471,14 @@ public class TranslatorXConnector {
                 .replace("$<subExtraRoleData>", _subExtraRoleData)
                 .replace("$<role_variables>", _role_variables)
                 .replace("$<role_variable_initialisations>"
-                         , roleVarInitialisationsUnrolled)
+                         , roleVarInitialisationsUnrolledBody)
                 .replace("$<connector_role_port>", _connector_role_port)
                 // high-level role info below last (previous
                 // replacements may be using them)
                 .replace("$<role_name>", _role_name)
                 .replace("$<rlIndex>", ""+_rlIndex)
-                .replace("$<roleArraySize>","_CAT("+_roleArraySize+")");
+                .replace("$<roleArraySize>","_CAT("+_roleArraySize+")")
+                .replace("$<roleIterator>",_roleIterator);
             // Lastly (!!!) pop role's symbol table (roleST)
             { bv.popLastSymbolTable(roleST); }
         }
@@ -486,16 +488,16 @@ public class TranslatorXConnector {
 
         // produce translation
         {
-            final var paramnameslist = _params_name_list;
-            final var paramnamesreallist = _params_name_real_list;
-            final var X_subconnectors = _connector_subconnectors;
-            final var X_variables = _connector_variables;
-            final var pushdefs = _params_pushdefs;
-            final var popdefs = _params_popdefs;
-            final var fictionalparams = _params_fictional;
-            final var connector_subconnectors_called
+            var paramnameslist = _params_name_list;
+            var paramnamesreallist = _params_name_real_list;
+            var X_subconnectors = _connector_subconnectors;
+            var X_variables = _connector_variables;
+            var pushdefs = _params_pushdefs;
+            var popdefs = _params_popdefs;
+            var fictionalparams = _params_fictional;
+            var connector_subconnectors_called
                 = _connector_subconnectors_called;
-            final Function<String, String> replace_template_arguments
+            Function<String, String> replace_template_arguments
                 = (String in) -> {
                 String res = in
                 .replace("$<params_pushdefs>", pushdefs)

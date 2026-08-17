@@ -6,14 +6,23 @@ pushdef(`__prefixR',__roleId(_context,$<connector_name>,_varname,$<rlIndex>))dnl
 dnl #
 dnl # Extra role data from sub-connector roles bound to this one.
 dnl #
+dnl ifdef(_NAME(__prefixR,ActualName),,define(_NAME(__prefixR,ActualName),__prefixR))dnl
+dnl ifdef(_NAME(__prefixR,ActualNameLHS),,define(_NAME(__prefixR,ActualNameLHS),__prefixR))dnl
+dnl
 define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
-$<subExtraRoleData>dnl
+define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
+$<subExtraRoleData>
+dnl
+popdef(`__ParentComponent')dnl
 dnl #
 dnl # Name of role#$<rlIndex>
 dnl #
 dnl define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
 define(_NAME(__prefixR,Name),`$<role_name>')dnl
-dnl DEBUG: Role _NAME(__prefixR,Name) _EVALNAME(__prefixR,Name) is __prefixR
+dnl #
+dnl # Name of role#$<rlIndex> iterator
+dnl #
+define(_NAME(__prefixR,Iterator),$<roleIterator>)dnl
 dnl #
 dnl # Size expr, and size of the role
 dnl #
@@ -49,6 +58,7 @@ define(_NAME(__prefixR,typedef),)dnl
 define(_NAME(__prefixR,typedefs),)dnl
 define(_NAME(__prefixR,vardecl),)dnl
 define(_NAME(__prefixR,vardecls),)dnl
+define(_NAME(__prefixR,FieldInitialisations),)dnl
 define(_NAME(__prefixR,inits),)dnl
 ',`dnl Normal definitions, for when $ <role_variables> are not empty:
 dnl NOTE: then/else parts MUST be quoted, otherwise the else definitions
@@ -96,10 +106,21 @@ dnl #
 dnl # role variable initialisation code should also contain the        TODO XXX
 dnl # initialisation of any sub-connector role variables that this
 dnl # role has been associated with
-define(_NAME(__prefixR,inits),dnl
+define(_NAME(__prefixR,FieldInitialisations),dnl
   _CAT($<role_variable_initialisations>)dnl
+_forloop(_EVALNAME(__prefixR,Iterator),0,_EVALNAME(__prefixR,sizeTotal),dnl
+  _EVALNAME(__prefixR,ExtraRoleDataInitialisations)`'dnl
+)dnl
+)dnl
+define(_NAME(__prefixR,inits),dnl
+/** Initialising role $<role_name> **/
+ifelse(_CAT(_is_empty,_EVALNAME(__prefixR,FieldInitialisations)),_is_empty,,dnl
+d_step {
+   _EVALNAME(__prefixR,FieldInitialisations)
+}
 dnl
-define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))
+define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))dnl
+)dnl
 )dnl
 ')dnl
 dnl #

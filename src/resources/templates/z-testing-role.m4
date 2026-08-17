@@ -112,6 +112,11 @@ connectorId: __connectorId(_context,`'my_connector_name,_varname) _EVALNAME(    
    actionId: __actionId(   _context,`'my_connector_name,_varname,1,1,open)
 "_EVALNAME(__actionId(   _context,`'my_connector_name,_varname,1,1,open),ensures)"
 
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualName),SIVLE)
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameLHS),ELVIS)
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualName),SIVLE)
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualNameLHS),ELVIS)
+
 ctBEGIN
 __GLOBAL_TYPEDEFS
 ctEND

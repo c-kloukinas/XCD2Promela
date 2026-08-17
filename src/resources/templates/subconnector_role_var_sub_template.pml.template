@@ -1,15 +1,26 @@
 dnl ### sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>)
 pushdef(`__subprefixR',__roleId(__subConnCtx,$<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>))dnl
 pushdef(`_subroleType',_NAME(__subprefixR,Type))dnl
+define(_NAME(__subprefixR,ActualName),_NAME($<subConnVarName>,_NAME(__subprefixR,Name)))dnl
+define(_NAME(__subprefixR,ActualNameLHS),_EVALNAME(__prefixR,ActualNameLHS)[_NAME(__prefixR,Iterator)]._NAME(__subprefixR,ActualName))dnl
 dnl ###
 dnl ### for each role ($<role_name> $<rlIndex>) in $<connector_name>
 dnl ###     add sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>) extra data to the role
-define(`__extradata',dnl
+define(`__extraData',dnl
 _NAME(__subprefixR,vardecl)(_subroleType,dnl __subprefixR
-$<subConnVarName>_Rl$<subConnRoleAssumedIndex>,$<subConnVarSize>))dnl
+_NAME(__subprefixR,ActualName),$<subConnVarSize>))dnl
 define(_NAME(__prefixR,ExtraRoleData),dnl
 defn(_NAME(__prefixR,ExtraRoleData))dnl
-ifelse(_CAT(_is_empty,__extradata),_is_empty,,`     '__extradata)dnl
+ifelse(_CAT(_is_empty,__extraData),_is_empty,,`     '__extraData)dnl
 )dnl
+dnl
+dnl # define the extra initialisations
+define(`__extraDataInits',dnl
+_EVALNAME(__subprefixR,FieldInitialisations))dnl
+define(_NAME(__prefixR,ExtraRoleDataInitialisations),dnl
+defn(_NAME(__prefixR,ExtraRoleDataInitialisations))dnl
+ifelse(_CAT(_is_empty,__extraDataInits),_is_empty,,__extraDataInits)dnl
+)dnl
+dnl
 popdef(`_subroleType')dnl
 popdef(`__subprefixR')dnl
