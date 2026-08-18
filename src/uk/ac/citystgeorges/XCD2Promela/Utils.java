@@ -101,7 +101,9 @@ class Utils {
                  , () -> {
                     return
                         func.apply(reader.lines()
-                                   .collect(Collectors.joining("\n")));
+                                   .collect(Collectors.joining("\n"))
+                                   // add final newline to file
+                                   + "\n");
                 });
             // theConfig.write(res);
         } catch (IOException e) {
