@@ -30,7 +30,7 @@ define(`_ilog2',`ifelse(eval($1>0),0,`errprint(log2 is only defined on positive 
 # case 1: `includeall' (no parens) $#==0
 # case 2: `includeall()' $#==1, $1==`'
 # case 3: `includeall(foo)' $#==1, $1!=`'
-define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) includeall(shift($@))')')')dnl
+define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) _includeall(shift($@))')')')dnl
 
 dnl define(`drefine',`define($1,$2)')
 
@@ -50,6 +50,10 @@ define(`__connectorId',`dnl
 _NAME($1,dnl context name
 X`'$2,dnl connector type
 V`'$3`'dnl instance name
+)')
+define(`__connectorId',`dnl
+_NAME($1,dnl context name
+X`'$3`'dnl instance name
 )')
 
 define(`__roleId',`dnl
