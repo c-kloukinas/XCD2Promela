@@ -1,9 +1,15 @@
 dnl -*- mode: m4 -*-
 divert(-1)dnl discard output - hash'ed comments don't copy over
+dnl
 dnl collect all typedefs that need to be done globally
+dnl
 define(__GLOBAL_TYPEDEFS,dnl UNDEFINED
 
 )
+dnl
+dnl Unlike __GLOBAL_TYPEDEFS, the next two (__GLOBAL_VARDECLS & __GLOBAL_INITS)
+dnl are only used for debugging.
+dnl
 define(__GLOBAL_VARDECLS,dnl UNDEFINED
 )
 define(__GLOBAL_INITS,dnl UNDEFINED

@@ -83,9 +83,9 @@ define(`_context',`_NONE')
 define(`_varname',`foobar')
 define(`my_connector_name',client2server_deadlock)
 AA _CAT(_,my_connector_name)(_context,_varname,3,1,2)dnl _$<connector_name>(_context,_varname,3,1,2)dnl
-
 dnl (first comma in _NAME below is to get an initial _).
-define(`theXInstanceName',_NAME(_context,X`'my_connector_name,_CAT(V,_varname)))dnl
+dnl define(`theXInstanceName',_NAME(_context,X`'my_connector_name,_CAT(V,_varname)))dnl
+define(`theXInstanceName',__connectorId(_context,my_connector_name,_varname))dnl
 BB _NAME(theXInstanceName,Rl1,Name) "_EVALNAME(theXInstanceName,Rl1,Name)"
 CC Correct role size?
 _NAME(theXInstanceName,Rl1_checkSize)(1*1) "_CAT(_NAME(theXInstanceName,Rl1_checkSize)(1*1))"

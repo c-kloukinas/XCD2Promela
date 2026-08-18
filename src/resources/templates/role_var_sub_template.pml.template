@@ -94,12 +94,15 @@ dnl #
 define(_NAME(__prefixR,vardecl),dnl type,varname,varsize
    `$'1 `$'2[`$'3];
 )
-define(_NAME(__prefixR,vardecls),dnl
+define(_NAME(__prefixR,myvardecls),dnl
 dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-_EVALNAME(__prefixR,vardecl)(__prefixRType,__prefixR,_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
+_NAME(__prefixR,vardecl)(__prefixRType,__prefixR,_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
+)
 dnl
+define(_NAME(__prefixR,vardecls),dnl
+ _EVALNAME(__prefixR,myvardecls)dnl
 define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')dnl
- _NAME(__prefixR,vardecls)))dnl
+ _EVALNAME(__prefixR,myvardecls)))dnl
 dnl #
 dnl # Role variable initialisations
 dnl #
@@ -113,7 +116,7 @@ _forloop(_EVALNAME(__prefixR,Iterator),0,_EVALNAME(__prefixR,sizeTotal),dnl
 )dnl
 )dnl
 define(_NAME(__prefixR,inits),dnl
-/** Initialising role $<role_name> **/
+/** Initialising role $<role_name> of connector $<connector_name> **/
 ifelse(_CAT(_is_empty,_EVALNAME(__prefixR,FieldInitialisations)),_is_empty,,dnl
 d_step {
    _EVALNAME(__prefixR,FieldInitialisations)

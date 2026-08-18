@@ -384,27 +384,27 @@ public class TranslatorXConnector {
                     + "," + _subConnType
                     + "," + _subConnVarName
                     + "," + _subConnRoleAssumedIndex + ")";
-                String _subConnRoleFieldNameName
-                    = "_NAME($<subConnVarName>,_NAME(__subprefixR,Name))";
-                String subConnRoleFullNameType
-                    = "_EVALNAME(" + _subConnRoleFullName + ",Type)";
-                String subConnRoleFullNameVarDeclMacro
-                    = "_EVALNAME(" + _subConnRoleFullName + ",vardecl)";
-                String subConnRoleFullNameAdditionalState
-                    = subConnRoleFullNameVarDeclMacro
-                    + "(" + subConnRoleFullNameType
-                    + "," + _subConnRoleFullName
-                    // how many instances of this sub-role's data - as
-                    // many as sub-connector instances.
-                    + "," + _subConnVarSize
-                    + ")"
-                    + ( "dnl ExtraRoleData from sub-role ("
-                        + _subConnRoleFullName + "," + _subConnRoleAssumedIndex
-                        + ( ") of sub-connector ("
-                            + _subConnType + " " + _subConnVarName
-                            + ")\n" ) );
-                // collect _subExtraRoleData
-                _subExtraRoleData += subConnRoleFullNameAdditionalState;
+                // String _subConnRoleFieldNameName
+                //     = "_NAME($<subConnVarName>,_NAME(__subprefixR,Name))";
+                // String subConnRoleFullNameType
+                //     = "_EVALNAME(" + _subConnRoleFullName + ",Type)";
+                // String subConnRoleFullNameVarDeclMacro
+                //     = "_EVALNAME(" + _subConnRoleFullName + ",vardecl)";
+                // String subConnRoleFullNameAdditionalState
+                //     = subConnRoleFullNameVarDeclMacro
+                //     + "(" + subConnRoleFullNameType
+                //     + "," + _subConnRoleFullName
+                //     // how many instances of this sub-role's data - as
+                //     // many as sub-connector instances.
+                //     + "," + _subConnVarSize
+                //     + ")"
+                //     + ( "dnl ExtraRoleData from sub-role ("
+                //         + _subConnRoleFullName + "," + _subConnRoleAssumedIndex
+                //         + ( ") of sub-connector ("
+                //             + _subConnType + " " + _subConnVarName
+                //             + ")\n" ) );
+                // // collect _subExtraRoleData
+                // _subExtraRoleData += subConnRoleFullNameAdditionalState;
 
                 String subConnRoleAssumedSize
                     = binding.elementSizeExpr;
