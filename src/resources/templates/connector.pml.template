@@ -3,6 +3,7 @@ include(0-common-defs.m4)dnl
 divert(-1)dnl
 # include definitions of subconnectors
 _includeall($<connector_subconnectors>)
+divert(-1)dnl again, since included files will have re-diverted to 0.
 #
 define(`_$<connector_name>',`dnl
 dnl### Start of connector $<connector_name> definition
@@ -19,7 +20,8 @@ dnl
 dnl Define parameters
 dnl
 $<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
-pushdef(`__subConnCtx',__prefixX)dnl new context for sub-connectors
+dnl pushdef(`__subConnCtx',__prefixX)dnl new context for sub-connectors
+pushdef(`__subConnCtx',_NAME(_context,X`'_varname))dnl new context for sub-connectors
 dnl
 dnl Instantiate subconnectors - their context is __prefixX
 dnl
@@ -42,4 +44,3 @@ popdef(`_context')dnl
 dnl### End of connector $<connector_name> definition
 ')dnl
 divert(0)dnl
-
