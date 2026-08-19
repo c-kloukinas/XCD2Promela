@@ -11,6 +11,9 @@ dnl ifdef(_NAME(__prefixR,ActualNameLHS),,define(_NAME(__prefixR,ActualNameLHS),
 dnl
 define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
 define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
+dnl Also initialise action extra guards/ensures (for sub-roles)
+$<connector_action_extra_guards_initialisation>
+dnl
 $<subExtraRoleData>
 dnl
 popdef(`__ParentComponent')dnl

@@ -22,5 +22,6 @@ defn(_NAME(__prefixR,ExtraRoleDataInitialisations))dnl
 ifelse(_CAT(_is_empty,__extraDataInits),_is_empty,,__extraDataInits)dnl
 )dnl
 dnl
+$<subActionGuards>
 popdef(`_subroleType')dnl
 popdef(`__subprefixR')dnl

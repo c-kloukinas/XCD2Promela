@@ -209,6 +209,10 @@ public class TranslatorXConnector {
             String _connector_role_port = "";
             LstStr all_ports
                 = roles2portvarsInParams.get(_role_name);
+            //
+            // Initialisation of extra guards
+            //
+            String _connector_action_extra_guards_initialisation = "";
             // IMPORTANT - process ports in the order used in the parameters!
             for (String port : all_ports) {
                 ++_portIndex;   // m4 arguments start at $1
@@ -243,6 +247,12 @@ public class TranslatorXConnector {
                 //
                 String _connector_role_port_action_guards = "";
                 for (String action : all_actions) {
+                    _connector_action_extra_guards_initialisation
+                        += Utils.readInputFile
+                            (XCD2Promela.resourceTemplates
+                             + "role_var_port_action_guard_init_sub_template.pml.template")
+                        .replace("$<actionName>", action)
+                        .replace("$<portIndex>", ""+_portIndex);
                     IdInfo actionInfo = bv.getIdInfo(action);
                     SymbolTableMethod actionST
                         = (SymbolTableMethod) actionInfo.getSB();
@@ -314,7 +324,7 @@ public class TranslatorXConnector {
                                + "assert(false); "
                                +  "/* incomplete action guards: r/p/a = "
                                + _role_name + "/" + port + "/" + action
-                               + " */ fi; "
+                               + " */ fi"
                                );
                     } else {
                         _port_action_guard = "true";
@@ -323,6 +333,7 @@ public class TranslatorXConnector {
                     _connector_role_port_action_guards +=
                         role_var_port_action_template
                         .replace("$<actionName>", action)
+                        .replace("$<portIndex>", ""+_portIndex)
                         .replace("$<port_action_guard>",_port_action_guard)
                         .replace("$<port_action_ensures>",_port_action_ensures);
 
@@ -410,6 +421,37 @@ public class TranslatorXConnector {
                     = binding.elementSizeExpr;
                 Map<String, PortInfo> subConnRolePortArgs
                     = binding.elementPortArgs;
+                String _subActionGuards = "";
+                for(Map.Entry<String,PortInfo> entry : subConnRolePortArgs.entrySet()) {
+                    String portName = entry.getKey();
+                    PortInfo portPInfo = entry.getValue();
+                    String portKind = portPInfo.portKind;
+                    String _subConnPortIndex = portPInfo.portIndex;
+                    String portSize = portPInfo.portSizeExpr;
+                    /*
+                     * Loop over all actions
+                     *
+                     * ASSUMPTION: Each sub-connector uses a *subset*
+                     * of the actions of the connector!!!
+                     *
+                     * That is, a sub-connector does *NOT* impose
+                     * constraints on actions that the connector does
+                     * not know about.
+                     */
+                    IdInfo portInfo = bv.getIdInfo(portName);
+                    SymbolTablePort portST
+                        = (SymbolTablePort) portInfo.getSB();
+                    LstStr all_actions = portST.all_port_actions();
+                    for (String _actionName : all_actions )
+                        _subActionGuards +=
+                            Utils.readInputFile
+                            (XCD2Promela.resourceTemplates
+                             + "subconnector_role_var_port_action_sub_template.pml.template")
+                            .replace("$<subConnPortIndex>",_subConnPortIndex)
+                            .replace("$<portIndex>", ""+_portIndex)
+                            .replace("$<actionName>", _actionName);
+                }
+
                 // String _subConnVarSize = "???";
                 IdInfo subXinfo = bv.getIdInfo(thisEnv,_subConnVarName);
                 CallInfoX subconnCallInfo = subXinfo.callInfoX;
@@ -424,6 +466,8 @@ public class TranslatorXConnector {
                 String extraRoleData = Utils.readInputFile
                     (XCD2Promela.resourceTemplates
                      + "subconnector_role_var_sub_template.pml.template")
+                    .replace("$<subActionGuards>", _subActionGuards)
+
                     .replace("$<subConnType>",    _subConnType)
                     .replace("$<subConnVarName>", _subConnVarName)
                     .replace("$<subConnVarSize>", _subConnVarSize)
@@ -472,6 +516,8 @@ public class TranslatorXConnector {
                 .replace("$<role_variables>", _role_variables)
                 .replace("$<role_variable_initialisations>"
                          , roleVarInitialisationsUnrolledBody)
+                .replace("$<connector_action_extra_guards_initialisation>"
+                         , _connector_action_extra_guards_initialisation)
                 .replace("$<connector_role_port>", _connector_role_port)
                 // high-level role info below last (previous
                 // replacements may be using them)

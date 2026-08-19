@@ -55,4 +55,6 @@ dnl #
 dnl # Role port action guards and guard-ensures pairs
 dnl #
 $<connector_role_port_action_guards>`'dnl
+dnl
+popdef(`__prefixRP')dnl
 dnl##### End of connector $<connector_name>, role $<role_name>, port $<portName> definitions

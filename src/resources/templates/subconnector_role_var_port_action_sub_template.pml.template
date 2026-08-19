@@ -1,0 +1,23 @@
+pushdef(`__prefixRPA',dnl name of the role action
+__actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>))dnl
+pushdef(`__subprefixRPA',__actionId(__subConnCtx,$<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>,$<subConnPortIndex>,$<actionName>))dnl
+dnl
+define(`__extraGuards',dnl
+ifdef(_NAME(__subprefixRPA,guards),_EVALNAME(__subprefixRPA,guards),))dnl
+dnl
+define(_NAME(__prefixRPA,ExtraGuards),dnl
+defn(_NAME(__prefixRPA,ExtraGuards))dnl
+ifelse(__extraGuards,,,
+&& __extraGuards)dnl
+)dnl
+dnl
+define(`__extraEnsures',dnl
+ifdef(_NAME(__subprefixRPA,ensures),_EVALNAME(__subprefixRPA,ensures),))dnl
+dnl
+define(_NAME(__prefixRPA,ExtraEnsures),dnl
+defn(_NAME(__prefixRPA,ExtraEnsures))dnl
+ifelse(_CAT(_is_empty,__extraEnsures),_is_empty,,;__extraEnsures)`'dnl
+)dnl
+dnl
+popdef(`__subprefixRPA')dnl
+popdef(`__prefixRPA')dnl
