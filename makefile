@@ -19,6 +19,9 @@ BLDSRC=$(BLDDIR)/src
 BLDCLS=$(BLDDIR)/classes
 CLLIST=$(BLDDIRFULL)/list$(TARGET).list
 SRCDIR=$(TOPDIR)/src
+RESDIR=resources
+# find normal files, exclude Emacs backups
+RESOURCES=$(shell find $(SRCDIR)/$(RESDIR) -type f | grep -v '~$$')
 TESTDIR=$(BLDDIR)/test
 TESTCASESDIR=$(TOPDIR)/xcd-test-cases
 BACKUPDIR=$(TOPDIR)/y-ignore-me/z-keep-backups
@@ -37,7 +40,7 @@ ANTLR=java -jar $(ANTLR_JAR_COMPLETE)
 ALL_TESTS=$(wildcard $(TESTCASESDIR)/*.xcd)
 ALL_TESTS_PASSED=$(patsubst $(TESTCASESDIR)/%.xcd,$(TESTDIR)/%.passed,$(ALL_TESTS))
 
-# files produced by antlr from a grammar file:
+# files produced by antlr from a grammar file (Produced Java Sources/Classes):
 PJS=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Parser.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Lexer.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%BaseListener.java,$(GRAMMAR))
@@ -46,38 +49,59 @@ PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%BaseVisitor.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Visitor.java,$(GRAMMAR))
 PJC=$(patsubst $(BLDSRC)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(PJS))
 
-# normal Java src files
+# Normal Java Source/Class files
 NJS=$(wildcard $(SRCDIR)/$(PKGDIR)/*.java)
 JAVA_SRC=$(PJS) $(NJS)
 NJC=$(patsubst $(SRCDIR)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(NJS))
+
+# all Java class files
 JAVA_CLASSES=$(PJC) $(NJC)
+
+# Define dependency tracking files ONLY for normal source
+DEPS        := $(NJC:.class=.d)
+JDEPS=jdeps
 
 .PRECIOUS: $(JAVA_SRC)
 
 .PHONY: all unused compile jar tests test1 test clean backup-incremental backup-full backupi backupf deps
 
-$(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java makefile
-	-rm $(BLDCLS)/$(PKGDIR)/$*.class
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $(SRCDIR)/$(PKGDIR)/$*.java
+$(BLDCLS)/$(PKGDIR)/%.d: $(BLDCLS)/$(PKGDIR)/%.class
+	$(JDEPS) -verbose:class -filter:none -cp $(BLDCLS) $< 2>/dev/null \
+		| grep '[-]> '"$(PKG)" \
+		| tr '\t' ' ' \
+		| sed -e 's/  */ /g' -e 's/^ //' -e 's/ classes *$$//' \
+		| sed -e 's/\./\//g' \
+		      -e 's/^\([^ ]*\) -> \([^ ]*\)$$/\1.class: \2.class/' \
+		> $@
 
-$(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java makefile
-	-rm $(BLDCLS)/$(PKGDIR)/$*.class
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $(BLDSRC)/$(PKGDIR)/$*.java
+$(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java
+	@mkdir -p $(dir $@)
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $<
+
+$(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java
+	@mkdir -p $(dir $@)
+	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $<
 
 $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(TOPDIR)/1-scripts/test-xcd makefile
 	$(TOPDIR)/1-scripts/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
 
-all:	jar
+all:	jar unused
 
 unused: $(NJS)
-	@for f in $(NJS) ; do b=`basename $$f .java` ; n=`grep $$b $(NJS) | wc -l` ; if [ $$n = 1 ]; then echo $$f unused ; fi; done
+	@for f in $(NJS) ; do \
+		b=`basename $$f .java` \
+		; n=`grep $$b $(NJS) \
+		| wc -l` \
+		; if [ $$n = 1 ]; then \
+			echo NOTE: $$f was NOT used \
+		; fi \
+	; done
 
 check:
 	echo ALL_TESTS=$(ALL_TESTS) 
 	echo ALL_TESTS_PASSED=$(ALL_TESTS_PASSED) 
 
-compile: $(BLDSRC)/$(PKGDIR)/$(GRAMMAR)Parser.java $(BLDCLS)/$(PKGDIR)/$(TARGET).class $(JAVA_CLASSES) makefile \
-	unused
+compile: $(BLDSRC)/$(PKGDIR)/$(GRAMMAR)Parser.java $(BLDCLS)/$(PKGDIR)/$(TARGET).class $(JAVA_CLASSES) makefile 
 
 #	@echo Java src: $(NJS)
 #	@echo Java src produced: $(PJS)
@@ -96,10 +120,10 @@ $(CLLIST): $(JAVA_CLASSES) makefile
 #	@(echo $(JAVA_CLASSES) | tr ' ' '\n' |sort -u) > $(CLLIST)2
 #	wc -l $(CLLIST) $(CLLIST)2
 
-$(THINJAR): $(CLLIST)
+$(THINJAR): $(CLLIST) $(RESOURCES)
 	-@cd $(BLDCLS); rm -f $(THINJAR)
 	@cd $(BLDCLS); jar -c -f $(THINJAR) -e $(MAIN) @$(CLLIST)
-	@cd $(SRCDIR); jar -u -f $(THINJAR) resources
+	@cd $(SRCDIR); jar -u -f $(THINJAR) $(RESDIR)
 
 $(TARGETJAR): $(THINJAR)
 	-@rm -rf $(JBLDDIRFULL)
@@ -159,12 +183,8 @@ backup-full:
 backup-incremental:
 	@sh 1-scripts/files-outside-build -n
 
-deps:	$(NJS) $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4 makefile 1-scripts/file-dependencies-of
-	MAIN=$(MAIN) make clean \
-		$(BLDSRC)/$(PKGDIR)/XCDParser.java \
-		$(BLDCLS)/$(PKGDIR)/$(MAIN).class
-	1-scripts/file-dependencies-of $(MAIN) > $(MAIN).deps
+deps:	$(DEPS) makefile
 
-ifeq ($(DEPSEXISTS),0)
-  include $(MAIN).deps
-endif
+# Include generated dependency rules if they exist
+-include $(DEPS)
+
