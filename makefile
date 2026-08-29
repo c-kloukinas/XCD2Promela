@@ -4,7 +4,6 @@ GRAMMAR=XCD
 PKG=uk.ac.citystgeorges.XCD2Promela
 PKGDIR=$(shell echo $(PKG) | tr . /)
 TOPDIR=$(shell pwd)
-DEPSEXISTS=$(shell test -f $(MAIN).deps; echo $?)
 
 TARGET=the$(MAIN)$(GRAMMAR)
 TARGET=$(GRAMMAR)$(MAIN)
@@ -18,13 +17,20 @@ THINJAR=$(BLDDIRFULL)/$(TARGET)-thin.jar
 BLDSRC=$(BLDDIR)/src
 BLDCLS=$(BLDDIR)/classes
 CLLIST=$(BLDDIRFULL)/list$(TARGET).list
-SRCDIR=$(TOPDIR)/src
+SRCDIRPLAIN=src
+SRCDIR=$(TOPDIR)/$(SRCDIRPLAIN)
 RESDIR=resources
 # find normal files, exclude Emacs backups
 RESOURCES=$(shell find $(SRCDIR)/$(RESDIR) -type f | grep -v '~$$')
 TESTDIR=$(BLDDIR)/test
 TESTCASESDIR=$(TOPDIR)/xcd-test-cases
 BACKUPDIR=$(TOPDIR)/y-ignore-me/z-keep-backups
+SCRIPTDIR=$(TOPDIR)/1-scripts
+
+GRAMMARFULL=$(PKGDIR)/$(GRAMMAR).g4
+# GRAMMARPARSER=$(patsubst %.g4,$(BLDSRC)/%Parser.java,$(GRAMMARFULL))
+TARGETJAVA=$(SRCDIR)/$(PKGDIR)/$(TARGET).java
+TARGETCLASS=$(patsubst $(SRCDIR)/%.java,$(BLDCLS)/%.class,$(TARGETJAVA))
 
 JAVAC?=javac
 JFLAGS?=-Xlint:unchecked
@@ -47,45 +53,56 @@ PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%BaseListener.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Listener.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%BaseVisitor.java,$(GRAMMAR))
 PJS+=$(patsubst %,$(BLDSRC)/$(PKGDIR)/%Visitor.java,$(GRAMMAR))
-PJC=$(patsubst $(BLDSRC)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(PJS))
+PJC=$(patsubst $(BLDSRC)/%.java,$(BLDCLS)/%.class,$(PJS))
 
 # Normal Java Source/Class files
-NJS=$(wildcard $(SRCDIR)/$(PKGDIR)/*.java)
+# NJS=$(wildcard $(SRCDIR)/$(PKGDIR)/*.java)
+NJS=$(shell find $(SRCDIR) -name '*.java')
 JAVA_SRC=$(PJS) $(NJS)
-NJC=$(patsubst $(SRCDIR)/$(PKGDIR)/%.java,$(BLDCLS)/$(PKGDIR)/%.class,$(NJS))
+NJC=$(patsubst $(SRCDIR)/%.java,$(BLDCLS)/%.class,$(NJS))
+NJCWITHOUTTARGETCLASS=$(patsubst $(TARGETCLASS),,$(NJC))
 
 # all Java class files
 JAVA_CLASSES=$(PJC) $(NJC)
 
 # Define dependency tracking files ONLY for normal source
-DEPS        := $(NJC:.class=.d)
+DEPS=$(patsubst %.class,%.d,$(NJC))
+JDEPS=echo jdeps
 JDEPS=jdeps
 
 .PRECIOUS: $(JAVA_SRC)
 
-.PHONY: all unused compile jar tests test1 test clean backup-incremental backup-full backupi backupf deps
-
-$(BLDCLS)/$(PKGDIR)/%.d: $(BLDCLS)/$(PKGDIR)/%.class
-	$(JDEPS) -verbose:class -filter:none -cp $(BLDCLS) $< 2>/dev/null \
-		| grep '[-]> '"$(PKG)" \
-		| tr '\t' ' ' \
-		| sed -e 's/  */ /g' -e 's/^ //' -e 's/ classes *$$//' \
-		| sed -e 's/\./\//g' \
-		      -e 's/^\([^ ]*\) -> \([^ ]*\)$$/\1.class: \2.class/' \
-		> $@
-
-$(BLDCLS)/$(PKGDIR)/%.class: $(SRCDIR)/$(PKGDIR)/%.java
-	@mkdir -p $(dir $@)
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $<
-
-$(BLDCLS)/$(PKGDIR)/%.class: $(BLDSRC)/$(PKGDIR)/%.java
-	@mkdir -p $(dir $@)
-	CLASSPATH=$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $<
-
-$(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(TOPDIR)/1-scripts/test-xcd makefile
-	$(TOPDIR)/1-scripts/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
+.PHONY: all compile jar \
+	tests test test1 \
+	clean \
+	backup-incremental backup-full backupi backupf \
+	unused deps
 
 all:	jar unused
+
+# explicit empty rule for everything in the src directory.
+$(SRCDIR)/%:	;
+
+# explicit empty rule for the makefile itself as well.
+makefile:	;
+
+# explicit empty rule for dependencies - don't try to automatically re-create
+# them (horrible looping if not present because make includes them and tries to
+# update them each time).
+%.d:	;
+
+$(BLDCLS)%.class: $(SRCDIR)%.java
+	@mkdir -p $(dir $@)
+	CLASSPATH=$(CLASSPATH) \
+	$(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(SRCDIR):$(BLDSRC) $<
+
+$(BLDCLS)%.class: $(BLDSRC)%.java
+	@mkdir -p $(dir $@)
+	CLASSPATH=$(CLASSPATH) \
+	$(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $<
+
+$(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(SCRIPTDIR)/test-xcd makefile
+	$(SCRIPTDIR)/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
 
 unused: $(NJS)
 	@for f in $(NJS) ; do \
@@ -98,10 +115,31 @@ unused: $(NJS)
 	; done
 
 check:
-	echo ALL_TESTS=$(ALL_TESTS) 
-	echo ALL_TESTS_PASSED=$(ALL_TESTS_PASSED) 
+	echo ALL_TESTS=$(ALL_TESTS)
+	echo ALL_TESTS_PASSED=$(ALL_TESTS_PASSED)
 
-compile: $(BLDSRC)/$(PKGDIR)/$(GRAMMAR)Parser.java $(BLDCLS)/$(PKGDIR)/$(TARGET).class $(JAVA_CLASSES) makefile 
+$(PJS): $(SRCDIR)/$(GRAMMARFULL)
+	(cd $(SRCDIR); \
+	$(ANTLR) -visitor -o $(TOPDIR)/$(BLDSRC) -package $(PKG) $(GRAMMARFULL))
+
+$(NJC):	$(PJS)
+
+# Just compile the target main class - the rest of NJS/PJS will be
+# compiled implicitly as needed
+#
+# But first remake any stale class files that are not the target main
+# class
+$(TARGETCLASS): $(PJS) $(NJS) makefile
+	@$(SCRIPTDIR)/remake $(NJCWITHOUTTARGETCLASS)
+	CLASSPATH=$(CLASSPATH) \
+	$(JAVAC) $(JFLAGS) -d $(BLDCLS) \
+		--source-path $(SRCDIR):$(BLDSRC) \
+		$(TARGETJAVA)
+
+#	 | grep -v 'is up to date' \
+
+# can create/update dependencies once you've (re)compiled
+compile: $(TARGETCLASS) deps
 
 #	@echo Java src: $(NJS)
 #	@echo Java src produced: $(PJS)
@@ -109,9 +147,6 @@ compile: $(BLDSRC)/$(PKGDIR)/$(GRAMMAR)Parser.java $(BLDCLS)/$(PKGDIR)/$(TARGET)
 #	@echo Java classes produced: $(PJC)
 
 jar: compile $(TARGETJAR)
-
-$(PJS): $(SRCDIR)/$(PKGDIR)/$(GRAMMAR).g4 makefile
-	(cd $(SRCDIR); $(ANTLR) -visitor -o $(TOPDIR)/$(BLDSRC) -package $(PKG) $(PKGDIR)/$(GRAMMAR).g4)
 
 $(CLLIST): $(JAVA_CLASSES) makefile
 	@(cd $(BLDCLS); find -name '*.class' |sort -u) > $(CLLIST)
@@ -122,18 +157,22 @@ $(CLLIST): $(JAVA_CLASSES) makefile
 
 $(THINJAR): $(CLLIST) $(RESOURCES)
 	-@cd $(BLDCLS); rm -f $(THINJAR)
-	@cd $(BLDCLS); jar -c -f $(THINJAR) -e $(MAIN) @$(CLLIST)
-	@cd $(SRCDIR); jar -u -f $(THINJAR) $(RESDIR)
+	cd $(BLDCLS) \
+	; jar -c -f $(THINJAR) -e $(MAIN) @$(CLLIST)
+	cd $(SRCDIR) \
+	; jar -u -f $(THINJAR) $(RESDIR)
 
 $(TARGETJAR): $(THINJAR)
 	-@rm -rf $(JBLDDIRFULL)
 	@mkdir -p $(JBLDDIRFULL)/lib $(JBLDDIRFULL)/main
-	@cd $(JBLDDIRFULL); jar -xf $(ONEJAR)
+	@cd $(JBLDDIRFULL) \
+	; jar -xf $(ONEJAR)
 	-@rm -rf $(JBLDDIRFULL)/src
 	@cp -p $(THINJAR) $(JBLDDIRFULL)/main/
 	@cp -p $(ANTLR_JAR_RUNTIME) $(JBLDDIRFULL)/lib/
 	@echo 'One-Jar-Main-Class: '$(PKG).$(MAIN) >> $(JBLDDIRFULL)/boot-manifest.mf
-	cd $(JBLDDIRFULL) ; jar -cvfm $(TARGETJAR) boot-manifest.mf . > /dev/null 2>&1
+	cd $(JBLDDIRFULL) \
+	; jar -cvfm $(TARGETJAR) boot-manifest.mf . > /dev/null 2>&1
 
 $(TESTDIR):
 	mkdir -p $(TESTDIR)
@@ -178,12 +217,49 @@ backupf:	backup-full
 backupi:	backup-incremental
 
 backup-full:
-	@sh 1-scripts/files-outside-build
+	@sh $(SCRIPTDIR)/files-outside-build
 
 backup-incremental:
-	@sh 1-scripts/files-outside-build -n
+	@sh $(SCRIPTDIR)/files-outside-build -n
 
+## This rule causes class files to be re-compiled all the time, because make
+## tries to update what it includes.
+## Instead, we have an explicit empty rule for %d and have target deps after the
+## actual compilation.
+# %.d: %.class
+
+# In the JDEPS call below, which is from a %.d: %.class old rule, we have:
+# depfile = $@
+# classfile = $<
 deps:	$(DEPS) makefile
+	@for depfile in $(DEPS); do \
+	    classfile=`dirname "$${depfile}"`/`basename "$${depfile}" .d`.class ; \
+	    javafile=`dirname "$${depfile}"`/`basename "$${depfile}" .d`.java ; \
+	    if [ -f "$${classfile}" ] ; then \
+		 if [ ! -f "$${depfile}" -o "$${depfile}" -ot "$${classfile}" ] ; then \
+		   echo 'COMMENT: Add self dependency' > /dev/null ; \
+		   echo "$${classfile}": "$${javafile}" > "$${depfile}" ; \
+		   echo 'COMMENT: No self dependency, to find independent classes' > /dev/null ; \
+		   echo '' > "$${depfile}" ; \
+	           $(JDEPS) -verbose:class -filter:none -cp $(BLDCLS) "$${classfile}" 2>/dev/null \
+		     | grep '[-]> '"$(PKG)" \
+		     | grep -v '\$$' \
+		     | tr '\t' ' ' \
+		     | sed -e 's/  */ /g' -e 's/^ //' -e 's/ classes *$$//' \
+		     | sed -e 's|\.|\/|g' \
+		           -e 's|^\([^ ]*\) -> \([^ ]*\)$$|$(SRCDIRPLAIN)/\2.java|' \
+		     | while read f ; do \
+			  if [ -f "$${f}" ] ; then \
+			    echo "$${classfile}": "$${f}" ; \
+			  fi ; \
+		     done \
+		     >> "$${depfile}" ; \
+		     echo Updated "$${depfile}" ; \
+	         fi ; \
+            else \
+	      rm -f "$${depfile}" ; \
+	    fi ; \
+	done
 
 # Include generated dependency rules if they exist
 -include $(DEPS)

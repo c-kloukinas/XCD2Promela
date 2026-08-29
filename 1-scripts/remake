@@ -1,0 +1,13 @@
+#! /bin/sh -
+
+targets=
+for f in "$@" ; do
+  if [ -f "$f" ] ; then
+    targets="${targets} $f"
+  fi
+done
+
+if [ "z${targets}z" != zz ] ; then
+  make ${targets} | grep -v ' is up to date.'
+fi
+
