@@ -16,7 +16,6 @@ $<connector_action_extra_guards_initialisation>
 dnl
 $<subExtraRoleData>
 dnl
-popdef(`__ParentComponent')dnl
 dnl #
 dnl # Name of role#$<rlIndex>
 dnl #
