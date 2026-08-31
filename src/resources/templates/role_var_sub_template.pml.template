@@ -4,19 +4,6 @@ dnl # Prefix of role#$<rlIndex>
 dnl #
 pushdef(`__prefixR',__roleId(_context,$<connector_name>,_varname,$<rlIndex>))dnl
 dnl #
-dnl # Extra role data from sub-connector roles bound to this one.
-dnl #
-dnl ifdef(_NAME(__prefixR,ActualName),,define(_NAME(__prefixR,ActualName),__prefixR))dnl
-dnl ifdef(_NAME(__prefixR,ActualNameLHS),,define(_NAME(__prefixR,ActualNameLHS),__prefixR))dnl
-dnl
-define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
-define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
-dnl Also initialise action extra guards/ensures (for sub-roles)
-$<connector_action_extra_guards_initialisation>
-dnl
-$<subExtraRoleData>
-dnl
-dnl #
 dnl # Name of role#$<rlIndex>
 dnl #
 dnl define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
@@ -47,6 +34,19 @@ dnl which is inside the quoted macro definition body
 popdef(`__mySizeShouldBe')dnl
 popdef(`__mySizeShouldBeExpr')dnl
 ')dnl
+dnl #
+dnl # Extra role data from sub-connector roles bound to this one.
+dnl #
+dnl ifdef(_NAME(__prefixR,ActualName),,define(_NAME(__prefixR,ActualName),__prefixR))dnl
+dnl ifdef(_NAME(__prefixR,ActualNameLHS),,define(_NAME(__prefixR,ActualNameLHS),__prefixR))dnl
+dnl
+define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
+define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
+dnl Also initialise action extra guards/ensures (for sub-roles)
+$<connector_action_extra_guards_initialisation>
+dnl
+$<subExtraRoleData>
+dnl
 dnl #
 dnl # Typedefs of role#$<rlIndex>
 dnl #
