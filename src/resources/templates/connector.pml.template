@@ -9,17 +9,17 @@ define(`_$<connector_name>',`dnl
 dnl### Start of connector $<connector_name> definition
 pushdef(`_context',`$1')dnl
 pushdef(`_varname',`$2')dnl
-pushdef(`_varsize',`$3')dnl
+pushdef(`_varsize',`$3')dnl what is the iterator of this one? XXX
 pushdef(`_params',`shift(shift(shift($@)))')dnl from 4th argument onwards
 dnl
 dnl Same context & varname cannot have different params or size,
 dnl so size & params not part of this mangled name.
-dnl (first comma in _NAME is to get an initial _).
 pushdef(`__prefixX',__connectorId(_context,$<connector_name>,_varname))dnl
 dnl
 dnl Define parameters
 dnl
 $<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
+dnl
 dnl pushdef(`__subConnCtx',__prefixX)dnl new context for sub-connectors
 pushdef(`__subConnCtx',_NAME(_context,X`'_varname))dnl new context for sub-connectors
 dnl
@@ -32,6 +32,15 @@ dnl #
 define(_NAME(__prefixX,sizeExpr),_varsize)dnl
 define(_NAME(__prefixX,size),`eval('_EVALNAME(__prefixX,sizeExpr)`)')dnl
 dnl
+dnl
+dnl Iterator for _varsize
+dnl
+define(_NAME(__prefixX,Iterator),dnl
+ifelse(_EVALNAME(__prefixX,size),1,dnl
+0,dnl Size is 1, so can only access offset 0!
+_NAME(__prefixX,_i)`'dnl Need to use proper name! XXX
+)dnl
+)dnl
 $<connector_variables>`'dnl
 dnl
 popdef(`__subConnCtx')dnl
