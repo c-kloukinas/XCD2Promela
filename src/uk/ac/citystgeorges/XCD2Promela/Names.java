@@ -95,10 +95,31 @@ class Names {
         return "_NAME(__prefixX,PARAM_"+var+")";}
     static String paramNameRole( String x, String role, String var ) {
         return roleName(x, role) + "_PARAM_"+var; }
-    static String varNameRole( String x, String role, String var ) {
-        return roleName(x, role) + "_VAR_"+var; }
-    static String varInstanceNameRole(String x,String role,String var,String inst){
-        return varNameRole(x,role,var)+inst; }// really? Not "[" + inst + "]" ?
+    static String varNameRole( String x, String rNum, String roleInstanceIterator, String var ) {
+        // return roleName(x, role) + "_VAR_"+var;
+        return "_NAME(__roleId(_context," + x // my_connector_name
+            + ",_varname"
+            + "," + rNum // roleIndex
+            + "),ActualNameUse)("
+            + roleInstanceIterator
+            + ")."
+            + var;
+    }
+    static String varNameRolePost_NOTUSED( String x, String rNum, String roleInstanceIterator, String var ) {
+        // return roleName(x, role) + "_VAR_"+var;
+        return "_EVALNAME(__roleId(_context," + x // my_connector_name
+            + ",_varname"
+            + "," + rNum // roleIndex
+            + "),ActualNameUse)["
+            + roleInstanceIterator
+            + "]._post_"        // POST()
+            + var;
+    }
+    // static String varInstanceNameRole(String x,String role,String var,String inst){
+    //     return varNameRole(x,role,var)+inst; }// really? Not "[" + inst + "]" ?
+
+    static String varInstanceNameRole(String x, String rNum, String roleInstanceIterator, String var,String inst){
+        return varNameRole(x,rNum,roleInstanceIterator,var)+inst; }// really? Not "[" + inst + "]" ?
 
     static String portActionName( String comp, String port, String act) {
         // return  componentName(comp) + "_VAR_PORT_" + port + "_ACTION_" + act;

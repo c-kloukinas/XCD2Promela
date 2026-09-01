@@ -919,6 +919,33 @@ class EnvironmentCreationVisitor
                                    , isVar);
     }
 
+    private String getRoleIndex(SymbolTable parent
+                    , String roleName) {
+        SymbolTableComposite prnt = (SymbolTableComposite) parent;
+        LstStr roles = prnt.rolesAsOrderedInParams;
+        int roleIndex = roles.indexOf(roleName);
+        Utils.myAssertHard(roleIndex!=-1
+                           , "Failed to find role \"" + roleName
+                           + "\" inside connector \"" + parent.compilationUnitID
+                           + "\"");
+        return ""+(roleIndex+1); // role indices start from 1
+    }
+    private String getRoleIterator(SymbolTable parent
+                                   , String roleName) {
+        IdInfo roleId = getIdInfo(parent, roleName);
+        String roleIterator = "_NAME(__prefixR," + roleId.arrayIterator + ")";
+        return roleIterator;
+    }
+    private String getVarInstance(SymbolTable parent
+                                  , String roleName) {
+        IdInfo roleId = getIdInfo(parent, roleName);
+        String index = "[UNKNOWN]";
+        if (roleId.arraySizeExpr.equals("1")
+            || roleId.arraySizeExpr.equals(""))
+            index = "[0]";      // There's only one element.
+        return index;
+    }
+
     public T visitVarOrParamDecl(String dtype
                                  , String varName
                                  , String array_sz
@@ -984,18 +1011,24 @@ class EnvironmentCreationVisitor
             } else if (tp==XCD_type.componentt
                        || tp==XCD_type.rolet) {
                 var theEnv = (SymbolTableComponent)framenow;
+                var parent = theEnv.parent;
+                String myCRName = theEnv.compilationUnitID;
                 trans = ((tp==XCD_type.componentt)
                          ? (isVar
-                            ? Names.varNameComponent(theEnv.compilationUnitID
+                            ? Names.varNameComponent(myCRName
                                                      , varName)
-                            : Names.paramNameComponent(theEnv.compilationUnitID
+                            : Names.paramNameComponent(myCRName
                                                        , varName))
                          : (isVar
-                            ?Names.varNameRole(theEnv.parent.compilationUnitID
-                                               , theEnv.compilationUnitID
-                                               , varName)
-                            :Names.paramNameRole(theEnv.parent.compilationUnitID
-                                                 , theEnv.compilationUnitID
+                            ?Names
+                            .varNameRole(parent.compilationUnitID
+                                         , getRoleIndex(parent
+                                                        , myCRName)
+                                         , getRoleIterator(parent
+                                                           , myCRName)
+                                         , varName)
+                            :Names.paramNameRole(parent.compilationUnitID
+                                                 , myCRName
                                                  , varName)));
             } else {
                 myassert(false

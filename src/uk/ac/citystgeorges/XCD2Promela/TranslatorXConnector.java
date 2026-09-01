@@ -135,9 +135,13 @@ public class TranslatorXConnector {
             // System.err.println("YYYYYY roleArSz: "+_roleArraySize+"\n");
 
             String roleVarInitialisationsUnrolledBody =
-                "/* Unrolling initialisations using iterator @"
-                + _roleIterator + " */\n"
-                + "_forloop(" + _roleIterator
+                "/* Unrolling role data initialisations using iterator @"
+                // + _roleIterator + " */\n"
+                + "_NAME(__prefixR,Iterator) "
+                + "up to _EVALNAME(__prefixR,sizeTotal) */\n"
+                // actual loop header:
+                // + "_forloop(" + _roleIterator
+                + "_forloop(_EVALNAME(__prefixR,Iterator)"
                 + ",0,_EVALNAME(__prefixR,sizeTotal),dnl\n";
 
             String role_vars = role_var_template;
@@ -175,7 +179,11 @@ public class TranslatorXConnector {
                         "\n\t" + vartype + " _post_" + roleVarName
                         + "[" + varsz + "];dnl\n" ;
                 roleVarInitialisationsUnrolledBody
-                    += "_forloop(" + varIterator
+                    += "/* Unrolling role variable initialisations "
+                    + "using iterator @" + varIterator
+                    + " up to " + varsz + " */\n"
+                    // actual loop header:
+                    + "_forloop(" + varIterator
                     + ",0,_CAT(" + varsz + "),dnl\n";
                 {
                     roleVarInitialisationsUnrolledBody

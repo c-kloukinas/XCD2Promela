@@ -100,6 +100,16 @@ _NAME(theXInstanceName,Rl1,Prt1,checkSize)(1+0) "_CAT(_NAME(theXInstanceName,Rl1
 _NAME(theXInstanceName,Rl1,Prt1,checkKind)(required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,checkKind)(required))"
 _NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required) "_CAT(_NAME(theXInstanceName,Rl1,Prt1,check)(2-1,required))"
 
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualName),TNEILC)
+dnl define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameUse),TNEILC_U)
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameUse),CLIENT[$1])
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameLHS),CLIENT)
+define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameLHSUse),CLIENT_U)
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualName),REVRES)
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualNameUse),SERVER[$1])
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualNameLHS),SERVER)
+define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualNameLHSUse),SERVER_U)
+
 connectorId: __connectorId(_context,`'my_connector_name,_varname) _EVALNAME(         __connectorId(_context,`'my_connector_name,_varname),sizeExpr)
      roleId: __roleId(     _context,`'my_connector_name,_varname,1) _EVALNAME(       __roleId(     _context,`'my_connector_name,_varname,1),sizeExpr)
      portId: __portId(     _context,`'my_connector_name,_varname,1,1) _EVALNAME(     __portId(     _context,`'my_connector_name,_varname,1,1),sizeExpr)
@@ -111,11 +121,6 @@ connectorId: __connectorId(_context,`'my_connector_name,_varname) _EVALNAME(    
      portId: __portId(     _context,`'my_connector_name,_varname,1,1) _EVALNAME(     __portId(     _context,`'my_connector_name,_varname,1,1),size)
    actionId: __actionId(   _context,`'my_connector_name,_varname,1,1,open)
 "_EVALNAME(__actionId(   _context,`'my_connector_name,_varname,1,1,open),ensures)"
-
-define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualName),SIVLE)
-define(_NAME(__roleId(_context,my_connector_name,_varname,1),ActualNameLHS),ELVIS)
-define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualName),SIVLE)
-define(_NAME(__roleId(_context,my_connector_name,_varname,2),ActualNameLHS),ELVIS)
 
 ctBEGIN
 __GLOBAL_TYPEDEFS

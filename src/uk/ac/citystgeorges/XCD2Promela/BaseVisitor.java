@@ -409,7 +409,8 @@ import uk.ac.citystgeorges.XCD2Promela.XCDParser.*;
         var idInfo = framenow.map.get(id);
         var compTypeid = framenow.compilationUnitID;
         var portid = "UNKNOWN_PORTID"; // framenow.portID;
-        String s = Names.varNameRole("UNKNOWN_conn", "UNKNOWN_role", id);
+        // String s = Names.varNameRole("UNKNOWN_conn", "UNKNOWN_role", id);
+        String s = "FIXME!!!";
 
         // var String output = "";
         // var String connIns_i = "";

@@ -1,8 +1,30 @@
 dnl ### sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>)
 pushdef(`__subprefixR',__roleId(__subConnCtx,$<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>))dnl
 pushdef(`_subroleType',_NAME(__subprefixR,Type))dnl
-define(_NAME(__subprefixR,ActualName),_NAME($<subConnVarName>,_NAME(__subprefixR,Name)))dnl
-define(_NAME(__subprefixR,ActualNameLHS),_EVALNAME(__prefixR,ActualNameLHS)[_NAME(__prefixR,Iterator)]._NAME(__subprefixR,ActualName))dnl
+dnl
+dnl #
+dnl # sub-role instance name, adapted to have the parent role instance
+dnl # as a prefix
+dnl #
+dnl
+define(_NAME(__subprefixR,InstanceAtOffset),dnl
+_NAME(__prefixR,InstanceAtOffset)($`'1)._NAME(__subprefixR,InstanceAtOffsetPlain)($`'1)dnl
+)dnl
+dnl
+dnl SUBROLE: I am __subprefixR, of size _EVALNAME(__subprefixR,size), and my 7rd InstanceAtOffset is _CAT(_CAT(`_NAME(__subprefixR,InstanceAtOffset)(7)'))
+dnl
+define(_NAME(__subprefixR,ActualName),dnl
+_NAME($<subConnVarName>,_NAME(__subprefixR,Name))`'dnl
+)dnl
+define(_NAME(__subprefixR,ActualNameLHS),dnl
+_EVALNAME(__prefixR,ActualNameLHS)[_NAME(__prefixR,Iterator)].dnl
+_NAME(__subprefixR,ActualName)`'dnl
+)dnl
+define(_NAME(__subprefixR,ActualNameUse),dnl
+dnl SUBROLE size is _EVALNAME(__subprefixR,size)
+_NAME(__prefixR,ActualNameUse)(_NAME(__prefixR,Iterator)).dnl
+_EVALNAME(__subprefixR,InstanceAtOffsetPlain)(_NAME(__prefixR,Iterator))`'dnl
+)dnl
 dnl ###
 dnl ### for each role ($<role_name> $<rlIndex>) in $<connector_name>
 dnl ###     add sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>) extra data to the role
@@ -21,7 +43,6 @@ define(_NAME(__prefixR,ExtraRoleDataInitialisations),dnl
 defn(_NAME(__prefixR,ExtraRoleDataInitialisations))dnl
 ifelse(_CAT(_is_empty,__extraDataInits),_is_empty,,__extraDataInits)dnl
 )dnl
-dnl
 $<subActionGuards>
 popdef(`_subroleType')dnl
 popdef(`__subprefixR')dnl

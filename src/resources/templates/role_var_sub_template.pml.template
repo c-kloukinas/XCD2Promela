@@ -1,4 +1,7 @@
 dnl#### Start of connector $<connector_name>, role $<role_name> definitions
+dnl ###
+dnl ### Sub-role-independent definitions (name/iterator/size)
+dnl ###
 dnl #
 dnl # Prefix of role#$<rlIndex>
 dnl #
@@ -19,6 +22,14 @@ define(_NAME(__prefixR,sizeExpr),`$<roleArraySize>')dnl
 define(_NAME(__prefixR,size),`eval('_EVALNAME(__prefixR,sizeExpr)`)')dnl
 define(_NAME(__prefixR,sizeTotal),`eval('_EVALNAME(__prefixR,size) * (_varsize)`)')dnl
 dnl #
+dnl # The name of an instant, at some offset (parameter) if sizeTotal
+dnl # is not 1, 0 offset otherwise.
+dnl #
+define(_NAME(__prefixR,InstanceAtOffsetPlain),dnl
+dnl # variableName_roleName[ role_sizeTotal == 1 ? 0 : offset_param ]
+_NAME(_varname,_EVALNAME(__prefixR,Name))[ifelse(_EVALNAME(__prefixR,size),1,0,$`'1)]dnl
+)dnl
+dnl #
 dnl # Size checker of role#$<rlIndex>
 dnl #
 define(_NAME(__prefixR,checkSize),`dnl
@@ -34,12 +45,12 @@ dnl which is inside the quoted macro definition body
 popdef(`__mySizeShouldBe')dnl
 popdef(`__mySizeShouldBeExpr')dnl
 ')dnl
+dnl ###
+dnl ### Sub-role-dependent definitions that work without re-definition
+dnl ###
 dnl #
 dnl # Extra role data from sub-connector roles bound to this one.
 dnl #
-dnl ifdef(_NAME(__prefixR,ActualName),,define(_NAME(__prefixR,ActualName),__prefixR))dnl
-dnl ifdef(_NAME(__prefixR,ActualNameLHS),,define(_NAME(__prefixR,ActualNameLHS),__prefixR))dnl
-dnl
 define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
 define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
 dnl Also initialise action extra guards/ensures (for sub-roles)
@@ -98,7 +109,7 @@ define(_NAME(__prefixR,vardecl),dnl type,varname,varsize
 )
 define(_NAME(__prefixR,myvardecls),dnl
 dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-_NAME(__prefixR,vardecl)(__prefixRType,__prefixR,_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
+_NAME(__prefixR,vardecl)(__prefixRType,_NAME(__prefixR,ActualNameLHS),_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
 )
 dnl
 define(_NAME(__prefixR,vardecls),dnl
@@ -113,6 +124,7 @@ dnl # initialisation of any sub-connector role variables that this
 dnl # role has been associated with
 define(_NAME(__prefixR,FieldInitialisations),dnl
   _CAT($<role_variable_initialisations>)dnl
+/* Unrolling extra sub-role data initialisations using iterator @`'_NAME(__prefixR,Iterator) up to _EVALNAME(__prefixR,sizeTotal) */
 _forloop(_EVALNAME(__prefixR,Iterator),0,_EVALNAME(__prefixR,sizeTotal),dnl
   _EVALNAME(__prefixR,ExtraRoleDataInitialisations)`'dnl
 )dnl
@@ -128,10 +140,43 @@ define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))dnl
 )dnl
 )dnl
 ')dnl
+dnl ###
+dnl ### Sub-role-dependent definitions (variable name/guards/ensures)
+dnl ###
+dnl
+dnl ROLE: I am __prefixR, of size _EVALNAME(__prefixR,size), and my 3rd InstanceAtOffset is _CAT(_CAT(`_NAME(__prefixR,InstanceAtOffset)(3)'))
 dnl #
 dnl # Role ports
 dnl #
 $<connector_role_port>`'dnl
+define(_NAME(__subprefixR,ActualName),dnl
+ifdef(_NAME(__prefixR,ActualName),dnl
+`defn(_NAME(__prefixR,ActualName))',dnl
+`_NAME(_varname,_NAME(__prefixR,Name))'`'dnl
+)dnl
+)dnl
+define(_NAME(__prefixR,ActualNameUse),dnl
+ifdef(_NAME(__prefixR,ActualNameUse),dnl
+`defn(_NAME(__prefixR,ActualNameUse))',dnl
+`defn(_NAME(__prefixR,InstanceAtOffsetPlain))'`'dnl
+)dnl
+)dnl
+dnl
+define(_NAME(__prefixR,ActualNameLHS),dnl
+_EVALNAME(__prefixR,ActualName)[_NAME(__prefixR,Iterator)]dnl
+)dnl
+dnl
+define(_NAME(__prefixR,InstanceAtOffset),dnl
+_EVALNAME(__prefixR,InstanceAtOffsetPlain)($1)`'dnl
+)dnl
+dnl
 popdef(`__prefixRType')dnl
+dnl
+dnl Do roles need a macro, like connector?                           XXX
+dnl
+define(_NAME(__prefixR,Apply),`dnl
+dnl The role __prefixR has been applied!
+')dnl
+dnl _EVALNAME(__prefixR,Apply)`'dnl
 popdef(`__prefixR')dnl
 dnl#### End of connector $<connector_name>, role $<role_name> definitions
