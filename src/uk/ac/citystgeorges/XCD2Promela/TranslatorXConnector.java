@@ -22,6 +22,8 @@ public class TranslatorXConnector {
         final var Err = System.err;
         // _vars will be filled in the template
         String _connector_name = compName;
+        IdInfo connectorIdInfo = bv.getIdInfo(thisEnv, _connector_name);
+        String _connector_iterator = connectorIdInfo.arrayIterator;
         Map<String,Integer> params = new HashMap<String,Integer>();
         String _params_pushdefs = "";
         String _params_popdefs = "";
@@ -563,6 +565,7 @@ public class TranslatorXConnector {
                 // high-level connector info below last (previous
                 // replacements may be using them)
                 .replace("$<connector_subconnectors>", X_subconnectors)
+                .replace("$<connector_iterator>", _connector_iterator)
                 .replace("$<connector_name>", _connector_name)
                 ;
                 {
