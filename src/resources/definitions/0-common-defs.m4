@@ -26,7 +26,7 @@ define(`_error',dnl
 `_warningM(fatal error,$*)m4exit(`1')')dnl
 dnl
 define(`_CAT', `$1$2')dnl
-define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'_NAME(shift($@))')')')dnl
+define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'$0(shift($@))')')')dnl
 define(`_EVALNAME', `_CAT(_NAME($@))')dnl
 define(`_ite', `ifelse(eval($1),0,`$3',`$2')')dnl
 define(`_ilog2r',`ifelse($1,1,$2,`_log2r(eval($1/2),incr($2))')')dnl
@@ -36,7 +36,7 @@ define(`_ilog2',`ifelse(eval($1>0),0,`errprint(log2 is only defined on positive 
 # case 1: `includeall' (no parens) $#==0
 # case 2: `includeall()' $#==1, $1==`'
 # case 3: `includeall(foo)' $#==1, $1!=`'
-define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) _includeall(shift($@))')')')dnl
+define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) $0(shift($@))')')')dnl
 
 dnl define(`drefine',`define($1,$2)')
 
@@ -47,7 +47,7 @@ dnl define(`drefine',`define($1,$2)')
 # _forloop(i, 0, 5,`eval(i*2) ') -> eval (quoted!!!) needed to compute with i
 define(`_forloop',dnl
 `ifelse(eval($2 < $3), 1,dnl
-`pushdef(`$1', `$2')$4`'popdef(`$1')`'_forloop(`$1', incr($2), $3, `$4')',)')dnl
+`pushdef(`$1', `$2')$4`'popdef(`$1')`'$0(`$1', incr($2), $3, `$4')',)')dnl
 
 #
 # Naming conventions
