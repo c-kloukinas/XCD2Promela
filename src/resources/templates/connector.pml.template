@@ -27,7 +27,7 @@ dnl
 $<params_pushdefs>`'dnl pushdef(`$<param_name>',$<param_index)
 dnl
 dnl pushdef(`__subConnCtx',__prefixX)dnl new context for sub-connectors
-pushdef(`__subConnCtx',_NAME(_context,X`'_varname))dnl new context for sub-connectors
+pushdef(`__subConnCtx',__connectorId(_context,$<connector_name>,_varname))dnl new context for sub-connectors
 dnl
 dnl Instantiate subconnectors - their context is __prefixX
 dnl
