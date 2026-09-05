@@ -50,23 +50,23 @@ define(`_forloop',dnl
 `pushdef(`$1', `$2')$4`'popdef(`$1')`'$0(`$1', incr($2), $3, `$4')',)')dnl
 
 # The identity/echo macro
-define(`echo', `$@')dnl
+define(`_echo', `$@')dnl
 #
 # List functions
 #
-define(`make_list',`($@)')dnl make_list(1, 2, 3) -> (1, 2, 3)
+define(`_make_list',`($@)')dnl _make_list(1, 2, 3) -> (1, 2, 3)
 #
-define(`expand_list', `echo$1')dnl expand_list((1,2)) -> 1, 2
+define(`_expand_list', `_echo$1')dnl _expand_list((1,2)) -> 1, 2
 #
-define(`head',`define(_$0,$`'1)_$0(expand_list($@))')dnl
+define(`_head',`define(_$0,$`'1)_$0(_expand_list($@))')dnl
 #
-define(`tail',`define(_$0,($`@'))_$0(shift(expand_list($@)))')dnl
+define(`_tail',`define(_$0,($`@'))_$0(shift(_expand_list($@)))')dnl
 #
-define(`foreach',dnl
+define(`_foreach',dnl
 `ifelse(`$3', `', `',dnl no list arg at all / empty list arg
 `$3', `()', `',dnl empty list
-`pushdef(`$1', head(`$3'))$2`'popdef(`$1')$0(`$1', `$2', tail(`$3'))')dnl
-')dnl foreach(`item', `Item: item ', make_list(1,2)) -> Item: 1 Item: 2
+`pushdef(`$1', _head(`$3'))$2`'popdef(`$1')$0(`$1', `$2', _tail(`$3'))')dnl
+')dnl _foreach(`item', `Item: item ', _make_list(1,2)) -> Item: 1 Item: 2
 
 #
 # Naming conventions
