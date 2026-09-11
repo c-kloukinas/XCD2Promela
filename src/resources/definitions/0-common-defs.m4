@@ -24,6 +24,9 @@ define(`_warning',dnl
 `_warningM(warning,$*)')dnl
 define(`_error',dnl
 `_warningM(fatal error,$*)m4exit(`1')')dnl
+define(`_warningDen',`_warning($@)')dnl debugging warnings enabled
+define(`_warningD',`')dnl debugging warnings do nothing by default
+dnl define(`_warningD',`defn(_warningDen)($@)')dnl debugging warnings re-enabled!
 dnl
 define(`_CAT', `$1$2')dnl
 define(`_NAME', `ifelse(`$#',`0',`',`ifelse(`$#',`1',`$1',`$1_`'$0(shift($@))')')')dnl
@@ -104,5 +107,17 @@ $4,dnl role number
 $5),dnl port number
 $6`'dnl action name
 )')
+
+define(`_checkArg1MatchesArg2',`dnl
+define(`arg1',`eval($1)')dnl
+define(`arg2',`eval($2)')dnl
+_warningD(`checkArg1MatchesArg2: My arg one is "$1 (arg1)" and my arg two is "$2 (arg2)"
+')dnl
+ifelse(arg1,arg2,dnl
+_warningD(`checkArg1MatchesArg2: Args "$1 (arg1)" and "$2 (arg2)" match`,' nothing to do
+'),dnl
+`errprint(checkArg1MatchesArg2: Args "$1 (arg1)" and "$2 (arg2)" differ
+)')')dnl
+
 divert(0)dnl
 
