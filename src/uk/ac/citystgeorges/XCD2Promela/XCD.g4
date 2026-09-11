@@ -417,13 +417,17 @@ unaryExpressionNotPlusMinus:
 /*
   <primary> ::= <aLiteral>
         | ( <expression> )
-        | ID                    // XXX: Extention
+        | in [ primary, primary ]  // XXX: Extention for value in Range
+        | in { ( primary (, primary)* )? }// XXX: Extention value in Set
+        | ID                       // XXX: Extention
         | <functionInvocation>
         | <arrayAccess>
 */
 primary:
   lit=aLiteral
   | TK_LPAR parExpr=expression TK_RPAR
+  | inRange=TK_IN theRange=range      // XXX: Extension - another form of int
+  | inSet=TK_IN theSet=set            // XXX: Extension - another form of int
   | name=ID
   | TK_AT atId=ID                     // XXX: Extension - another form of ID
   | theResult=TK_RESULT               // XXX: Extension - another form of ID

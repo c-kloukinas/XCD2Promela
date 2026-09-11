@@ -169,20 +169,23 @@ connector composite_init2par(initiator{auction,propose}, participant{auction,pro
 }
 
 
-composite auctionProtocol (){
+composite auctionProtocol (int N){
     component initiator inIns(3, 4);
-    component participant partIns1(6);
-    component participant partIns2(5);
-    component participant partIns3(2);
-    //    component participant partIns4(7,9);
+    component participant partIns[N](\in [1, 6]);
+    // component participant partIns1(6);
+    // component participant partIns2(5);
+    // component participant partIns3(2);
+    // //    component participant partIns4(7,9);
 
-    connector basic_init2par conn1(inIns{auction[0],propose[0]}
-                                   , partIns1{auction,propose});
-    connector basic_init2par conn2(inIns{auction[1],propose[1]}
-                                   , partIns2{auction,propose});
-    connector basic_init2par conn3(inIns{auction[2],propose[2]}
-                                   , partIns3{auction,propose});
-    //   connector basic_init2par conn4(inIns{auction[3],propose[3]}, partIns4{auction,propose});
+    connector basic_init2par cn[@i:N](inIns{auction[@i],propose[@i]},
+                                      partIns[@i]{auction,propose});
+    // connector basic_init2par conn1(inIns{auction[0],propose[0]}
+    //                                , partIns1{auction,propose});
+    // connector basic_init2par conn2(inIns{auction[1],propose[1]}
+    //                                , partIns2{auction,propose});
+    // connector basic_init2par conn3(inIns{auction[2],propose[2]}
+    //                                , partIns3{auction,propose});
+    // //   connector basic_init2par conn4(inIns{auction[3],propose[3]}, partIns4{auction,propose});
 }
 
-component auctionProtocol configAuction();
+component auctionProtocol configAuction(3);

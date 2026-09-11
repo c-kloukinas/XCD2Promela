@@ -42,6 +42,10 @@ public class TranslatorPrimaryContext implements TranslatorI {
             // bv.mywarning("FUNCTION call: " + s);
         } else if (ctx.arrayAcc!=null) {
             s = bv.visit(ctx.arrayAcc).get(0);
+        } else if (ctx.inRange!=null) {
+            s = bv.visit(ctx.theRange).get(0);
+        } else if (ctx.inSet!=null) {
+            s = bv.visit(ctx.theSet).get(0);
         } else
             bv.myassert(false, "Unknown case of nullaryExpression");
         // System.out.println("Translation is: " + s);
