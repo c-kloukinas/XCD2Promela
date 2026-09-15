@@ -1,3 +1,4 @@
+dnl /* DEF __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>) 03 */
 dnl###### Start of connector $<connector_name>, role $<role_name>, port $<portName>, action $<actionName> definitions
 pushdef(`__prefixRPA',dnl name of the role action
 __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>))dnl
@@ -6,7 +7,7 @@ dnl #
 dnl # action guards should be CONJOINED with the guards of any
 dnl # sub-connector roles that this role has been associated with
 define(_NAME(__prefixRPA,guards),dnl
-_CAT(_CAT($<port_action_guard>)
+_CAT(_CAT($<connector07_port_action01_guard>)
 _NAME(__prefixRPA,ExtraGuards))`'dnl
 )dnl
 dnl # Action conditional updates
@@ -16,7 +17,7 @@ dnl # sub-connector roles that this role has been associated
 dnl # with. [SEQUENCED: first conditionally update your variables
 dnl # if::fi, then update those of sub-connector roles.]
 define(_NAME(__prefixRPA,ensures),dnl
-_CAT(_CAT($<port_action_ensures>)
+_CAT(_CAT($<connector07_port_action02_ensures>)
 _NAME(__prefixRPA,ExtraEnsures))`'dnl
 )dnl
 popdef(`__prefixRPA')dnl

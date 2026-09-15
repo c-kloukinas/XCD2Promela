@@ -1303,7 +1303,14 @@ class EnvironmentCreationVisitor
             }
 
             if (framenow instanceof SymbolTableComposite) {
-                ((SymbolTableComposite)framenow).subconnectors.add(instance_name);
+                {
+                    ((SymbolTableComposite)framenow).subconnectors
+                        .add(instance_name);
+                    IdInfo subXinfo= getIdInfo(framenow, instance_name);
+                    String subXtype= subXinfo.variableTypeName;
+                    ((SymbolTableComposite)framenow).subconnector_types
+                        .add(subXtype);
+                }
                 // mywarning(framenow.compilationUnitID
                 //        + "'s subcomponent of type "
                 //           + instance_name);
@@ -2128,4 +2135,5 @@ class EnvironmentCreationVisitor
         map.put(XCDParser.TK_REQUIRED, XCD_type.requiredvart);
         return map;
     }
+
 }

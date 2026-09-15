@@ -1,3 +1,4 @@
+dnl /* DEF __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>) 01 */
 pushdef(`__prefixRPA',dnl name of the role action
 __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>))dnl
 define(_NAME(__prefixRPA,ExtraGuards),)dnl start with "true" defn & collect

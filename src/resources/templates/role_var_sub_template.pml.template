@@ -5,12 +5,25 @@ dnl ###
 dnl #
 dnl # Prefix of role#$<rlIndex>
 dnl #
-pushdef(`__prefixR',__roleId(_context,$<connector_name>,_varname,$<rlIndex>))dnl
+pushdef(`__prefixR',`__roleId(_context,$<connector_name>,_varname,$<rlIndex>)')dnl
+dnl
+define(_NAME(__prefixR,XvarSize),_EVALNAME(__prefixX,size))dnl
+dnl
+define(_NAME(__prefixR,XvarIterator),_EVALNAME(__prefixX,Iterator))dnl
+dnl
+dnl ## *IMPORTANT*!!!
+dnl #
+dnl # Role instance prefix with/without offset are set by the enclosing element
+dnl #
+dnl define(_NAME(__prefixR,InstancePrefixNoOffset),_NAME(__superPrefixR,InstancePrefixWithOffset)._NAME(__prefixR,FieldName))dnl
+dnl
+dnl define(_NAME(__prefixR,InstancePrefixWithOffset),_NAME(__prefixR,InstancePrefixNoOffset)[_EVALNAME(__superPrefixR,offsetOrZero)(_NAME(__superPrefixR,Iterator))])dnl
+dnl
 dnl #
 dnl # Name of role#$<rlIndex>
 dnl #
-dnl define(_NAME(__prefixX,RlNm$<rlIndex>),`$<role_name>')dnl
 define(_NAME(__prefixR,Name),`$<role_name>')dnl
+define(_NAME(__prefixR,FieldName),_NAME(_varname,_EVALNAME(__prefixR,Name)))dnl
 dnl #
 dnl # Name of role#$<rlIndex> iterator
 dnl #
@@ -19,52 +32,54 @@ dnl #
 dnl # Size expr, and size of the role
 dnl #
 define(_NAME(__prefixR,sizeExpr),`$<roleArraySize>')dnl
+dnl
+ifelse(_context,`_context',`errprint(Undefined context!)m4exit(1)',)dnl
+ifelse(_varname,`_varname',`errprint(Undefined varname!)m4exit(1)',)dnl
+ifelse(__prefixX,`__prefixX',`errprint(Undefined prefixX!)m4exit(1)',)dnl
+dnl
 define(_NAME(__prefixR,size),`eval('_EVALNAME(__prefixR,sizeExpr)`)')dnl
-define(_NAME(__prefixR,sizeTotal),`eval('_EVALNAME(__prefixR,size) * (_varsize)`)')dnl
+define(_NAME(__prefixR,sizeTotal),`eval('_EVALNAME(__prefixR,size) * (_EVALNAME(__prefixR,XvarSize))`)')dnl
+define(_NAME(__prefixR,offsetOrZero),`ifelse(_EVALNAME(__prefixR,size),1,0,$`'1)')dnl
 dnl #
 dnl # The name of an instant, at some offset (parameter) if sizeTotal
 dnl # is not 1, 0 offset otherwise.
 dnl #
 define(_NAME(__prefixR,InstanceAtOffsetPlain),dnl
-dnl # variableName_roleName[ role_sizeTotal == 1 ? 0 : offset_param ]
-_NAME(_varname,_EVALNAME(__prefixR,Name))[ifelse(_EVALNAME(__prefixR,size),1,0,$`'1)]dnl
-)dnl
+_EVALNAME(__prefixR,FieldName)`'dnl
+[_EVALNAME(__prefixR,offsetOrZero)($`'1)])dnl
+dnl
+define(_NAME(__prefixR,InstanceAtOffset),dnl
+_EVALNAME(__prefixR,InstancePrefixWithOffset).`'dnl
+_EVALNAME(__prefixR,InstanceAtOffsetPlain)($`'1))dnl
+dnl
 dnl #
 dnl # Size checker of role#$<rlIndex>
 dnl #
 define(_NAME(__prefixR,checkSize),`dnl
-dnl Delay evaluation of $1 below, so it is the $1 of checkSize, and _NOT_
-dnl that of the connector macro (within which checkSize is defined).
-pushdef(`__mySizeShouldBeExpr',$'`1)dnl
-pushdef(`__mySizeShouldBe',eval(__mySizeShouldBeExpr))dnl
-ifelse(__mySizeShouldBe,'_EVALNAME(__prefixR,size)`,,dnl
-dnl Below we use two quotes because we are inside the quoted _error,
-dnl which is inside the quoted macro definition body
-`_error(Role array size ("''_NAME(__prefixR,sizeExpr)" = _EVALNAME(__prefixR,size)``) is different to size passed ("__mySizeShouldBeExpr" = __mySizeShouldBe).
-)')dnl
-popdef(`__mySizeShouldBe')dnl
-popdef(`__mySizeShouldBeExpr')dnl
-')dnl
+_checkArg1MatchesArg2('$`'1`,_NAME('__prefixR`,size))')dnl
 dnl ###
 dnl ### Sub-role-dependent definitions that work without re-definition
 dnl ###
 dnl #
 dnl # Extra role data from sub-connector roles bound to this one.
 dnl #
-define(_NAME(__prefixR,ExtraRoleData),)dnl start with empty definition & collect
-define(_NAME(__prefixR,ExtraRoleDataInitialisations),)dnl start with empty definition & collect
-dnl Also initialise action extra guards/ensures (for sub-roles)
-$<connector_action_extra_guards_initialisation>
+dnl start with empty definition & collect
+define(_NAME(__prefixR,CollectedExtraRoleData),)dnl
+dnl start with empty definition & collect
+define(_NAME(__prefixR,CollectedExtraRoleDataInitialisations),)dnl
 dnl
-$<subExtraRoleData>
+dnl # Action extra guards/ensures initialisation happens *before*
+dnl # role variable declaration in the connector.
+dnl
+$<role01_subExtraRoleData>
 dnl
 dnl #
 dnl # Typedefs of role#$<rlIndex>
 dnl #
 dnl # Name of the type of the role variables
 pushdef(`__prefixRType',_NAME(__prefixR,Type))dnl
-define(_NAME(__prefixR,Fields),$<role_variables>
-_EVALNAME(__prefixR,ExtraRoleData))dnl
+define(_NAME(__prefixR,Fields),$<role02_variables>
+_EVALNAME(__prefixR,CollectedExtraRoleData))dnl
 dnl If $ <role_variables> are empty, then define typedefs,etc. to be empty:
 ifelse(_CAT(_is_empty,_EVALNAME(__prefixR,Fields)),_is_empty,`dnl Empty definitions (when no variables)
 define(_NAME(__prefixR,typedef),)dnl
@@ -79,7 +94,7 @@ dnl will always be used
 dnl #
 dnl # Type definition for the structure containing the role variables.
 dnl #
-dnl # role variables should also contain the variables of any          TODO XXX
+dnl # role variables should also contain the variables of any
 dnl # sub-connector roles that this role has been associated with
 define(_NAME(__prefixR,typedef),dnl
   typedef `$'1 {
@@ -107,34 +122,37 @@ dnl #
 define(_NAME(__prefixR,vardecl),dnl type,varname,varsize
    `$'1 `$'2[`$'3];
 )
+dnl # sequence of: $ <var_type> _NAME(_context,_varname,$ <var_name>);
 define(_NAME(__prefixR,myvardecls),dnl
-dnl list of: $<var_type> _NAME(_context,_varname,$<var_name>);
-_NAME(__prefixR,vardecl)(__prefixRType,_NAME(__prefixR,ActualNameLHS),_EVALNAME(__prefixR,sizeTotal))dnl $< connector_variables>
-)
+_NAME(__prefixR,vardecl)(__prefixRType,_EVALNAME(__prefixR,FieldName),_EVALNAME(__prefixR,size)))dnl
 dnl
 define(_NAME(__prefixR,vardecls),dnl
- _EVALNAME(__prefixR,myvardecls)dnl
-define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')dnl
- _EVALNAME(__prefixR,myvardecls)))dnl
+dnl
+ _EVALNAME(__prefixR,myvardecls)`'dnl
+define(`__GLOBAL_VARDECLS',defn(`__GLOBAL_VARDECLS')`'dnl
+ _EVALNAME(__prefixR,myvardecls))`'dnl
+)dnl
 dnl #
 dnl # Role variable initialisations
 dnl #
-dnl # role variable initialisation code should also contain the        TODO XXX
+dnl # role variable initialisation code should also contain the
 dnl # initialisation of any sub-connector role variables that this
 dnl # role has been associated with
 define(_NAME(__prefixR,FieldInitialisations),dnl
-  _CAT($<role_variable_initialisations>)dnl
-/* Unrolling extra sub-role data initialisations using iterator @`'_NAME(__prefixR,Iterator) up to _EVALNAME(__prefixR,sizeTotal) */
-_forloop(_EVALNAME(__prefixR,Iterator),0,_EVALNAME(__prefixR,sizeTotal),dnl
-  _EVALNAME(__prefixR,ExtraRoleDataInitialisations)`'dnl
+/* Data initialisations for connector _varname with size _NAME(__prefixX,size) and iterator @_NAME(__prefixX,Iterator) */
+  _CAT($<role03_variable_initialisations>)dnl
+/* Unrolling extra sub-role data initialisations using iterator @_NAME(__prefixR,Iterator) up to _EVALNAME(__prefixR,size) */
+dnl _forloop(_EVALNAME(__prefixR,Iterator),0,_EVALNAME(__prefixR,size),dnl BUG 2)
+_forloop(_EVALNAME(__prefixR,Iterator),0,1,dnl BUG 2
+  _EVALNAME(__prefixR,CollectedExtraRoleDataInitialisations)`'dnl
 )dnl
 )dnl
 define(_NAME(__prefixR,inits),dnl
 /** Initialising role $<role_name> of connector $<connector_name> **/
 ifelse(_CAT(_is_empty,_EVALNAME(__prefixR,FieldInitialisations)),_is_empty,,dnl
-d_step {
+/* d_step { */
    _EVALNAME(__prefixR,FieldInitialisations)
-}
+/* } */
 dnl
 define(`__GLOBAL_INITS',defn(`__GLOBAL_INITS') _NAME(__prefixR,inits))dnl
 )dnl
@@ -144,39 +162,11 @@ dnl ###
 dnl ### Sub-role-dependent definitions (variable name/guards/ensures)
 dnl ###
 dnl
-dnl ROLE: I am __prefixR, of size _EVALNAME(__prefixR,size), and my 3rd InstanceAtOffset is _CAT(_CAT(`_NAME(__prefixR,InstanceAtOffset)(3)'))
 dnl #
 dnl # Role ports
 dnl #
-$<connector_role_port>`'dnl
-define(_NAME(__subprefixR,ActualName),dnl
-ifdef(_NAME(__prefixR,ActualName),dnl
-`defn(_NAME(__prefixR,ActualName))',dnl
-`_NAME(_varname,_NAME(__prefixR,Name))'`'dnl
-)dnl
-)dnl
-define(_NAME(__prefixR,ActualNameUse),dnl
-ifdef(_NAME(__prefixR,ActualNameUse),dnl
-`defn(_NAME(__prefixR,ActualNameUse))',dnl
-`defn(_NAME(__prefixR,InstanceAtOffsetPlain))'`'dnl
-)dnl
-)dnl
+$<role04_ports>`'dnl
 dnl
-define(_NAME(__prefixR,ActualNameLHS),dnl
-_EVALNAME(__prefixR,ActualName)[_NAME(__prefixR,Iterator)]dnl
-)dnl
-dnl
-define(_NAME(__prefixR,InstanceAtOffset),dnl
-_EVALNAME(__prefixR,InstanceAtOffsetPlain)($1)`'dnl
-)dnl
-dnl
-popdef(`__prefixRType')dnl
-dnl
-dnl Do roles need a macro, like connector?                           XXX
-dnl
-define(_NAME(__prefixR,Apply),`dnl
-dnl The role __prefixR has been applied!
-')dnl
-dnl _EVALNAME(__prefixR,Apply)`'dnl
-popdef(`__prefixR')dnl
+popdef(`__prefixR')dnl pop connector definition of __prefixR
 dnl#### End of connector $<connector_name>, role $<role_name> definitions
+dnl

@@ -52,9 +52,8 @@ dnl # Get the number of port actions
 dnl #
 define(_NAME(__prefixRP,actionsTotal),`$<actionsTotal>')dnl
 dnl #
-dnl # Role port action guards and guard-ensures pairs
+dnl # NOTE: Role port action guards and guard-ensures pairs are
+dnl # defined at the connector level, *after* role variables.
 dnl #
-$<connector_role_port_action_guards>`'dnl
-dnl
 popdef(`__prefixRP')dnl
 dnl##### End of connector $<connector_name>, role $<role_name>, port $<portName> definitions

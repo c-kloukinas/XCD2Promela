@@ -1,48 +1,41 @@
 dnl ### sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>)
 pushdef(`__subprefixR',__roleId(__subConnCtx,$<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>))dnl
+dnl #
+dnl # Define InstancePrefixNoOffset & InstancePrefixWithOffset of the sub-role
+dnl #
+define(_NAME(__subprefixR,InstancePrefixNoOffset),dnl
+ _NAME(__prefixR,InstancePrefixWithOffset)._NAME(__prefixR,FieldName)`'dnl
+)dnl
+define(_NAME(__subprefixR,InstancePrefixWithOffset),dnl
+_NAME(__subprefixR,InstancePrefixNoOffset)`'dnl
+[_EVALNAME(__prefixR,offsetOrZero)(_NAME(__prefixR,Iterator))]`'dnl
+)dnl
+dnl #
+dnl # Define the sub-type,
+dnl #
 pushdef(`_subroleType',_NAME(__subprefixR,Type))dnl
 dnl
-dnl #
-dnl # sub-role instance name, adapted to have the parent role instance
-dnl # as a prefix
-dnl #
+pushdef(`_subroleInstanceName',dnl
+_EVALNAME(__subprefixR,FieldName))dnl
 dnl
-define(_NAME(__subprefixR,InstanceAtOffset),dnl
-_NAME(__prefixR,InstanceAtOffset)($`'1)._NAME(__subprefixR,InstanceAtOffsetPlain)($`'1)dnl
-)dnl
-dnl
-dnl SUBROLE: I am __subprefixR, of size _EVALNAME(__subprefixR,size), and my 7rd InstanceAtOffset is _CAT(_CAT(`_NAME(__subprefixR,InstanceAtOffset)(7)'))
-dnl
-define(_NAME(__subprefixR,ActualName),dnl
-_NAME($<subConnVarName>,_NAME(__subprefixR,Name))`'dnl
-)dnl
-define(_NAME(__subprefixR,ActualNameLHS),dnl
-_EVALNAME(__prefixR,ActualNameLHS)[_NAME(__prefixR,Iterator)].dnl
-_NAME(__subprefixR,ActualName)`'dnl
-)dnl
-define(_NAME(__subprefixR,ActualNameUse),dnl
-dnl SUBROLE size is _EVALNAME(__subprefixR,size)
-_NAME(__prefixR,ActualNameUse)(_NAME(__prefixR,Iterator)).dnl
-_EVALNAME(__subprefixR,InstanceAtOffsetPlain)(_NAME(__prefixR,Iterator))`'dnl
-)dnl
 dnl ###
 dnl ### for each role ($<role_name> $<rlIndex>) in $<connector_name>
 dnl ###     add sub-role ($<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>) extra data to the role
 define(`__extraData',dnl
-_NAME(__subprefixR,vardecl)(_subroleType,dnl __subprefixR
-_NAME(__subprefixR,ActualName),$<subConnVarSize>))dnl
-define(_NAME(__prefixR,ExtraRoleData),dnl
-defn(_NAME(__prefixR,ExtraRoleData))dnl
+_NAME(__subprefixR,vardecl)(_subroleType,_subroleInstanceName,$<subConnVarSize>))dnl
+define(_NAME(__prefixR,CollectedExtraRoleData),dnl
+defn(_NAME(__prefixR,CollectedExtraRoleData))dnl
 ifelse(_CAT(_is_empty,__extraData),_is_empty,,`     '__extraData)dnl
 )dnl
 dnl
 dnl # define the extra initialisations
 define(`__extraDataInits',dnl
 _EVALNAME(__subprefixR,FieldInitialisations))dnl
-define(_NAME(__prefixR,ExtraRoleDataInitialisations),dnl
-defn(_NAME(__prefixR,ExtraRoleDataInitialisations))dnl
+define(_NAME(__prefixR,CollectedExtraRoleDataInitialisations),dnl
+defn(_NAME(__prefixR,CollectedExtraRoleDataInitialisations))dnl
 ifelse(_CAT(_is_empty,__extraDataInits),_is_empty,,__extraDataInits)dnl
 )dnl
-$<subActionGuards>
+dnl
+popdef(`_subroleInstanceName')dnl
 popdef(`_subroleType')dnl
 popdef(`__subprefixR')dnl

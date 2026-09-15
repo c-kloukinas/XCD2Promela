@@ -213,6 +213,7 @@ class ElementBindings {         // Just to ensure that elementBindings
 class SymbolTableComposite extends SymbolTable { // COMPOSITE or CONNECTOR
     LstStr subcomponents = new LstStr();
     LstStr subconnectors = new LstStr();
+    Set<String> subconnector_types = new TreeSet<String>();
     CompositeConstructs compConstructs = new CompositeConstructs();
     LstStr rolesAsOrderedInParams = new LstStr();
     Map<String, LstStr> roles2portvarsInParams = new HashMap<String, LstStr>();

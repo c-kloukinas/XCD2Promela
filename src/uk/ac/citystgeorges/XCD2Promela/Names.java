@@ -100,7 +100,7 @@ class Names {
         return "_NAME(__roleId(_context," + x // my_connector_name
             + ",_varname"
             + "," + rNum // roleIndex
-            + "),ActualNameUse)("
+            + "),InstanceAtOffset)("
             + roleInstanceIterator
             + ")."
             + var;
@@ -110,9 +110,9 @@ class Names {
         return "_EVALNAME(__roleId(_context," + x // my_connector_name
             + ",_varname"
             + "," + rNum // roleIndex
-            + "),ActualNameUse)["
+            + "),InstanceAtOffset)("
             + roleInstanceIterator
-            + "]._post_"        // POST()
+            + ")._post_"        // POST()
             + var;
     }
     // static String varInstanceNameRole(String x,String role,String var,String inst){

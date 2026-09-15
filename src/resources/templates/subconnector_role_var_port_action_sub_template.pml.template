@@ -1,3 +1,4 @@
+dnl /* DEF __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>) 02 */
 pushdef(`__prefixRPA',dnl name of the role action
 __actionId(_context,$<connector_name>,_varname,$<rlIndex>,$<portIndex>,$<actionName>))dnl
 pushdef(`__subprefixRPA',__actionId(__subConnCtx,$<subConnType>,$<subConnVarName>,$<subConnRoleAssumedIndex>,$<subConnPortIndex>,$<actionName>))dnl
@@ -19,5 +20,21 @@ defn(_NAME(__prefixRPA,ExtraEnsures))dnl
 ifelse(_CAT(_is_empty,__extraEnsures),_is_empty,,;__extraEnsures)`'dnl
 )dnl
 dnl
+dnl /*
+dnl  * Working on extraGuards for __prefixRPA & __subprefixRPA :
+dnl  *
+dnl  * _EVALNAME(__prefixRPA,guards)
+dnl  *
+dnl  * where  _EVALNAME(__subprefixRPA,guards)
+dnl  *
+dnl  *   and  _EVALNAME(__prefixRPA,ExtraGuards)
+dnl  *
+dnl  * _EVALNAME(__prefixRPA,ensures)
+dnl  *
+dnl  * where  _EVALNAME(__subprefixRPA,ensures)
+dnl  *
+dnl  *   and  _EVALNAME(__prefixRPA,ExtraEnsures)
+dnl  *
+dnl  */
 popdef(`__subprefixRPA')dnl
 popdef(`__prefixRPA')dnl
