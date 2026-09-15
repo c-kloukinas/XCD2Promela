@@ -35,11 +35,23 @@ define(`_ite', `ifelse(eval($1),0,`$3',`$2')')dnl
 define(`_ilog2r',`ifelse($1,1,$2,`_log2r(eval($1/2),incr($2))')')dnl
 define(`_ilog2',`ifelse(eval($1>0),0,`errprint(log2 is only defined on positive integers
 )',`_log2r($1,0)')')dnl
-
+dnl
+dnl # Safe include macro - do NOT include if already included.
+dnl
+define(`_sanitize_name',`patsubst(`$1',`[^a-zA-Z0-9_]',`_')')dnl
+dnl
+define(`_include_guard',`_CAT(`_incGuard_',`_sanitize_name(`$1')')')dnl
+dnl
+define(`_include_once',dnl
+`ifdef(_include_guard(`$1'),dnl
+`',dnl
+`define(_include_guard(`$1'),`_CAT(_included_,_include_guard(`$1'))')dnl
+include(`$1')')dnl
+')dnl
 # case 1: `includeall' (no parens) $#==0
 # case 2: `includeall()' $#==1, $1==`'
 # case 3: `includeall(foo)' $#==1, $1!=`'
-define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`include($1) $0(shift($@))')')')dnl
+define(`_includeall', `ifelse(`$#',`0',`',`ifelse(`$1',`',`$1',`_include_once($1) $0(shift($@))')')')dnl
 
 dnl define(`drefine',`define($1,$2)')
 
