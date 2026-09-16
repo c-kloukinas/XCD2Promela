@@ -8,6 +8,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TranslatorPrimaryContext implements TranslatorI {
+    /*
+     * translationsOfVar:
+     * (also used in EnvironmentCreationVisitor & TranslatorXComponent)
+     *
+     * [0] = translation,
+     * [1] = array size,
+     * [2] = init value,
+     * [3] = post translation
+     */
+    static int translationsOfVar = 4;
     @Override
     public T translate(BaseVisitor<T> bv, ParserRuleContext ctx) {
         return translate(bv, (PrimaryContext)ctx); }
@@ -23,7 +33,9 @@ public class TranslatorPrimaryContext implements TranslatorI {
             s = bv.visit(ctx.parExpr).get(0);
         } else if (ctx.name != null) {
             String varid = ctx.name.getText();
-            String trans = translate_ID(bv, varid);
+            String trans = translate_ID(bv, varid
+                                // are we assigning to it?
+                                        , bv.globalAssignableName);
             s = trans;
         } else if (ctx.atId != null) {
             // var framenow = bv.symbolTableNow();
@@ -54,6 +66,11 @@ public class TranslatorPrimaryContext implements TranslatorI {
     }
 
     String translate_ID(BaseVisitor<T> bv, String id) {
+        return translate_ID(bv, id
+                                // are we assigning to it?
+                            , bv.globalAssignableName);
+    }
+    String translate_ID(BaseVisitor<T> bv, String id, boolean isAssignableP) {
         bv.myassert(id!=null && !id.equals("")
                     , "empty name for a variable");
         IdInfo idinfo = bv.getIdInfo(id);
@@ -92,7 +109,24 @@ public class TranslatorPrimaryContext implements TranslatorI {
                         + bv.symbolTableNow().compilationUnitID
                         + "\" of type: "
                         + bv.symbolTableNow().type);
-            return idinfo.translation.get(0);
+            String res = (isAssignableP
+                          && idinfo.has_post
+                          && idinfo.translation.size()==translationsOfVar) // translation, array size, initVal, postTranslation
+                ? idinfo.translation.get(translationsOfVar-1)
+                : idinfo.translation.get(0);
+            // is it a non-array variable? add [0] to it then!
+            {
+                if (! idinfo.is_param
+                    && idinfo.arraySizeExpr.equals(""))
+                    res += "[0]";
+                // if (! idinfo.is_param && bv.globalAssignableName
+                //     && ! idinfo.arraySizeExpr.equals(""))
+                //     System.err.println
+                //         ("translate_ID: id \"" + id
+                //          + "\" has arraySizeExpr: \""
+                //          +  idinfo.arraySizeExpr + "\"");
+            }
+            return res;
         }
     }
 }

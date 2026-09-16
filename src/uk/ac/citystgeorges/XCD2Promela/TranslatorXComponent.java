@@ -192,8 +192,15 @@ public class TranslatorXComponent {
                                               see what comes out */
             } else init = "=000"; // default value
             LstStr translation = info.translation;
-            bv.myassert(translation.size()==3
-                        , "Variable " + nm + " doesn't have translations for itself, its array size, and its initial value");
+            bv.myassert(translation.size()
+                        >=
+                        (TranslatorPrimaryContext.translationsOfVar - 1)
+                        , "Variable " + nm
+                        + " doesn't have translations for itself,"
+                        + " its array size, and its initial value"
+                        + " (and maybe for its post variable)"
+                        + " - size is: "
+                        + translation.size());
             String arrSzTrans = translation.get(1);
             String initTrans = translation.get(2);
             if (initTrans==null)

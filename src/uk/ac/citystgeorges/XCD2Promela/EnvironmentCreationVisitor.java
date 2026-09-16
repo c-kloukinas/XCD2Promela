@@ -962,6 +962,7 @@ class EnvironmentCreationVisitor
                                        , !isVar
                                        , initVal
                                        , compUnitId);
+        String transPost = "";
         if (tp==XCD_type.methodt
             || tp==XCD_type.eventt
             || tp==XCD_type.functiont) {
@@ -1030,6 +1031,26 @@ class EnvironmentCreationVisitor
                             :Names.paramNameRole(parent.compilationUnitID
                                                  , myCRName
                                                  , varName)));
+                transPost = ((tp==XCD_type.componentt)
+                             ? (isVar
+                                ? Names
+                                .varNameComponent
+                                (myCRName, Names.varPostName(varName))
+                                : Names
+                                .paramNameComponent
+                                (myCRName, Names.varPostName(varName)))
+                             : (isVar
+                                ?Names
+                                .varNameRole
+                                (parent.compilationUnitID
+                                 , getRoleIndex(parent, myCRName)
+                                 , getRoleIterator(parent, myCRName)
+                                 , Names.varPostName(varName))
+                                :Names
+                                .paramNameRole
+                                (parent.compilationUnitID
+                                 , myCRName
+                                 , Names.varPostName(varName))));
             } else {
                 myassert(false
                          , (isVar?"Variable ":"Parameter ")
@@ -1067,6 +1088,19 @@ class EnvironmentCreationVisitor
                 // mywarning("VarDecl: " + varName
                 //           + " has initVal null");
         }
+        idinfo.translation.add(transPost);
+        Utils.myAssertHard(!isVar
+                           || !(tp==XCD_type.componentt
+                                || tp==XCD_type.rolet)
+                           || ( idinfo.translation.size()
+                                ==
+                                TranslatorPrimaryContext
+                                .translationsOfVar)
+                /* isVar ->
+                 *  ( tp \in {component, connector}
+                 *    -> (size == translationsOfVar) )
+                 */
+                           , "Bad translation of variable " + varName);
         return defaultResult();
     }
 
@@ -2060,18 +2094,21 @@ class EnvironmentCreationVisitor
     @Override
     T getAssignableName(String name) {
         T res = defaultResult();
-        var tr = new TranslatorPrimaryContext();
-        String s = tr.translate_ID(this, name);
         IdInfo sRecord = getIdInfo(name);
+        var tr = new TranslatorPrimaryContext();
+        String s = tr.translate_ID(this, name
+                                   , (sRecord.type==XCD_type.vart
+                                      && sRecord.has_post));
         if (globalAssignableName) {
             myassert((sRecord.type==XCD_type.mparamt)
                      || (sRecord.type==XCD_type.vart)
                      , "LeftHandSide: How can one assign into \""
                      + name
                      + "\" (" + s + ") ? " + sRecord.type);
-            if (sRecord.type==XCD_type.vart
-                && sRecord.has_post)
-                s = Names.varPostName(s);
+            // System.err
+            //     .println("LeftHandSide: Assigning into \""
+            //              + name
+            //              + "\" aka \"" + s + "\"");
         }
         if (sRecord.type==XCD_type.mparamt) {
             // could this be a method parameter?
