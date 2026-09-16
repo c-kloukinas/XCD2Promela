@@ -102,6 +102,7 @@ $(BLDCLS)%.class: $(BLDSRC)%.java
 	$(JAVAC) $(JFLAGS) -d $(BLDCLS) --source-path $(BLDSRC):$(SRCDIR) $<
 
 $(TESTDIR)/%.passed: $(TESTCASESDIR)/%.xcd $(TARGETJAR) $(SCRIPTDIR)/test-xcd makefile
+	@-rm $(TESTDIR)/$*.passed $(TESTDIR)/$*.failed
 	$(SCRIPTDIR)/test-xcd $(TARGETJAR) $(TESTCASESDIR)/$*.xcd
 
 unused: $(NJS)
